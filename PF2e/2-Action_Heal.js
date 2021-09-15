@@ -34,9 +34,11 @@ async function CheckFeat(slug) {
         }
         return false;
         }
+    
     async function applyChanges($html) {
 	for (const token of canvas.tokens.controlled) {
     const heals = await CheckSpell('heal');
+    
     /*Informs the player that they do not possess the heal spell in their character sheet*/
     if (heals === false && token.actor.data.type != 'npc') { ui.notifications.warn('Actor does not possess the heal spell'); }
     else if (game.user.targets.size < 1) { ui.notifications.warn('Please target a token'); }
@@ -48,6 +50,7 @@ async function CheckFeat(slug) {
     if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.find((t) => t === 'undead' || t=== 'construct')) {
      var tt = true; }
     else { var tt = false; }
+    
     /*Staff of Healing*/
     const staff = await CheckStaff('staff-of-healing');
     const gstaff = await CheckStaff('staff-of-healing-greater');
