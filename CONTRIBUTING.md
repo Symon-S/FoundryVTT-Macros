@@ -1,2 +1,0 @@
-Drental
-Tikael
