@@ -1,3 +1,5 @@
+/* By Tikael with snippets of code by Drental */
+
 if (!actor) {
   ui.notifications.warn("You must have an actor selected");
 } else {
