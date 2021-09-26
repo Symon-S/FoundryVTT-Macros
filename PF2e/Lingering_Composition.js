@@ -1,3 +1,5 @@
+/*Snippets used from Drental and Tik's version */
+
 if (!actor || token.actor.type !== 'character') {
 	ui.notifications.warn("You must have a PC token selected");}
 if (token.actor.itemTypes.feat.find(lc => lc.slug === "lingering-composition") === undefined) { ui.notifications.warn("The actor does not possess the Lingering Composition feat") }
