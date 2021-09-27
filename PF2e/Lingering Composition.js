@@ -1,8 +1,9 @@
 /*Snippets used from Drental and Tik's version */
 
 if (!actor || token.actor.type !== 'character') {
-	ui.notifications.warn("You must have a PC token selected");}
-if (token.actor.itemTypes.feat.find(lc => lc.slug === "lingering-composition") === undefined) { ui.notifications.warn("The actor does not possess the Lingering Composition feat") }
+	ui.notifications.warn("You must have a PC token selected"); return;}
+if (token.actor.itemTypes.feat.find(lc => lc.slug === "lingering-composition") === undefined) { ui.notifications.warn("The actor does not possess the Lingering Composition feat"); return; }
+if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.focus.value === undefined) { ui.notifications.warn("You have no focus points"); return; }
       else {
 	const skillName = "Performance";
 	const skillKey = "prf";
@@ -128,7 +129,7 @@ if (token.actor.itemTypes.feat.find(lc => lc.slug === "lingering-composition") =
 	    });
 	  }
 	
-	game.pf2e.Check.roll(
+	const roll = await game.pf2e.Check.roll(
 	  new game.pf2e.CheckModifier(
 	    `<span class="pf2-icon">A</span> <b>${actionName}</b> - <p class="compact-text">${skillName } Skill Check</p>`,
 	    token.actor.data.data.skills[skillKey], modifiers ),
@@ -136,4 +137,8 @@ if (token.actor.itemTypes.feat.find(lc => lc.slug === "lingering-composition") =
 	    event
 	    //for callback: ,(Roll) => {console.log(Roll);}
 	);
+        if (roll.data.flags.pf2e.context.outcome != "failure") { 
+          const currentpoints = actor.data.data.resources.focus.value-1;
+         actor.update({"data.resources.focus.value":currentpoints});
+        }
       }
