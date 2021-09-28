@@ -7,8 +7,8 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
       else {
 	const skillName = "Performance";
 	const skillKey = "prf";
-	const actionSlug = "lingering-composition"
-	const actionName = "Lingering Composition"
+	var actionSlug = "lingering-composition"
+	var actionName = "Lingering Composition"
       
 	const modifiers = []
 	// list custom modifiers for a single roll here
@@ -18,15 +18,18 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
       
       let cantrips = token.actor.itemTypes.spell.filter(s=> s.isFocusSpell === true && s.isCantrip === true && s.data.data.traits.value.includes('composition') && s.data.data.duration.value === '1 round');
       
+      
       let label;
       if (cantrips.find(f => f.slug === 'dirge-of-doom') != undefined) { label = `Choose a Spell : <br>(Target all affected enemies for Dirge of Doom)` }
       else { label = `Choose a Spell : ` }
       
       let lc_data = [
 	{ label: label, type: `select`, options: cantrips.map(p=> p.name) },
-	{ label: `Custom DC`, type: `number` }
+	{ label: `Custom DC : `, type: `number` }
       ];
       
+      if (token.actor.itemTypes.spell.some(s => s.data.data.slug === 'inspire-heroics')) { lc_data.push( { label: `Inspire Heroics (Defense or Courage Only) : `, type: `checkbox` } ) }     
+
       const choice = await quickDialog({data: lc_data, title: `Lingering Composition`});
       
       const cast_spell = token.actor.itemTypes.spell.find(n => n.name === choice[0]);
@@ -38,13 +41,24 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
       
       let effect = effects.find(e => e.data.name.includes(choice[0]));
       
-      
       const notes = [...token.actor.data.data.skills[skillKey].notes];
-      if (effect != undefined) {
+      
+      if (choice[2] === true) {
+       if ( choice[0] === 'Inspire Courage' || choice[0] === 'Inspire Defense') {  
+         var actionSlug = "inspire-heroics";
+         var actionName = "Inspire Heroics";
+         let ihc = effects.find(e => e.data.name.includes(`${choice[0].substr(8)}, +3`));
+         let ihs = effects.find(e => e.data.name.includes(`${choice[0].substr(8)}, +2`));
+         notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${ihs.id}">${ihs.name}</a></p>`});
+         notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${ihc.id}">${ihc.name}</a></p>`});
+         notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> You don't spend the Focus Point for casting the spell</p>`});
+       }
+      else { ui.notifications.warn('Inspire Heroics is only applicable to Inspire Courage or Defense'); return; }
+      }
+      else if (effect != undefined) {
  notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 3 rounds</p>`});
          notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 4 rounds</p>`});
          notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
-
        }
       else{
         notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${com_id}">${choice[0]}</a> lasts 3 rounds</p>`});
@@ -60,7 +74,7 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
       
 	let DCbyLevel = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50]
       
-      	var level;
+      	let level;
       	if (choice[0] === 'Dirge of Doom') {
                 options.push(`secret`)
       		const ids = game.user.targets.ids;
