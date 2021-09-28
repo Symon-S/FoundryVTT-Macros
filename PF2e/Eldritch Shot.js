@@ -58,6 +58,7 @@ async function Eldritch_shot()
       Object.entries(spell.spellcasting.data.data.slots).forEach(slot => {
                if (slot[1].value > 0 && parseInt(slot[0].substr(4)) === spell.level) { spells_items.push(spell)}
               })
+    if(spell.isCantrip) {spells_items.push(spell)}
     }
 	});
         
