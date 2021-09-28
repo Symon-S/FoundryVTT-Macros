@@ -1,4 +1,6 @@
 /*Snippets used from Drental and Tik's version */
+/*This Macro lets you more easily use lingering composition and inspire heroics*/
+/*It also uses focus points when rolling anything but a failure*/
 
 if (!actor || token.actor.type !== 'character') {
 	ui.notifications.warn("You must have a PC token selected"); return;}
