@@ -1,4 +1,4 @@
-    Eldritch_shot();
+Eldritch_shot();
 
 async function Eldritch_shot()
 {
@@ -307,8 +307,14 @@ async function Eldritch_shot()
             
           }
 
-          const flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)`;
-          const critt_flav = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)`;
+          if (ndspell.data.data.save.value !== ''){
+            var flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)<br><span data-pf2-saving-throw='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.dc.value}' data-pf2-traits='${traits}, damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.dc.value} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
+            var critt_flav = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)<br><span data-pf2-saving-throw='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.dc.value}' data-pf2-traits='${traits}, damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.dc.value} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
+          }
+        else{
+        var flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)`;
+        var critt_flav = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)`;
+        }
 
           if (critt){
             var droll = new Roll(tdamage);
@@ -342,7 +348,8 @@ async function Eldritch_shot()
   
         new Dialog({
           content, 
-          buttons : { OK : {label : `OK`, callback : async (html) => { resolve(html.find('#choice').val()); } } }
+          buttons : { OK : {label : `OK`, callback : async (html) => { resolve(html.find('#choice').val()); } } },
+          default : 'OK'
         }).render(true);
       });
     } 
@@ -425,7 +432,8 @@ async function Eldritch_shot()
               }
             }));
           }}
-        }
+        },
+        default : 'Ok'
         })._render(true);
         document.getElementById("0qd").focus();
       });
