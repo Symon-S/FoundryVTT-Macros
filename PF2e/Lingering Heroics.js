@@ -93,7 +93,10 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
       
       
         let DC;
-	if( isNaN(choice[1]) ) { DC = DCbyLevel[level]; }
+	if ( isNaN(choice[1]) ) { 
+	 if (choice[2] === true) {DC = DCbyLevel[level] + 5; }
+	 else { DC = DCbyLevel[level]; }
+	} 
         else { DC = choice[1]; }
       
       
