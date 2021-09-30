@@ -1,4 +1,4 @@
-Eldritch_shot();
+    Eldritch_shot();
 
 async function Eldritch_shot()
 {
@@ -14,6 +14,8 @@ async function Eldritch_shot()
         ui.notifications.warn('Does not have Eldritch Archer Dedication.');
       }
       else{
+
+        //Going to rewrite this section whole soon
         let spells_items =[];
         /* Filter Spells Spontaneous, Focus, and Innate Spells*/
   let spon_entries = actor.itemTypes.spellcastingEntry.filter(item => item.isSpontaneous === true || item.isFocusPool === true || item.isInnate === true || item.isFlexible === true);
@@ -60,6 +62,7 @@ async function Eldritch_shot()
               })
     if(spell.isCantrip && !spells_items.includes(spell) ) {spells_items.push(spell)}
     }
+    
 	});
         
 	/* Add Prepared spells at different levels */
@@ -146,7 +149,7 @@ async function Eldritch_shot()
 	
 	/* Grab the specific spell chosen */
         let spellp = await spells.filter(p=> p.name === sp_choice);
- ;
+
         let ndspell = spellp.find(sl=>sl.slug);
   
         let location = ndspell.data.data.location.value;
@@ -202,14 +205,29 @@ async function Eldritch_shot()
           if (ndspell.data.data.save.value === '' || ndspell.data.data.save.value === null || ndspell.data.data.save.value === undefined) {
             var flav0 = `<strong>Eldritch Shot</strong><br><strong>${sp_choice}</strong>`;
             }
-            else { 
-  var traits = ndspell.data.data.traits.value.join();
-  var flav0 = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a><br><span data-pf2-saving-throw='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.dc.value}' data-pf2-traits='${traits}' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.dc.value} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;}
-            let message = ChatMessage.applyRollMode({ flavor: flav0, content: desc_sp, speaker: ChatMessage.getSpeaker() }, game.settings.get("core", "rollMode"));
-            ChatMessage.create(message);
-          }
+          else { 
+            var traits = ndspell.data.data.traits.value.join();
+            var flav0 = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a><br><span data-pf2-saving-throw='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.dc.value}' data-pf2-traits='${traits}' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.dc.value} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;}
+          let message = ChatMessage.applyRollMode({ flavor: flav0, content: desc_sp, speaker: ChatMessage.getSpeaker() }, game.settings.get("core", "rollMode"));
+          ChatMessage.create(message);
+        }
         /* Damage, oh the sweet sweet damage */
-        else { 
+        else {
+          const d_sorc = CheckFeat('dangerous-sorcery');
+          const dd_sorc = d_sorc ? ` + {${ndspell.heightenedLevel}}[status]` : '';
+          const c_sorc = d_sorc ? ` + {${ndspell.heightenedLevel * 2}}[status]` : '';
+          
+          let key = s_entry.ability;
+          const s_mod = ndspell.damage[0].applyMod ? ` + ${token.actor.data.data.abilities[key].mod}` : '';
+          const critmod = ndspell.damage[0].applyMod ? ` + ${token.actor.data.data.abilities[key].mod*2}` : ''; 
+          var dtype;
+
+          if (ndspell.slug === 'telekinetic-projectile') {
+            let options = ["piercing","bludgeoning","slashing"];
+            let prompt = `Which type of damage?`
+            var dtype = await choose(options,prompt);
+          }
+
           var multiplier = 0;
           if (ndspell.data.data.scaling != undefined && ndspell.slug !== `acid-splash`) {
             if (ndspell.heightenedLevel > ndspell.level) { var multiplier = Math.ceil((ndspell.heightenedLevel - ndspell.level) / ndspell.data.data.scaling.interval);
@@ -219,170 +237,94 @@ async function Eldritch_shot()
               var multiplier = Math.ceil((castlevel - ndspell.level) / ndspell.data.data.scaling.interval);
             }
             
+		        for (let [index] of ndspell.damage.entries())
+		         if (ndspell.isCantrip !== true && ndspell.isFocusSpell !== true) {
+			        if (index === 0) { 
+                let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
+                var dtype = ndspell.damage[index].type.value;
+                var damage = "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + s_mod + "}" + `[${ndspell.damage[index].type.value}]` + dd_sorc ;
+                if (game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + `[${ndspell.damage[index].type.value}]` + dd_sorc;  }
+              }
+		          else {
+                let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
+                var damage = damage + "+" + "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + `[${ndspell.damage[index].type.value}]`;
+                var dtype = dtype + "+" + ndspell.damage[index].type.value;
+				        if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = tdamage + "+" + "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + `[${ndspell.damage[index].type.value}]`;  }
+			     	    
+			        }
+			       } 
+		         else{
+			        if (index === 0) { 
+                if (ndspell.slug === 'telekinetic-projectile') {
+                  let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
+                  var damage = "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + s_mod + "}" + "[" + dtype + "]";
+                  if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + dtype + "]"; }
+                }
+                else{
+                  let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
+                  var damage = "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + s_mod + "}" + "[" + ndspell.damage[index].type.value + "]";
+                  var dtype = ndspell.damage[index].type.value;
+                  if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + ndspell.damage[index].type.value + "]";} 
+                }
+              }
+			        else {
+               let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
+				       var damage = damage + "+" + "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + "[" + ndspell.damage[index].type.value + "]";
+				       var dtype = dtype + "+" + ndspell.damage[index].type.value;
+               if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = tdamage + "+" + "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + "[" + ndspell.damage[index].type.value + "]";}
+			        }
+             } 
+          }
+      
+    
+          if (ndspell.slug === 'acid-splash') {
+            var dtype = 'acid'
+            if (actor.level < 5) {
+              var damage = `{1d6}[acid] + {1}[splash]`
+              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*1d6}[acid] + {1}[splash]`;}
+              else { tdamage = `{2d6}[acid] + {1}[splash]`}
+            }
+            else if (actor.level >= 5 && actor.level < 9) {
+              var damage = `{1d6${s_mod}}[acid] + {1}[splash]`;
+              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*1d6${critmod}}[acid] + {1}[splash]`;}
+              else { tdamage = `{2d6${critmod}}[acid] + {1}[splash]`}
+            }
+            else if (actor.level >= 9 && actor.level < 13) {
+              var damage = `{2d6${s_mod}}[acid] + {2}[splash]`;
+              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*2d6${critmod}}[acid] + {2}[splash]`;}
+              else { tdamage = `{4d6${critmod}}[acid] + {2}[splash]`}
+            }
+            else if (actor.level >= 13 && actor.level < 18) {
+              var damage = `{3d6${s_mod}}[acid] + {3}[splash]`;
+              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*3d6${critmod}}[acid] + {3}[splash]`;} 
+              else { tdamage = `{6d6${critmod}}[acid] + {3}[splash]`}
+            }
+            else { 
+              var damage = `{4d6${s_mod}}[acid] + {4}[splash]`;
+              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*4d6${critmod}}[acid] + {4}[splash]`;}
+              else { tdamage = `{8d6${critmod}}[acid] + {4}[splash]`}
+            }
+            
+          }
 
-		for (let [index] of ndspell.damage.entries())
-		if (ndspell.heightenedLevel === ndspell.level && ndspell.isCantrip !==true && ndspell.isFocusSpell !== true) {
-			if (index === 0) { var damage = ndspell.damage[index].value; var dtype = ndspell.damage[index].type.value; }
-		     	else {
-				var damage = damage + "+" + ndspell.damage[index].value;
-			     	var dtype = dtype + "+" + ndspell.damage[index].type.value;
-			     }
-			     
-		    } 
-		else{
-			if (index === 0) { var damage = ndspell.damage[index].value + "+" + multiplier * ndspell.data.data.scaling.damage[index].substr(0,1) + ndspell.data.data.scaling.damage[index].substr(1); var dtype = ndspell.damage[index].type.value; }
-			else {
-				var damage = damage + "+" + ndspell.damage[index].value + "+" + multiplier * ndspell.data.data.scaling.damage[index].substr(0,1) + ndspell.data.data.scaling.damage[index].substr(1);
-				var dtype = dtype + "+" + ndspell.damage[index].type.value;
-			}
-		}
-          }
-          const d_sorc = CheckFeat('dangerous-sorcery');
-          const dd_sorc = d_sorc ? `+ ${ndspell.heightenedLevel}` : '';
-          
-          let key = s_entry.ability;
-          const s_mod = ndspell.damage[0].applyMod ? token.actor.data.data.abilities[key].mod : 0;
-          if (ndspell.slug === 'telekinetic-projectile') {
-            let options = ["piercing","bludgeoning","slashing"];
-            let prompt = `Which type of damage?`
-            var dtype = await choose(options,prompt);
-          }
-          else if (dam > 1) { var dtype = `${ndspell.damage[0].type.value} + ${ndspell.damage[1].type.value}`;}
-          else { var dtype = ndspell.damage[0].type.value;}
-          let critmod = s_mod * 2; 
-          
           const flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)`;
           const critt_flav = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)`;
-          
 
-          if (ndspell.isCantrip === false) { 
-            if (critt === true && game.settings.get("pf2e","critRule") === 'doubledice' ) { 
-               let tdamage = ndspell.damage[0].applyMod ? `damage + critmod ${dd_sorc}` : `${damage} ${dd_sorc}`;
-               const droll = new Roll(tdamage).alter(2, 0, {multiplyNumeric: true});
-               droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() }); 
-            
+          if (critt){
+            var droll = new Roll(tdamage);
+            if (game.settings.get("pf2e","critRule") === 'doubledice' && ndspell.slug !== 'acid-splash') {
+              var droll = new Roll(damage).alter(2, 0, {multiplyNumeric: true});
             }
-            
-
-            else if (critt === true && game.settings.get("pf2e","critRule") === 'doubledamage' ) { let tdamage = ndspell.damage[0].applyMod ? `2 * (${damage} + ${s_mod} ${dd_sorc})` : `2 * (${damage} ${dd_sorc})`;
-                       const droll = new Roll(tdamage);
-                       droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
-            }
-
-            else{ let tdamage = ndspell.damage[0].applyMod ? damage + "+" + s_mod + dd_sorc : damage + dd_sorc; 
-               const droll = new Roll(tdamage);
-               droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });        
-            }
+            droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });   
           }
-
           else {
-            if (critt === true && game.settings.get("pf2e","critRule") === 'doubledice' ) { 
-              if (ndspell.slug === 'acid-splash') {
-                if ( actor.level < 5 ) {
-                let tdamage = `1d6 + 1`;
-                const droll = new Roll(tdamage).alter(2);
-                droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
-                }
-                else if (actor.level >= 5 && actor.level < 9 ) {
-                  let tdamage = `1d6 + ${critmod} + 1`;
-                  const droll = new Roll(tdamage).alter(2);
-                  droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
-                }
-                else if (actor.level >= 9 && actor.level < 13 ) {
-                  let tdamage = `2d6 + ${critmod} + 2`;
-                  const droll = new Roll(tdamage).alter(2);
-                  droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
-                }
-                else if (actor.level >= 13 && actor.level < 17 ) {
-                  let tdamage = `3d6 + ${critmod} + 3`;
-                  const droll = new Roll(tdamage).alter(2);
-                  droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
-                }
-                else {
-                  let tdamage = `2d6 + ${critmod} + 2`;
-                  const droll = new Roll(tdamage).alter(2);
-                  droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
-                }  
-              }
-              else{  
-              let tdamage = ndspell.damage[0].applyMod ? damage + "+" + critmod : damage; 
-              const droll = new Roll(tdamage).alter(2);
-              droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
-              }
-            }
-            else if (critt === true && game.settings.get("pf2e","critRule") === 'doubledamage' ) {
-              if (ndspell.slug === 'acid-splash') {
-                if (actor.level < 5 ) {
-                let tdamage = `2*(1d6) + 1`;
-                const droll = new Roll(tdamage);
-                droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
-                }
-                else if (actor.level >= 5 && actor.level < 9 ) {
-                  let tdamage = `2*(1d6 + ${s_mod}) + 1`; 
-                  const droll = new Roll(tdamage);
-                  droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
-                }
-                else if (actor.level >= 9 && actor.level < 13 ) {
-                  let tdamage = `2*(2d6 + ${s_mod}) + 2`;
-                  const droll = new Roll(tdamage);
-                  droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
-                }
-                else if (actor.level >= 13 && actor.level < 17 ) {
-                  let tdamage = `2*(3d6 + ${s_mod}) + 3`;
-                  const droll = new Roll(tdamage);
-                  droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
-                }
-                else {
-                  let tdamage = `2*(4d6 + ${s_mod}) + 4`
-                  const droll = new Roll(tdamage);
-                  droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
-                }  
-              }
-              else{
-              let tdamage = ndspell.damage[0].applyMod ? 2 + "*" + "(" + damage + "+" + s_mod + ")" : 2 + "*" + "(" + damage + ")"; 
-              const droll = new Roll(tdamage);
-              droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
-              }
-            }
-            else{ 
-              if (ndspell.slug === 'acid-splash') {
-                if (actor.level < 5 ) {
-                let tdamage = `1d6 + 1`;
-                const droll = new Roll(tdamage);
-                droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
-                }
-                else if (actor.level >= 5 && actor.level < 9 ) {
-                  let tdamage = `1d6 + ${s_mod} + 1`;
-                  const droll = new Roll(tdamage);
-                  droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
-                }
-                else if (actor.level >= 9 && actor.level < 13 ) {
-                  let tdamage = `2d6 + ${s_mod} + 2`;
-                  const droll = new Roll(tdamage);
-                  droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
-                ;
-                }
-                else if (actor.level >= 13 && actor.level < 17 ) {
-                  let tdamage = `3d6 + ${s_mod} + 3`;
-                  const droll = new Roll(tdamage);
-                  droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
-                }
-                else {
-                  let tdamage = `4d6 + ${s_mod} + 4`;
-                  const droll = new Roll(tdamage);
-                  droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
-                }  
-              }
-              else{
-              let tdamage = ndspell.damage[0].applyMod ? damage + "+" + s_mod : damage;
-              const droll = new Roll(tdamage);
-              droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
-              }
-            }
+            var droll = new Roll(damage);
+            droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
           }
-        }
-      }
-    }
+        
+       }
+  }
+          
 
     async function choose(options = [], prompt = ``)
     {
@@ -489,4 +431,5 @@ async function Eldritch_shot()
       });
     }
   }
+ }
 }
