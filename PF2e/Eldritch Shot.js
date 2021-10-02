@@ -280,29 +280,29 @@ async function Eldritch_shot()
           if (ndspell.slug === 'acid-splash') {
             var dtype = 'acid'
             if (actor.level < 5) {
-              var damage = `{1d6}[acid] + {1}[splash]`
-              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*1d6}[acid] + {1}[splash]`;}
-              else { tdamage = `{2d6}[acid] + {1}[splash]`}
+              var damage = `{1d6}[acid] + {1}[splash,acid]`
+              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*1d6}[acid] + {1}[splash,acid]`;}
+              else { tdamage = `{2d6}[acid] + {1}[splash,acid]`}
             }
             else if (actor.level >= 5 && actor.level < 9) {
-              var damage = `{1d6${s_mod}}[acid] + {1}[splash]`;
-              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*1d6${critmod}}[acid] + {1}[splash]`;}
-              else { tdamage = `{2d6${critmod}}[acid] + {1}[splash]`}
+              var damage = `{1d6${s_mod}}[acid] + {1}[splash,acid]`;
+              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*1d6${critmod}}[acid] + {1}[splash,acid]`;}
+              else { tdamage = `{2d6${critmod}}[acid] + {1}[splash,acid]`}
             }
             else if (actor.level >= 9 && actor.level < 13) {
-              var damage = `{2d6${s_mod}}[acid] + {2}[splash]`;
-              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*2d6${critmod}}[acid] + {2}[splash]`;}
-              else { tdamage = `{4d6${critmod}}[acid] + {2}[splash]`}
+              var damage = `{2d6${s_mod}}[acid] + {2}[splash,acid]`;
+              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*2d6${critmod}}[acid] + {2}[splash,acid]`;}
+              else { tdamage = `{4d6${critmod}}[acid] + {2}[splash,acid]`}
             }
             else if (actor.level >= 13 && actor.level < 18) {
-              var damage = `{3d6${s_mod}}[acid] + {3}[splash]`;
-              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*3d6${critmod}}[acid] + {3}[splash]`;} 
-              else { tdamage = `{6d6${critmod}}[acid] + {3}[splash]`}
+              var damage = `{3d6${s_mod}}[acid] + {3}[splash,acid]`;
+              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*3d6${critmod}}[acid] + {3}[splash,acid]`;} 
+              else { tdamage = `{6d6${critmod}}[acid] + {3}[splash,acid]`}
             }
             else { 
-              var damage = `{4d6${s_mod}}[acid] + {4}[splash]`;
-              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*4d6${critmod}}[acid] + {4}[splash]`;}
-              else { tdamage = `{8d6${critmod}}[acid] + {4}[splash]`}
+              var damage = `{4d6${s_mod}}[acid] + {4}[splash,acid]`;
+              if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = `{2*4d6${critmod}}[acid] + {4}[splash,acid]`;}
+              else { tdamage = `{8d6${critmod}}[acid] + {4}[splash,acid]`}
             }
             
           }
