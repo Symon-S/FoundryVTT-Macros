@@ -251,16 +251,18 @@ async function Eldritch_shot()
 		         if (ndspell.isCantrip !== true && ndspell.isFocusSpell !== true) {
 			        if (index === 0) { 
                 let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
+                if (ndspell.slug === 'scorching-ray') { dicenum = multiplier * (2 * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1'))) + (2 * parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1')));}
                 var dtype = ndspell.damage[index].type.value;
                 var damage = "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + s_mod + "}" + `[${ndspell.damage[index].type.value}]` + dd_sorc ;
-                if (game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + `[${ndspell.damage[index].type.value}]` + dd_sorc;  }
+                if (game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + `[${ndspell.damage[index].type.value}]` + c_sorc;  }
+                else { var tdamage = "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + `[${ndspell.damage[index].type.value}]` + c_sorc;}
               }
 		          else {
                 let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
                 var damage = damage + "+" + "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + `[${ndspell.damage[index].type.value}]`;
                 var dtype = dtype + "+" + ndspell.damage[index].type.value;
 				        if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = tdamage + "+" + "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + `[${ndspell.damage[index].type.value}]`;  }
-			     	    
+			     	    else { var tdamage = tdamage + "+" + "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + `[${ndspell.damage[index].type.value}]` + c_sorc;}
 			        }
 			       } 
 		         else{
@@ -269,12 +271,14 @@ async function Eldritch_shot()
                   let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
                   var damage = "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + s_mod + "}" + "[" + dtype + "]";
                   if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + dtype + "]"; }
+                  else { tdamage = "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + dtype + "]"; }
                 }
                 else{
                   let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
                   var damage = "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + s_mod + "}" + "[" + ndspell.damage[index].type.value + "]";
                   var dtype = ndspell.damage[index].type.value;
                   if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + ndspell.damage[index].type.value + "]";} 
+                  else{ tdamage = "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + ndspell.damage[index].type.value + "]";}
                 }
               }
 			        else {
@@ -282,6 +286,7 @@ async function Eldritch_shot()
 				       var damage = damage + "+" + "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + "[" + ndspell.damage[index].type.value + "]";
 				       var dtype = dtype + "+" + ndspell.damage[index].type.value;
                if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = tdamage + "+" + "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + "[" + ndspell.damage[index].type.value + "]";}
+               else{ tdamage = tdamage + "+" + "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + ndspell.damage[index].type.value + "]";}
 			        }
              } 
           }
@@ -328,9 +333,6 @@ async function Eldritch_shot()
 
           if (critt){
             var droll = new Roll(tdamage);
-            if (game.settings.get("pf2e","critRule") === 'doubledice' && ndspell.slug !== 'acid-splash') {
-              var droll = new Roll(damage).alter(2, 0, {multiplyNumeric: true});
-            }
             droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });   
           }
           else {
