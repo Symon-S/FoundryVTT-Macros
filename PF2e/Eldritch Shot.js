@@ -214,7 +214,6 @@ async function Eldritch_shot()
         /* Damage, oh the sweet sweet damage */
         else {
           const d_sorc = CheckFeat('dangerous-sorcery');
-          
           var dstype = status;
           if (d_sorc && ndspell.damage.length === 1){ var dstype = `status,${ndspell.damage[0].type.value}`; }
           if (d_sorc && ndspell.damage.length > 1 ){ 
@@ -226,9 +225,7 @@ async function Eldritch_shot()
           }
               
           const dd_sorc = d_sorc ? ` + {${ndspell.heightenedLevel}}[${dstype}]` : '';
-          const c_sorc = d_sorc ? ` + {${ndspell.heightenedLevel * 2}}[${dstype}]` : '';          const dd_sorc = d_sorc ? ` + {${ndspell.heightenedLevel}}[status]` : '';
-          const c_sorc = d_sorc ? ` + {${ndspell.heightenedLevel * 2}}[status]` : '';
-          console.log(c_sorc);
+          const c_sorc = d_sorc ? ` + {${ndspell.heightenedLevel * 2}}[${dstype}]` : '';
           
           let key = s_entry.ability;
           const s_mod = ndspell.damage[0].applyMod ? ` + ${token.actor.data.data.abilities[key].mod}` : '';
@@ -240,7 +237,7 @@ async function Eldritch_shot()
             let prompt = `Which type of damage?`
             var dtype = await choose(options,prompt);
           }
-          console.log(ndspell);
+
           var multiplier = 0;
           if (ndspell.data.data.scaling != undefined && ndspell.slug !== `acid-splash`) {
             if (ndspell.heightenedLevel > ndspell.level) { var multiplier = Math.ceil((ndspell.heightenedLevel - ndspell.level) / ndspell.data.data.scaling.interval);
@@ -289,7 +286,7 @@ async function Eldritch_shot()
              } 
           }
       
-          console.log(actor.level);
+    
           if (ndspell.slug === 'acid-splash') {
             var dtype = 'acid'
             if (actor.level < 5) {
@@ -321,13 +318,13 @@ async function Eldritch_shot()
           }
 
           if (ndspell.data.data.save.value !== ''){
-              var flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)<br><span data-pf2-saving-throw='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.dc.value}' data-pf2-traits='${traits}, damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.dc.value} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
-              var critt_flav = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)<br><span data-pf2-saving-throw='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.dc.value}' data-pf2-traits='${traits}, damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.dc.value} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
-            }
-          else{
-          var flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)`;
-          var critt_flav = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)`;
+            var flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)<br><span data-pf2-saving-throw='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.dc.value}' data-pf2-traits='${traits}, damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.dc.value} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
+            var critt_flav = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)<br><span data-pf2-saving-throw='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.dc.value}' data-pf2-traits='${traits}, damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.dc.value} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
           }
+        else{
+        var flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)`;
+        var critt_flav = `<strong>Eldritch Shot</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)`;
+        }
 
           if (critt){
             var droll = new Roll(tdamage);
@@ -340,7 +337,7 @@ async function Eldritch_shot()
             var droll = new Roll(damage);
             droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
           }
-        
+
        }
   }
           
