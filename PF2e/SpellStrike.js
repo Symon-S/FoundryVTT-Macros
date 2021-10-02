@@ -11,18 +11,26 @@ async function Spellstrike()
       /* Check for spellstrike and warn if not present */
       const spellstrike = CheckFeat('spellstrike');
       if (spellstrike === false) {
-        ui.notifications.warn('Does not have Spellstrike.');
+        ui.notifications.error('Does not have Spellstrike.'); return;
       }
       else{
+  const exceptions = ['magic-missile','force-fang'];
+  let ttraits = [];
+  if (game.user.targets.ids.length === 1) { canvas.tokens.placeables.find(t => t.id === game.user.targets.ids[0]).actor.data.data.traits.traits.value.forEach(p => {ttraits.push(p)}); }
+  if (ttraits.includes('undead')) { exceptions.push('heal'); }
+
   let spells_items =[];
         /* Filter Spells Spontaneous, Flexible, Focus, and Innate Spells*/
   let spon_entries = actor.itemTypes.spellcastingEntry.filter(item => item.isSpontaneous === true || item.isFocusPool === true || item.isInnate === true || item.isFlexible === true);
-	
+	  
   let spon_spells=[];
   spon_entries.forEach(item => {
     item.spells.contents.forEach(spell => {
       if (CheckFeat('expansive-spellstrike') === true) {
-        if (spell.data.data.spellType.value === 'utility') { return; }
+        if (spell.data.data.spellType.value === 'utility' || spell.data.data.spellType.value === 'heal') { 
+         if (exceptions.includes(spell.slug)) { prep_spells.push(spell); }
+         return; 
+        }
         if (item.isFlexible === true && spell.isCantrip === true && Object.entries(item.data.data.slots.slot0.prepared).some(i => i[1].id === spell.id) !== true){ return; }
         spon_spells.push(spell);
       }
@@ -71,13 +79,15 @@ async function Spellstrike()
         
 	/* Add Prepared spells at different levels */
   let prep_entries = actor.itemTypes.spellcastingEntry.filter(item => item.isPrepared === true && item.isFlexible === false);
-	
 
   let prep_spells = [];
   prep_entries.forEach(item => {
     item.spells.contents.forEach(spell => {
       if (CheckFeat('expansive-spellstrike') === true) {
-        if (spell.data.data.spellType.value === 'utility') { return; }
+        if (spell.data.data.spellType.value === 'utility' || spell.data.data.spellType.value === 'heal') { 
+         if (exceptions.includes(spell.slug)) { prep_spells.push(spell); }
+         return; 
+      }
         prep_spells.push(spell);
       }
       else { 
@@ -86,7 +96,6 @@ async function Spellstrike()
       }
     })
   })
-  
 
 	let slottedSpells = [];
 	prep_entries.forEach(item => {
@@ -100,7 +109,6 @@ async function Spellstrike()
 		});
 	 });
 	});
-	
 
 	prep_spells.forEach(spell => {
 		let baseLevel = spell.level;
@@ -129,7 +137,6 @@ async function Spellstrike()
 
 	})
 	
-	
         /* Sort spells by level and name */
         let spells = sortSpellsByLevel(spells_items);
 
@@ -138,7 +145,6 @@ async function Spellstrike()
   if (CheckFeat('starlit-span') === true) {  var weapons = actor.data.data.actions.filter(i => i.type === "strike"); }
   else { 
    var weapons = actor.itemTypes.weapon.filter(i => i.isRanged !== true);
-   
    let melee = weapons;
    let names = [];
    melee.forEach(a => { names.push(a.name); });
@@ -280,16 +286,18 @@ var flav0 = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="p
 		         if (ndspell.isCantrip !== true && ndspell.isFocusSpell !== true) {
 			        if (index === 0) { 
                 let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
+                if (ndspell.slug === 'scorching-ray') { dicenum = multiplier * (2 * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1'))) + (2 * parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1')));}
                 var dtype = ndspell.damage[index].type.value;
                 var damage = "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + s_mod + "}" + `[${ndspell.damage[index].type.value}]` + dd_sorc ;
-                if (game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + `[${ndspell.damage[index].type.value}]` + dd_sorc;  }
+                if (game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + `[${ndspell.damage[index].type.value}]` + c_sorc;  }
+                else { var tdamage = "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + `[${ndspell.damage[index].type.value}]` + c_sorc;}
               }
 		          else {
                 let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
                 var damage = damage + "+" + "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + `[${ndspell.damage[index].type.value}]`;
                 var dtype = dtype + "+" + ndspell.damage[index].type.value;
 				        if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = tdamage + "+" + "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + `[${ndspell.damage[index].type.value}]`;  }
-			     	    
+			     	    else { var tdamage = tdamage + "+" + "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + `[${ndspell.damage[index].type.value}]` + c_sorc;}
 			        }
 			       } 
 		         else{
@@ -298,12 +306,14 @@ var flav0 = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="p
                   let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
                   var damage = "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + s_mod + "}" + "[" + dtype + "]";
                   if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + dtype + "]"; }
+                  else { tdamage = "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + dtype + "]"; }
                 }
                 else{
                   let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
                   var damage = "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + s_mod + "}" + "[" + ndspell.damage[index].type.value + "]";
                   var dtype = ndspell.damage[index].type.value;
                   if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + ndspell.damage[index].type.value + "]";} 
+                  else{ tdamage = "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + ndspell.damage[index].type.value + "]";}
                 }
               }
 			        else {
@@ -311,10 +321,12 @@ var flav0 = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="p
 				       var damage = damage + "+" + "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + "[" + ndspell.damage[index].type.value + "]";
 				       var dtype = dtype + "+" + ndspell.damage[index].type.value;
                if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = tdamage + "+" + "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + "[" + ndspell.damage[index].type.value + "]";}
+               else{ tdamage = tdamage + "+" + "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + ndspell.damage[index].type.value + "]";}
 			        }
-             } 
+             }  
           }
-      
+         
+
           if (ndspell.slug === 'acid-splash') {
             var dtype = 'acid'
             if (actor.level < 5) {
@@ -349,6 +361,10 @@ var flav0 = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="p
             var flavor = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (${dtype} damage)<br><span data-pf2-saving-throw='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.dc.value}' data-pf2-traits='${traits}, damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.dc.value} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
             var critt_flav = flavor;
           }
+         if (ndspell.slug === 'heal') {
+                      var flavor = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (${dtype} damage)<br><span data-pf2-saving-throw='fortitude' data-pf2-dc='${s_entry.data.data.dc.value}' data-pf2-traits='${traits}, damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.dc.value} </strong>Basic Fortitude save</span>`;
+            var critt_flav = flavor;
+          }
           else{
             if (ndspell.data.data.save.value !== ''){
               var flavor = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)<br><span data-pf2-saving-throw='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.dc.value}' data-pf2-traits='${traits}, damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.dc.value} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
@@ -359,13 +375,11 @@ var flav0 = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="p
             var critt_flav = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)`;
             }
           }
-          if (critt && ndspell.data.data.spellType.value !== 'save'){
+          if (critt && ndspell.data.data.spellType.value !== 'save' && ndspell.slug !== 'heal'){
             var droll = new Roll(tdamage);
-            if (game.settings.get("pf2e","critRule") === 'doubledice' && ndspell.slug !== 'acid-splash') {
-              var droll = new Roll(damage).alter(2, 0, {multiplyNumeric: true});
-            }
-            droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });   
-          }
+            droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
+          }   
+          
           else {
             var droll = new Roll(damage);
             droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
