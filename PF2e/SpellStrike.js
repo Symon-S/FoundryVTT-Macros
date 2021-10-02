@@ -359,7 +359,7 @@ var flav0 = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="p
             var critt_flav = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)`;
             }
           }
-          if (critt){
+          if (critt && ndspell.data.data.spellType.value !== 'save'){
             var droll = new Roll(tdamage);
             if (game.settings.get("pf2e","critRule") === 'doubledice' && ndspell.slug !== 'acid-splash') {
               var droll = new Roll(damage).alter(2, 0, {multiplyNumeric: true});
