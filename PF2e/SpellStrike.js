@@ -243,8 +243,18 @@ var flav0 = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="p
         else {
           var traits = ndspell.data.data.traits.value.join();
           const d_sorc = CheckFeat('dangerous-sorcery');
-          const dd_sorc = d_sorc ? ` + {${ndspell.heightenedLevel}}[status]` : '';
-          const c_sorc = d_sorc ? ` + {${ndspell.heightenedLevel * 2}}[status]` : '';
+          var dstype = status;
+          if (d_sorc && ndspell.damage.length === 1){ var dstype = `status,${ndspell.damage[0].type.value}`; }
+          if (d_sorc && ndspell.damage.length > 1 ){ 
+             let types = [];
+             ndspell.damage.forEach( t => {
+               types.push(t.type.value);
+             });             
+             var dstype = `status,${await choose(types,'Which type of damage?')}`;
+          }
+              
+          const dd_sorc = d_sorc ? ` + {${ndspell.heightenedLevel}}[${dstype}]` : '';
+          const c_sorc = d_sorc ? ` + {${ndspell.heightenedLevel * 2}}[${dstype}]` : '';
           
           let key = s_entry.ability;
           const s_mod = ndspell.damage[0].applyMod ? ` + ${token.actor.data.data.abilities[key].mod}` : '';
