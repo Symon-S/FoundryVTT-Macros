@@ -149,7 +149,7 @@ async function Spellstrike()
    let melee = weapons;
    let names = [];
    melee.forEach(a => { names.push(a.name); });
-   let ranged = actor.itemTypes.weapon.filter(i => i.isRanged === true);
+   let ranged = actor.itemTypes.weapon.filter(i => i.isRanged === true && i.isEquipped);
    ranged.forEach(r => { names.push(r.name); });
    actor.data.data.actions.forEach(gus => {
     if ( names.includes(gus.name) ) return;
