@@ -74,6 +74,7 @@ async function Spellstrike()
       Object.entries(spell.spellcasting.data.data.slots).forEach(slot => {
                if (slot[1].value > 0 && parseInt(slot[0].substr(4)) === spell.level) { spells_items.push(spell)}
               })
+    if(spell.isCantrip && !spells_items.includes(spell) ) {spells_items.push(spell)}
     }
 	});
         
@@ -144,7 +145,7 @@ async function Spellstrike()
   var weapons = [];
   if (CheckFeat('starlit-span') === true) {  var weapons = actor.data.data.actions.filter(i => i.type === "strike"); }
   else { 
-   var weapons = actor.itemTypes.weapon.filter(i => i.isRanged !== true);
+   var weapons = actor.itemTypes.weapon.filter(i => i.isRanged !== true && i.isEquipped);
    let melee = weapons;
    let names = [];
    melee.forEach(a => { names.push(a.name); });
@@ -176,6 +177,13 @@ async function Spellstrike()
 
 	/* Get the strike actions and roll strike */
         let strike = token.actor.data.data.actions.find(a => a.type === 'strike' && a.name === wp_choice);
+        if (token.actor.itemTypes.feat.some(f => f.slug === 'arcane-cascade')) { 
+          token.actor.data.data.actions.forEach(action => {
+            if (action.type === "strike"){
+             action.traits.push({name:'magus', label: 'Magus', toggle: false});
+            }
+          });
+        }
         if (critt === true) {
           strike.critical({ event });
         }
@@ -183,6 +191,12 @@ async function Spellstrike()
           strike.damage({ event });
         }
 	
+        if (token.actor.itemTypes.feat.some(f => f.slug === 'arcane-cascade')) {
+          token.actor.data.data.actions.forEach(action => {
+            if ( action.type === 'strike' && action.traits.findIndex(n => n.name === 'magus') >= 0 ) { action.traits.splice(action.traits.findIndex(n => n.name === 'magus'),1);}
+          });
+        }
+
 	/* Grab the specific spell chosen */
         let spellp = await spells.filter(p=> p.name === sp_choice);
         let ndspell = spellp.find(sl=>sl.slug);
