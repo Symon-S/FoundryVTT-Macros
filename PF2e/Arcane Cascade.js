@@ -161,7 +161,7 @@ const dialogData = [
         const value = Math.max(...shields.map(v => v.acBonus));
 	const stRule = [{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised","damaging-effect"]},"label":"Sparkling Targe","type":"circumstance",value}];
 	if (shields.some(s => s.slug === "tower-shield" || s.slug === "darkwood-tower-shield-high-grade" || s.slug === "darkwood-tower-shield-standard-grade")) {
-		stRule = [{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised","damaging-effect"], "not":["self:cover:greater"]},"label":"Sparkling Targe","type":"circumstance","value":2}/*,{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised","damaging-effect","self:cover:greater"]},"label":"Sparkling Targe","type":"circumstance","value":4}*/];
+		stRule = [{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised","damaging-effect"], "not":["self:cover:greater"]},"label":"Sparkling Targe","type":"circumstance","value":2}];
 //The part above will be modified to take the take cover action into account once that is implemented into the system.
 	}
 	stRule.forEach( r => ArcaneCascade.data.rules.push(r));
