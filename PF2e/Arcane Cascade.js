@@ -29,7 +29,6 @@ if (acFeatsOwned.includes('sustaining-steel') && !acFeatsOwned.includes('inexora
 if (acFeatsOwned.includes('starlit-eyes') && !acFeatsOwned.includes('starlit-span')) { ui.notifications.error("Starlit Eyes requires Starlit Span Hybrid Study!"); return; }
 if (acFeatsOwned.includes('student-of-the-staff') && !acFeatsOwned.includes('twisting-tree')) { ui.notifications.error("Student of the Staff requires Twisting Tree Hybrid Study!"); return; }
 
-const dType = ["bludgeoning", "piercing", "slashing", "bleed","positive", "negative","acid", "cold", "electricity", "fire", "sonic", "force","chaotic", "lawful", "good", "evil","mental","poison","untyped"]
 const spellTypes = ["Abjuration","Conjuration","Divination","Enchantment","Evocation","Illusion","Necromancy","Transmutation"]
 const dialogData = [
 	//The damage type of a spell with damage but no type is untyped. Spells that don't cause damage can be left blank
@@ -40,8 +39,8 @@ const dialogData = [
 
  const chosenSpellType = await quickDialog({title : `Arcane Cascade`, data : dialogData});
  let damageType;
- if (dType.includes(chosenSpellType[0].toLowerCase())) { damageType = chosenSpellType[0].toLowerCase(); }
- if (!dType.includes(chosenSpellType[0].toLowerCase()) && chosenSpellType[0] !== "") { ui.notifications.error(`"${chosenSpellType[0]}" is not a valid damage type`); return}
+ if (CONFIG.PF2E.damageTypes[chosenSpellType[0].toLowerCase()] !== undefined) { damageType = chosenSpellType[0].toLowerCase(); }
+ if (CONFIG.PF2E.damageTypes[chosenSpellType[0].toLowerCase()] === undefined && chosenSpellType[0] !== "") { ui.notifications.error(`"${chosenSpellType[0]}" is not a valid damage type`); return}
  if (chosenSpellType[0] === "") {
  	if (chosenSpellType[1] === "Abjuration" || chosenSpellType[1] === "Evocation") { damageType = "force" }
  	if (chosenSpellType[1] === "Divination" || chosenSpellType[1] === "Enchantment" || chosenSpellType[1] === "Illusion")  { damageType = "mental" }
