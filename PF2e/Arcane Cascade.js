@@ -133,13 +133,13 @@ const dialogData = [
  
  /*Inexorable Iron*/
  if(acFeatsOwned.includes('inexorable-iron')) {
+	 let value;
+	 if (token.actor.level === 1) { value = 1;}
+	 else { value = Math.floor(token.actor.level / 2);}
 	 if (game.modules.has("pf2e-persistent-damage")) {
-		let value;
-		if (token.actor.level === 1) { value = 1;}
-		else { value = Math.floor(token.actor.level / 2);}
-			ArcaneCascade.data.rules.push({"key":"PF2E.RuleElement.Healing","selector":"fast-healing","predicate":{"any":["greatsword","greataxe","polearm"]}, value });
-
+		ArcaneCascade.data.rules.push({"key":"PF2E.RuleElement.Healing","selector":"fast-healing","predicate":{"any":["greatsword","greataxe","polearm"]}, value });
 	 }
+	 ArcaneCascade.data.rules.push({"key":"TempHP",value})
 	 const message = ChatMessage.applyRollMode({ flavor: `<strong>Inexorable Iron</strong><br> <p class='compact-text'>When you enter Arcane Cascade stance and at the start of each of your turns while you're in that stance, if you're wielding a melee weapon in two hands, you gain temporary Hit Points equal to half your level (minimum 1 temporary HP).</p>`, speaker: ChatMessage.getSpeaker() }, game.settings.get("core", "rollMode"));
 	 ChatMessage.create(message);
 
@@ -161,8 +161,7 @@ const dialogData = [
         const value = Math.max(...shields.map(v => v.acBonus));
 	const stRule = [{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised","damaging-effect"]},"label":"Sparkling Targe","type":"circumstance",value}];
 	if (shields.some(s => s.slug === "tower-shield" || s.slug === "darkwood-tower-shield-high-grade" || s.slug === "darkwood-tower-shield-standard-grade")) {
-		stRule = [{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised","damaging-effect"], "not":["self:cover:greater"]},"label":"Sparkling Targe","type":"circumstance","value":2}];
-//The part above will be modified to take the take cover action into account once that is implemented into the system.
+		stRule = [{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised","damaging-effect"], "not":["self:cover:greater"]},"label":"Sparkling Targe","type":"circumstance","value":2}/*,{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised","damaging-effect","self:cover:greater"]},"label":"Sparkling Targe","type":"circumstance","value":4}*/];
 	}
 	stRule.forEach( r => ArcaneCascade.data.rules.push(r));
 
