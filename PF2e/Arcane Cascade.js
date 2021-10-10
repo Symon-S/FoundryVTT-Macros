@@ -5,6 +5,7 @@ if (!token.actor.itemTypes.feat.some(ac => ac.slug === 'arcane-cascade' )) { ui.
 const studies = ['inexorable-iron','laughing-shadow','sparkling-targe','starlit-span','twisting-tree']
 const acFeats = ['starlit-eyes','resounding-cascade','student-of-the-staff','arcane-shroud','sustaining-steel','inexorable-iron','laughing-shadow','sparkling-targe','starlit-span','twisting-tree'];
 
+
 const acFeatsOwned = [];
 let count = 0;
 acFeats.forEach ( a => {
@@ -22,24 +23,30 @@ if (existing){
 else{
 
  /* Error Messages */
+if (count === 0) { ui.notifications.error("You have not set a Hybrid Studies class feature"); return; }
 if (count > 1) { ui.notifications.error("You cannot have more than 1 hybrid study"); return; } 
 if (acFeatsOwned.includes('sustaining-steel') && !acFeatsOwned.includes('inexorable-iron')) { ui.notifications.error("Sustaining Steel requires Inexorable Iron Hybrid Study!"); return; }
 if (acFeatsOwned.includes('starlit-eyes') && !acFeatsOwned.includes('starlit-span')) { ui.notifications.error("Starlit Eyes requires Starlit Span Hybrid Study!"); return; }
 if (acFeatsOwned.includes('student-of-the-staff') && !acFeatsOwned.includes('twisting-tree')) { ui.notifications.error("Student of the Staff requires Twisting Tree Hybrid Study!"); return; }
 
-
+const dType = ["bludgeoning", "piercing", "slashing", "bleed","positive", "negative","acid", "cold", "electricity", "fire", "sonic", "force","chaotic", "lawful", "good", "evil","mental","poison","untyped"]
 const spellTypes = ["Abjuration","Conjuration","Divination","Enchantment","Evocation","Illusion","Necromancy","Transmutation"]
 const dialogData = [
-  	{ label : `What type of spell was used last?`, type : `select`, options : spellTypes }
+	//The damage type of a spell with damage but no type is untyped. Spells that don't cause damage can be left blank
+	{ label : `Damage type of spell cast?(If no type specified, use untyped. If not a damage spell, leave blank)`, type: `text`, options: [""]},
+  	{ label : `What is the school of the spell used last?`, type : `select`, options : spellTypes }
 ];
  if (acFeatsOwned.includes('arcane-shroud')) { dialogData.push({ label : `Arcane Shroud? (Only with slotted spells)`, type : `checkbox` }); }
 
  const chosenSpellType = await quickDialog({title : `Arcane Cascade`, data : dialogData});
  let damageType;
- if (chosenSpellType[0] === "Abjuration" || chosenSpellType[0] === "Evocation") { damageType = "force" }
- if (chosenSpellType[0] === "Divination" || chosenSpellType[0] === "Enchantment" || chosenSpellType[0] === "Illusion")  { damageType = "mental" }
- if (chosenSpellType[0] === "Necromancy")  { damageType = "negative" }
-		
+ if (dType.includes(chosenSpellType[0].toLowerCase())) { damageType = chosenSpellType[0].toLowerCase(); }
+ if (!dType.includes(chosenSpellType[0].toLowerCase()) && chosenSpellType[0] !== "") { ui.notifications.error(`"${chosenSpellType[0]}" is not a valid damage type`); return}
+ if (chosenSpellType[0] === "") {
+ 	if (chosenSpellType[1] === "Abjuration" || chosenSpellType[1] === "Evocation") { damageType = "force" }
+ 	if (chosenSpellType[1] === "Divination" || chosenSpellType[1] === "Enchantment" || chosenSpellType[1] === "Illusion")  { damageType = "mental" }
+ 	if (chosenSpellType[1] === "Necromancy")  { damageType = "negative" }
+ }		
  const ArcaneCascade = {
   "name": "Arcane Cascade",
   "type": "effect",
@@ -62,6 +69,7 @@ const dialogData = [
       {
         "key": "FlatModifier",
         "selector": "damage",
+"predicate":{"not":["ranged"]},
         "value": {
           "brackets": [
             {
@@ -107,7 +115,12 @@ const dialogData = [
   "effects": [],
   "sort": 0
  };
- 
+
+ if (acFeatsOwned.includes('starlit-span')) {
+ ArcaneCascade.data.rules.push({"key":"DamageDice","selector":"damage","traits":["arcane","magical"]})
+ }
+ else { ArcaneCascade.data.rules.push({"key":"DamageDice","selector":"damage", "predicate":{"not":["ranged"]},"traits":["arcane","magical"]}); }
+
  /* Twisting Tree */
  if (acFeatsOwned.includes('twisting-tree')) {
   //Comment the next line out to prevent the annoying reminder message from popping up.
@@ -126,6 +139,7 @@ const dialogData = [
  /*Starlit-span*/
  if (acFeatsOwned.includes('starlit-span')) {
 	ArcaneCascade.data.rules.push({"key":"Note","selector":"damage","predicate":{"any":["ranged","thrown","bow","dart","sling"],"all":["magus"]},"text":"<p class='compact-text'><strong>Starlit Span:</strong> Lower the DC to 3 instead of 5 against a concealed creature and to 9 instead of 11 against a hidden one. When using shooting star you don't have to attempt the flat check for targeting a hidden creature with a ranged Strike.</p>"});
+	ArcaneCascade.data.rules[0] = {"key":"FlatModifier","selector":"damage","value":{"brackets":[{"end": 6,"value": 1},{"end": 14,"start": 7,"value": 2},{"start": 15,"value": 3}]},damageType}
 	if(acFeatsOwned.includes('starlit-eyes')){
 		ArcaneCascade.data.rules.push({"key":"Note","selector":"damage","predicate":{"any":["ranged","thrown","bow","dart","sling"],"not":["magus"]},"text":"<p class='compact-text'><strong>Starlit Eyes:</strong> Lower the DC to 3 instead of 5 against a concealed creature and to 9 instead of 11 against a hidden one. When using shooting star you don't have to attempt the flat check for targeting a hidden creature with a ranged Strike.</p>"});
 	}
@@ -172,7 +186,7 @@ const dialogData = [
  await actor.createEmbeddedDocuments('Item', [ArcaneCascade]);
 		
  //Arcane Shroud
- if(chosenSpellType[1]) {
+ if(chosenSpellType[2]) {
  	const spellcom = game.packs.find(sp => sp.collection === "pf2e.spells-srd");
   	const spells = await spellcom.getDocuments();
 
@@ -214,11 +228,11 @@ const dialogData = [
           ${data.map(({type, label, options}, i)=> {
           if(type.toLowerCase() === `select`)
           {
-            return `<tr><th style="width:50%"><label>${label}</label></th><td style="width:50%"><select id="${i}qd">${options.map((e,i)=> `<option value="${e}">${e}</option>`).join(``)}</td></tr>`;
+            return `<tr><th style="width:80%;font-size:13px"><label>${label}</label></th><td style="width:20%"><select id="${i}qd">${options.map((e,i)=> `<option value="${e}">${e}</option>`).join(``)}</td></tr>`;
           }else if(type.toLowerCase() === `checkbox`){
-            return `<tr><th style="width:50%"><label>${label}</label></th><td style="width:50%"><input type="${type}" id="${i}qd" ${options || ``}/></td></tr>`;
+            return `<tr><th style="width:80%;font-size:13px"><label>${label}</label></th><td style="width:20%"><input type="${type}" id="${i}qd" ${options || ``}/></td></tr>`;
           }else{
-            return `<tr><th style="width:50%"><label>${label}</label></th><td style="width:50%"><input type="${type}" id="${i}qd" value="${options instanceof Array ? options[0] : options}"/></td></tr>`;
+            return `<tr><th style="width:80%;font-size:13px"><label>${label}</label></th><td style="width:20%"><input type="${type}" id="${i}qd" value="${options instanceof Array ? options[0] : options}"/></td></tr>`;
           }
           }).join(``)}
         </table>`;
