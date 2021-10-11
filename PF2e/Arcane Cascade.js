@@ -15,9 +15,16 @@ acFeats.forEach ( a => {
   	}
 });
 
-const existing = actor.itemTypes.effect.find(e => e.name === "Arcane Cascade");
+const ITEM_UUID = 'Compendium.pf2e.feature-effects.fsjO5oTKttsbpaKl';
+const ArcaneCascade = (await fromUuid(ITEM_UUID)).toObject();
+ArcaneCascade.flags.core = ArcaneCascade.flags.core ?? {};
+ArcaneCascade.flags.core.sourceId = ITEM_UUID;
+console.log(ArcaneCascade);
+const existing = actor.itemTypes.effect.find((effect) => effect.getFlag('core', 'sourceId') === ITEM_UUID);
+console.log(existing);
 if (existing){
 	await existing.delete();
+	return;
 }
 
 else{
@@ -45,76 +52,16 @@ const dialogData = [
  	if (chosenSpellType[1] === "Abjuration" || chosenSpellType[1] === "Evocation") { damageType = "force" }
  	if (chosenSpellType[1] === "Divination" || chosenSpellType[1] === "Enchantment" || chosenSpellType[1] === "Illusion")  { damageType = "mental" }
  	if (chosenSpellType[1] === "Necromancy")  { damageType = "negative" }
- }		
- const ArcaneCascade = {
-  "name": "Arcane Cascade",
-  "type": "effect",
-  "img": "systems/pf2e/icons/features/classes/arcane-cascade.webp",
-  "data": {
-    "description": {
-      "value": "<p><strong>Requirements</strong> You used your most recent action to Cast a Spell or make a Spellstrike.</p>\n<hr />\n<p>You divert a portion of the spell's magical power and keep it cycling through your body and weapon using specialized forms, breathing, or footwork. While you're in the stance, your melee Strikes deal [[/r 1 #damage]]{1 extra damage}. This damage increases to 2 if you have weapon specialization and 3 if you have greater weapon specialization. Any Strike that benefits from this damage gains the arcane trait, making it magical.</p>\n<p>If your most recent spell before entering the stance was one that can deal damage, the damage from the stance is the same type that spell could deal (or one type of your choice if the spell could deal multiple types of damage). If the spell couldn't deal damage, this stance's bonus damage depends on the spell's school.</p>\n<ul>\n<li><strong>Abjuration</strong> or <strong>Evocation</strong> force</li>\n<li><strong>Conjuration</strong> or <strong>Transmutation</strong> same type as your weapon or unarmed attack</li>\n<li><strong>Divination</strong>, <strong>Enchantment</strong>, or <strong>Illusion</strong> mental</li>\n<li><strong>Necromancy</strong> negative</li>\n</ul>"
-    },
-    "source": {
-      "value": ""
-    },
-    "traits": {
-      "value": [],
-      "rarity": {
-        "value": "common"
-      },
-      "custom": ""
-    },
-    "rules": [
-      {
-        "key": "FlatModifier",
-        "selector": "damage",
-"predicate":{"not":["ranged"]},
-        "value": {
-          "brackets": [
-            {
-              "end": 6,
-              "value": 1
-            },
-            {
-              "end": 14,
-              "start": 7,
-              "value": 2
-            },
-            {
-              "start": 15,
-              "value": 3
-            }
-          ]
-        },damageType
-      }
-    ],
-    "slug": null,
-    "schema": {
-      "version": 0.665,
-      "lastMigration": null
-    },
-    "level": {
-      "value": 1
-    },
-    "duration": {
-      "value": -1,
-      "unit": "unlimited",
-      "sustained": false,
-      "expiry": "turn-start"
-    },
-    "start": {
-      "value": 0,
-      "initiative": null
-    },
-    "target": null,
-    "tokenIcon": {
-      "show": true
-    }
-  },
-  "effects": [],
-  "sort": 0
- };
+ }
+ 
+ //Sets the damage type
+ ArcaneCascade.data.rules[0].damageType = damageType;
 
+ //Fix Tik's oversight
+ ArcaneCascade.data.rules[0].predicate = {"not":["ranged"]}
+ console.log(ArcaneCascade);
+
+ //Push up some fake traits
  if (acFeatsOwned.includes('starlit-span')) {
  ArcaneCascade.data.rules.push({"key":"DamageDice","selector":"damage","traits":["arcane","magical"]})
  }
@@ -172,9 +119,9 @@ const dialogData = [
  if(acFeatsOwned.includes('sparkling-targe')) {
         const shields = token.actor.itemTypes.armor.filter(s => s.isShield && s.isEquipped);
         const value = Math.max(...shields.map(v => v.acBonus));
-	const stRule = [{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised","damaging-effect"]},"label":"Sparkling Targe","type":"circumstance",value}];
+	let stRule = [{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised"]},"roll-options":["all"],"label":"Sparkling Targe","type":"circumstance",value}];
 	if (shields.some(s => s.slug === "tower-shield" || s.slug === "darkwood-tower-shield-high-grade" || s.slug === "darkwood-tower-shield-standard-grade")) {
-		stRule = [{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised","damaging-effect"], "not":["self:cover:greater"]},"label":"Sparkling Targe","type":"circumstance","value":2}/*,{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised","damaging-effect","self:cover:greater"]},"label":"Sparkling Targe","type":"circumstance","value":4}*/];
+		stRule = [{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised"],"not":["cover-greater"]},"roll-options":["all"],"label":"Sparkling Targe","type":"circumstance","value":2},{"key":"FlatModifier","selector":"saving-throw","predicate":{"all":["self:shield:raised","cover-greater"]},"roll-options":["all"],"label":"Sparkling Targe Cover","type":"circumstance","value":4}];
 	}
 	stRule.forEach( r => ArcaneCascade.data.rules.push(r));
 
