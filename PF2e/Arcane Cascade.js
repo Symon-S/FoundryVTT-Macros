@@ -107,10 +107,8 @@ const dialogData = [
 
  /*Laughing Shadow*/
  if(acFeatsOwned.includes('laughing-shadow')) {
-	if (token.actor.data.data.attributes.ac.dexCap.value === Infinity || token.actor.data.data.attributes.ac.dexCap.value === 5){
-		ArcaneCascade.data.rules.push({"key":"FlatModifier","selector":"speed","type":"status","value":10});
-	}
-	else { ArcaneCascade.data.rules.push({"key":"FlatModifier","selector":"speed","type":"status","value":5}); }
+	ArcaneCascade.data.rules.push({"key":"FlatModifier","selector":"speed","predicate":{"all":["self:armored"]},"type":"status","value":5,"label":"Laughing Shadow Armored"});
+	ArcaneCascade.data.rules.push({"key":"FlatModifier","selector":"speed","predicate":{"not":["self:armored"]},"type":"status","value":10,"label":"Laughing Shadow Unarmored"});
 	ArcaneCascade.data.rules.push({"key":"ToggleProperty","property":"flags.pf2e.rollOptions.damage-roll.nofreehand","label":"Does not have a hand free"})
 	ArcaneCascade.data.rules.push({"key":"FlatModifier","selector":"damage","predicate":{"not":["nofreehand"]},"value": {"brackets": [{"end": 6,"value": 2},{"end": 14,"start": 7,"value": 3},{"start": 15,"value": 4}]},damageType,"label":"Laughing Shadow"});
  }
