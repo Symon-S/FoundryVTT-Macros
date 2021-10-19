@@ -16,7 +16,7 @@ const dialogs = [
 	{ label : `What type of item?`, type: `select`, options: ["Treasures","Permanents","Consumables"]},
 	{ label : `Level? (Only Permanents and Consumables)`, type: `number`, options: [0]},
 	{ label : `Center range value if treasure (Only Treasures)<br>(50% in either direction will be evaluated)`, type: `number`},
-        { label : `Denomination? (Only Treasures)`, type: `select`, options: ["Gold","Silver"]},
+        { label : `Denomination? (Only Treasures)`, type: `select`, options: ["Silver","Gold"]},
 	{ label : `Quantity?`, type: `number`, options: [1]}
 ];
 
