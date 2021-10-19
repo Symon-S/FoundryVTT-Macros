@@ -1,4 +1,4 @@
-// Little Loot Genrator written by me for the PF2e system. You can enter values for Treasures in just Silver as opposed to using the Gold denomination. I am considering just making it completely in Silver only
+// Little Loot Genrator written by me for the PF2e system. The values for Treasures are in Silver 1GP = 10SP
 
 //Limit Macro use to GM
 if (!game.user.isGM) { return ui.notifications.error("You are unable to use this macro!"); }
@@ -15,8 +15,7 @@ const spellS = await spellz.getDocuments();
 const dialogs = [	
 	{ label : `What type of item?`, type: `select`, options: ["Treasures","Permanents","Consumables"]},
 	{ label : `Level? (Only Permanents and Consumables)`, type: `number`, options: [0]},
-	{ label : `Center range value if treasure (Only Treasures)<br>(50% in either direction will be evaluated)`, type: `number`},
-        { label : `Denomination? (Only Treasures)`, type: `select`, options: ["Silver","Gold"]},
+	{ label : `Center range value in Silver (Only Treasures)<br>(50% in either direction will be evaluated)`, type: `number`},
 	{ label : `Quantity?`, type: `number`, options: [1]}
 ];
 
@@ -24,10 +23,10 @@ const dialogs = [
 const picks = await quickDialog({title: 'Loot Generator', data: dialogs});
 
 //Throw Error if quantity is below 1
-if ( Noan(picks[4]) || picks[4] < 1) { return ui.notifications.error("A quantity of at least 1 is required!");}
+if ( Noan(picks[3]) || picks[3] < 1) { return ui.notifications.error("A quantity of at least 1 is required!");}
 
 //Pre-prep a counter array
-let itemArray = [...Array(Math.round(picks[4])).keys()];
+let itemArray = [...Array(Math.round(picks[3])).keys()];
 let randomItems = [];
 
 //Treasures
@@ -48,24 +47,17 @@ if (picks[0] === "Treasures") {
 	}
 	if ( picks[2] < 1) { return ui.notifications.error("A value greater than 1 needs to be entered for range")}
 	else {
-		let denomination = "gp";
+		let denomination = "sp";
 		let value = Math.round(picks[2]);
 		let treasures = [];
-		if (picks[3] === "Silver") { 
-			if (Math.round(picks[2]) < 10) { 
-				denomination = "sp"; 
-				value = Math.round(picks[2]);
-				if (Math.round(picks[2]) < 4 ) { value = 1 }
-				treasures = treasure.filter(f => f.data.data.denomination.value === denomination && Ranges(value).includes(f.data.data.value.value)); }
-			else { 
-				denomination = "gp";
-				value = Math.round(picks[2]) / 10; 
-				treasures = treasure.filter(f => f.data.data.denomination.value === denomination && Ranges(value).includes(f.data.data.value.value) );
-				let temp = treasure.filter(f => f.data.data.denomination.value === "sp" && Ranges(Math.round(picks[2])).includes(f.data.data.value.value));
-				if ( temp.length  > 0 ) { temp.forEach( t => treasures.push(t));}
+		if (Math.round(picks[2]) < 3 ) { value = 1 }
+		if (Math.round(picks[2]) >= 7) { 
+			denomination = "gp";
+			value = Math.round(picks[2] / 10); 
+			treasures = treasure.filter(f => f.data.data.denomination.value === denomination && Ranges(value).includes(f.data.data.value.value) );
+			let temp = treasure.filter(f => f.data.data.denomination.value === "sp" && Ranges(Math.round(picks[2])).includes(f.data.data.value.value));
+			if ( temp.length  > 0 ) { temp.forEach( t => treasures.push(t));}
 			}
-		}
-		else { treasures = treasure.filter(f => f.data.data.denomination.value === denomination && Ranges(value).includes(f.data.data.value.value)); }
 
 		if (treasures.length === 0) { return ui.notifications.warn(`There are no treasures within 20% of ${value}${denomination}`); }
 		
