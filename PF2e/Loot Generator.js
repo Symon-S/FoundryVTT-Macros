@@ -42,7 +42,7 @@ if (picks[0] === "Treasures") {
 			if (output === undefined) { output = `<p><a class="entity-link" draggable="true" data-pack="pf2e.equipment-srd" data-id="${r.id}">${r.name}</a></p>` }
 			else { output = output + `<p><a class="entity-link" draggable="true" data-pack="pf2e.equipment-srd" data-id="${r.id}">${r.name}</a></p>` }
 		});
-                return ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>${output}`, speaker: ChatMessage.getSpeaker(), whisper:["Y3VAI2m6FxZptFGd"]});
+                return ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>${output}`, speaker: {alias:'GM'}, whisper:[game.user.id]});
 	}
 	if ( picks[2] < 1) { return ui.notifications.error("A value greater than 1 needs to be entered for range")}
 	else {
@@ -76,7 +76,7 @@ if (picks[0] === "Treasures") {
 			if (output === undefined) { output = `<p><a class="entity-link" draggable="true" data-pack="pf2e.equipment-srd" data-id="${r.id}">${r.name}</a></p>` }
 			else { output = output + `<p><a class="entity-link" draggable="true" data-pack="pf2e.equipment-srd" data-id="${r.id}">${r.name}</a></p>` }
 		});
-                ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>${output}`, speaker: ChatMessage.getSpeaker(), whisper:["Y3VAI2m6FxZptFGd"]});
+                ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>${output}`, speaker: {alias:'GM'}, whisper:[game.user.id]});
 	}
 }
 
@@ -112,7 +112,7 @@ if (picks[0] === "Permanents") {
 			else {output = output + `<p><a class="entity-link" draggable="true" data-pack="pf2e.equipment-srd" data-id="${r.id}">${r.name}</a></p>` }
 		}
 	});
-        ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>${output}`, speaker: ChatMessage.getSpeaker(), whisper:["Y3VAI2m6FxZptFGd"]});
+        ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>${output}`, speaker: {alias:'GM'}, whisper:[game.user.id]});
 }
 
 //Consumbales
@@ -147,7 +147,7 @@ if (picks[0] === "Consumables") {
 			else {output = output + `<p><a class="entity-link" draggable="true" data-pack="pf2e.equipment-srd" data-id="${r.id}">${r.name}</a></p>` }
 		}
 	});
-        ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>${output}`, speaker: ChatMessage.getSpeaker(), whisper:["Y3VAI2m6FxZptFGd"]});
+        ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>${output}`, speaker: {alias:'GM'}, whisper:[game.user.id]});
 
 }
 
