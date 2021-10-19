@@ -1,3 +1,5 @@
+// Little Loot Genrator written by me for the PF2e system. You can enter values for Treasures in just Silver as opposed to using the Gold denomination. I am considering just making it completely in Silver only
+
 //Limit Macro use to GM
 if (!game.user.isGM) { return ui.notifications.error("You are unable to use this macro!"); }
 
