@@ -1,4 +1,5 @@
 // Little Loot Genrator written by me for the PF2e system. The values for Treasures are in Silver 1GP = 10SP
+//Level is only for Permanents and Consumables. Value is only for treasures, since they don't have a level.
 
 //Limit Macro use to GM
 if (!game.user.isGM) { return ui.notifications.error("You are unable to use this macro!"); }
