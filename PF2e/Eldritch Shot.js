@@ -146,7 +146,7 @@ async function Eldritch_shot()
         else {
           strike.damage({ event });
         }
-	
+
 	/* Grab the specific spell chosen */
         let spellp = await spells.filter(p=> p.name === sp_choice);
 
@@ -162,8 +162,7 @@ async function Eldritch_shot()
       
 
         /* Does it do damage? */
-        const dam = ndspell.damage.length;
-      
+        const dam = Object.entries(ndspell.data.data.damage.value).length;
 
 	/* Compendium Link for spell */
         const comp_id = ndspell.sourceId.substr(27);
@@ -215,11 +214,11 @@ async function Eldritch_shot()
         else {
           const d_sorc = CheckFeat('dangerous-sorcery');
           var dstype = status;
-          if (d_sorc && ndspell.damage.length === 1){ var dstype = `status,${ndspell.damage[0].type.value}`; }
-          if (d_sorc && ndspell.damage.length > 1 ){ 
+          if (d_sorc && dam === 1){ var dstype = `status,${ndspell.data.data.damage.value[0].type.value}`; }
+          if (d_sorc && dam > 1 ){ 
              let types = [];
-             ndspell.damage.forEach( t => {
-               types.push(t.type.value);
+             Object.entries(ndspell.data.data.damage.value).forEach( t => {
+               types.push(t[1].type.value);
              });             
              var dstype = `status,${await choose(types,'Which type of damage?')}`;
           }
@@ -228,8 +227,8 @@ async function Eldritch_shot()
           const c_sorc = d_sorc ? ` + {${ndspell.heightenedLevel * 2}}[${dstype}]` : '';
           
           let key = s_entry.ability;
-          const s_mod = ndspell.damage[0].applyMod ? ` + ${token.actor.data.data.abilities[key].mod}` : '';
-          const critmod = ndspell.damage[0].applyMod ? ` + ${token.actor.data.data.abilities[key].mod*2}` : ''; 
+          const s_mod = ndspell.data.data.damage.value[0].applyMod ? ` + ${token.actor.data.data.abilities[key].mod}` : '';
+          const critmod = ndspell.data.data.damage.value[0].applyMod ? ` + ${token.actor.data.data.abilities[key].mod*2}` : ''; 
           var dtype;
 
           if (ndspell.slug === 'telekinetic-projectile') {
@@ -238,6 +237,7 @@ async function Eldritch_shot()
             var dtype = await choose(options,prompt);
           }
 
+          var damage,tdamage;
           var multiplier = 0;
           if (ndspell.data.data.scaling != undefined && ndspell.slug !== `acid-splash`) {
             if (ndspell.heightenedLevel > ndspell.level) { var multiplier = Math.ceil((ndspell.heightenedLevel - ndspell.level) / ndspell.data.data.scaling.interval);
@@ -246,52 +246,52 @@ async function Eldritch_shot()
               let castlevel = Math.ceil(actor.level / 2);
               var multiplier = Math.ceil((castlevel - ndspell.level) / ndspell.data.data.scaling.interval);
             }
-            
-		        for (let [index] of ndspell.damage.entries())
+
+		        Object.keys(ndspell.data.data.damage.value).forEach( index => {
+              let ind = parseInt(index);
 		         if (ndspell.isCantrip !== true && ndspell.isFocusSpell !== true) {
-			        if (index === 0) { 
-                let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
-                if (ndspell.slug === 'scorching-ray') { dicenum = multiplier * (2 * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1'))) + (2 * parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1')));}
-                var dtype = ndspell.damage[index].type.value;
-                var damage = "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + s_mod + "}" + `[${ndspell.damage[index].type.value}]` + dd_sorc ;
-                if (game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + `[${ndspell.damage[index].type.value}]` + c_sorc;  }
-                else { var tdamage = "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + `[${ndspell.damage[index].type.value}]` + c_sorc;}
+			        if (ind === 0) { 
+                let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[ind].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.data.data.damage.value[ind].value.replace(/(^\d+)(.+$)/i,'$1'));
+                if (ndspell.slug === 'scorching-ray') { dicenum = multiplier * (2 * parseInt(ndspell.data.data.scaling.damage[ind].replace(/(^\d+)(.+$)/i,'$1'))) + (2 * parseInt(ndspell.data.data.damage.value[ind].value.replace(/(^\d+)(.+$)/i,'$1')));}
+                dtype = ndspell.data.data.damage.value[ind].type.value;
+                damage = "{" + dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + s_mod + "}" + `[${ndspell.data.data.damage.value[ind].type.value}]` + dd_sorc ;
+                if (game.settings.get("pf2e","critRule") === 'doubledamage') { tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + critmod + "}" + `[${ndspell.data.data.damage.value[ind].type.value}]` + c_sorc;  }
+                else { tdamage = "{" + 2*dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + critmod + "}" + `[${ndspell.data.data.damage.value[ind].type.value}]` + c_sorc;}
               }
 		          else {
-                let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
-                var damage = damage + "+" + "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + `[${ndspell.damage[index].type.value}]`;
-                var dtype = dtype + "+" + ndspell.damage[index].type.value;
-				        if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = tdamage + "+" + "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + `[${ndspell.damage[index].type.value}]`;  }
-			     	    else { var tdamage = tdamage + "+" + "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + `[${ndspell.damage[index].type.value}]` + c_sorc;}
+                let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[ind].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.data.data.damage.value[ind].value.replace(/(^\d+)(.+$)/i,'$1'));
+                damage = damage + "+" + "{" + dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + "}" + `[${ndspell.data.data.damage.value[ind].type.value}]`;
+                dtype = dtype + "+" + ndspell.data.data.damage.value[ind].type.value;
+				        if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { tdamage = tdamage + "+" + "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + "}" + `[${ndspell.data.data.damage.value[ind].type.value}]`;  }
+			     	    else { tdamage = tdamage + "+" + "{" + 2*dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + critmod + "}" + `[${ndspell.data.data.damage.value[ind].type.value}]` + c_sorc;}
 			        }
 			       } 
 		         else{
-			        if (index === 0) { 
+			        if (ind === 0) { 
                 if (ndspell.slug === 'telekinetic-projectile') {
-                  let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
-                  var damage = "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + s_mod + "}" + "[" + dtype + "]";
-                  if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + dtype + "]"; }
-                  else { tdamage = "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + dtype + "]"; }
+                  let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[ind].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.data.data.damage.value[ind].value.replace(/(^\d+)(.+$)/i,'$1'));
+                  damage = "{" + dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + s_mod + "}" + "[" + dtype + "]";
+                  if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + critmod + "}" + "[" + dtype + "]"; }
+                  else { tdamage = "{" + 2*dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + critmod + "}" + "[" + dtype + "]"; }
                 }
                 else{
-                  let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
-                  var damage = "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + s_mod + "}" + "[" + ndspell.damage[index].type.value + "]";
-                  var dtype = ndspell.damage[index].type.value;
-                  if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + ndspell.damage[index].type.value + "]";} 
-                  else{ tdamage = "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + ndspell.damage[index].type.value + "]";}
+                  let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[ind].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.data.data.damage.value[ind].value.replace(/(^\d+)(.+$)/i,'$1'));
+                  damage = "{" + dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + s_mod + "}" + "[" + ndspell.data.data.damage.value[ind].type.value + "]";
+                  dtype = ndspell.data.data.damage.value[ind].type.value;
+                  if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { tdamage = "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + critmod + "}" + "[" + ndspell.data.data.damage.value[ind].type.value + "]";} 
+                  else{ tdamage = "{" + 2*dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + critmod + "}" + "[" + ndspell.data.data.damage.value[ind].type.value + "]";}
                 }
               }
 			        else {
-               let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[index].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.damage[index].value.replace(/(^\d+)(.+$)/i,'$1'));
-				       var damage = damage + "+" + "{" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + "[" + ndspell.damage[index].type.value + "]";
-				       var dtype = dtype + "+" + ndspell.damage[index].type.value;
-               if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { var tdamage = tdamage + "+" + "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[index].substr(1) + "}" + "[" + ndspell.damage[index].type.value + "]";}
-               else{ tdamage = tdamage + "+" + "{" + 2*dicenum + ndspell.data.data.scaling.damage[index].substr(1) + critmod + "}" + "[" + ndspell.damage[index].type.value + "]";}
+               let dicenum = multiplier * parseInt(ndspell.data.data.scaling.damage[ind].replace(/(^\d+)(.+$)/i,'$1')) + parseInt(ndspell.data.data.damage.value[ind].value.replace(/(^\d+)(.+$)/i,'$1'));
+				       damage = damage + "+" + "{" + dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + "}" + "[" + ndspell.data.data.damage.value[ind].type.value + "]";
+				       dtype = dtype + "+" + ndspell.data.data.damage.value[ind].type.value;
+               if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { tdamage = tdamage + "+" + "{" + "2*" + dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + "}" + "[" + ndspell.data.data.damage.value[ind].type.value + "]";}
+               else{ tdamage = tdamage + "+" + "{" + 2*dicenum + ndspell.data.data.scaling.damage[ind].substr(1) + critmod + "}" + "[" + ndspell.data.data.damage.value[ind].type.value + "]";}
 			        }
              } 
-          }
-      
-    
+          });
+        }
           if (ndspell.slug === 'acid-splash') {
             var dtype = 'acid'
             if (actor.level < 5) {
