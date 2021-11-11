@@ -71,6 +71,7 @@ const dialogData = [
  if (acFeatsOwned.includes('twisting-tree')) {
   //Comment the next line out to prevent the annoying reminder message from popping up.
   ui.notifications.info("Use the Twisted Tree Two Handed Toggle during Arcane Cascade to switch between 1 and 2 handed use of a staff");
+  //If the macro isn't working with your staff, add the staff trait to the staff
   const ttRule = [{"key": "ToggleProperty","property": "flags.pf2e.rollOptions.damage-roll.twohanded","property": "flags.pf2e.rollOptions.attack-roll.twohanded","label":"Twisting Tree Two Handed"},
   {"key":"DamageDice","label":"Twisting Tree Arcane Cascade","selector":"damage","predicate":{"all":["staff"],"not":["twohanded"]},"diceNumber":0,"override":{"dieSize":"d6"}},
   {"key":"DamageDice","label":"Twisting Tree Arcane Cascade","selector":"damage","predicate":{"all":["staff","twohanded"]},"traits":["parry","reach","trip"],"diceNumber":0,"override":{"dieSize":"d8"}},
