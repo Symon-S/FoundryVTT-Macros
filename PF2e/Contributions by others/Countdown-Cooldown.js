@@ -1,4 +1,4 @@
-//Macro created by Friz in collaboration with Tik and ArthurTrumpet
+//Macro created by ArthurTrumpe with some help from Tik.
 
 const effect = await game.items.find(a => a.id == "ddA2kj2MdCsoXzVe").toObject();
 countdownEffect();
