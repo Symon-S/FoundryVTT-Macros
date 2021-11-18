@@ -19,9 +19,7 @@ const ITEM_UUID = 'Compendium.pf2e.feature-effects.fsjO5oTKttsbpaKl';
 const ArcaneCascade = (await fromUuid(ITEM_UUID)).toObject();
 ArcaneCascade.flags.core = ArcaneCascade.flags.core ?? {};
 ArcaneCascade.flags.core.sourceId = ITEM_UUID;
-console.log(ArcaneCascade);
 const existing = actor.itemTypes.effect.find((effect) => effect.getFlag('core', 'sourceId') === ITEM_UUID);
-console.log(existing);
 if (existing){
 	await existing.delete();
 	return;
@@ -58,8 +56,7 @@ const dialogData = [
  ArcaneCascade.data.rules[0].damageType = damageType;
 
  //Fix Tik's oversight
- ArcaneCascade.data.rules[0].predicate = {"not":["ranged"]}
- console.log(ArcaneCascade);
+ if (!acFeatsOwned.includes('starlit-span')) { ArcaneCascade.data.rules[0].predicate = {"not":["ranged"]} }
 
  //Push up some fake traits
  if (acFeatsOwned.includes('starlit-span')) {
