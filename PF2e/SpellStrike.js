@@ -28,7 +28,7 @@ async function Spellstrike()
     item.spells.contents.forEach(spell => {
       if (CheckFeat('expansive-spellstrike') === true) {
         if (spell.data.data.spellType.value === 'utility' || spell.data.data.spellType.value === 'heal') { 
-         if (exceptions.includes(spell.slug)) { prep_spells.push(spell); }
+         if (exceptions.includes(spell.slug)) { spon_spells.push(spell); }
          return; 
         }
         if (item.isFlexible === true && spell.isCantrip === true && Object.entries(item.data.data.slots.slot0.prepared).some(i => i[1].id === spell.id) !== true){ return; }
