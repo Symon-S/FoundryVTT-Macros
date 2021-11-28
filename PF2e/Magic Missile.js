@@ -9,6 +9,7 @@ token.actor.itemTypes.spell.forEach(id => {
 });
 
 const mm = [];
+const formula =  `{1d4 + 1}[force]`;
 
 mmE.forEach(e => {
 	if (e.isPrepared && !e.isFlexible) {
@@ -16,8 +17,7 @@ mmE.forEach(e => {
 			let lv = parseInt(sl[0].substr(4));
 			Object.entries(sl[1].prepared).forEach(p => {
 				if(mmIds.includes(p[1].id) && !p[1].expended) {
-					const formula = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? `{1d4 + ${lv + 1}}[force]` : `{1d4 + 1}[force]`;
-					mm.push({name: `Magic Missile lv${lv} (${e.name})`, level: lv, prepared: true, formula: formula, slot: sl[0], prepkey: p[0], entryId: e.id })
+					mm.push({name: `Magic Missile lv${lv} (${e.name})`, level: lv, prepared: true, slot: sl[0], prepkey: p[0], entryId: e.id })
 				}
 			})
 		});
@@ -27,7 +27,7 @@ mmE.forEach(e => {
 		spellData.levels.forEach(sp => {
 			if(sp.isCantrip || sp.uses.value === 0 || sp.uses.max === 0 ) { return; }
 			sp.active.forEach(spa => {
-				if(spa.chatData.slug === 'magic-missile'){ mm.push({name: `Magic Missile lv${sp.level} (${e.name})`, level: sp.level, prepared: false, entryId: e.id, formula: spa.chatData.formula })}
+				if(spa.chatData.slug === 'magic-missile'){ mm.push({name: `Magic Missile lv${sp.level} (${e.name})`, level: sp.level, prepared: false, entryId: e.id })}
 			})
 		});
 	}
@@ -70,7 +70,7 @@ if (tot < multi) { return ui.notifications.warn(`You have entered ${ multi - tot
 
 fmm.forEach(a => {
         if(a.num === 0 || a.num === undefined) { return; }
-	let dam = mmch.formula.repeat(a.num).replace(/]{/g,'] + {');
+	let dam = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? formula.repeat(a.num).replace(/]{/g,'] + {') + ` + {${mmch.level}}[force]` : formula.repeat(a.num).replace(/]{/g,'] + {');
 	var droll = new Roll(dam);
         droll.toMessage({ flavor: `<strong>${a.num} Magic Missile(s) targeting ${a.name}</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="gKKqvLohtrSJj3BM"><strong>Magic Missile</strong></a>`, speaker: ChatMessage.getSpeaker() });
 });
