@@ -45,7 +45,7 @@ const mmch = mm.find(n => n.name === mmdiag[0]);
 const multi = parseInt(mmdiag[1]) * Math.floor((1 + mmch.level)/2);
 
 const targetIds = game.user.targets.ids;
-targets = canvas.tokens.placeables.filter(t => targetIds.includes(t.id));
+const targets = canvas.tokens.placeables.filter(t => targetIds.includes(t.id));
 
 const tdata = [];
 targets.forEach(t => {
