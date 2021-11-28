@@ -25,7 +25,7 @@ mmE.forEach(e => {
 	else {
 		const spellData = e.getSpellData();
 		spellData.levels.forEach(sp => {
-			if(sp.uses.value === 0 || sp.uses.max === 0 || sp.isCantrip ) { return; }
+			if(sp.isCantrip || sp.uses.value === 0 || sp.uses.max === 0 ) { return; }
 			sp.active.forEach(spa => {
 				if(spa.chatData.slug === 'magic-missile'){ mm.push({name: `Magic Missile lv${sp.level} (${e.name})`, level: sp.level, prepared: false, entryId: e.id, formula: spa.chatData.formula })}
 			})
