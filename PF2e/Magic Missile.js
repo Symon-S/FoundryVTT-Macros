@@ -69,6 +69,7 @@ if (tot > multi) { return ui.notifications.warn(`You have entered ${tot - multi}
 if (tot < multi) { return ui.notifications.warn(`You have entered ${ multi - tot} too few missiles. Please try again`)}
 
 fmm.forEach(a => {
+        if(a.num === 0 || a.num === undefined) { return; }
 	let dam = mmch.formula.repeat(a.num).replace(/]{/g,'] + {');
 	var droll = new Roll(dam);
         droll.toMessage({ flavor: `<strong>${a.num} Magic Missile(s) targeting ${a.name}</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="gKKqvLohtrSJj3BM"><strong>Magic Missile</strong></a>`, speaker: ChatMessage.getSpeaker() });
