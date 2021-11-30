@@ -1,7 +1,3 @@
-/*Snippets used from Drental and Tik's version */
-/*This Macro lets you more easily use lingering composition and inspire heroics*/
-/*It also uses focus points when rolling anything but a failure*/
-
 if (!actor || token.actor.type !== 'character') {
 	ui.notifications.warn("You must have a PC token selected"); return;}
 if (token.actor.itemTypes.feat.find(lc => lc.slug === "lingering-composition") === undefined) { ui.notifications.warn("The actor does not possess the Lingering Composition feat"); return; }
@@ -156,7 +152,7 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
 	    event
 	    //for callback: ,(Roll) => {console.log(Roll);}
 	);
-        if (roll.data.flags.pf2e.context.outcome != "failure") { 
+        if (roll.data.degreeOfSuccess != 1) { 
           const currentpoints = actor.data.data.resources.focus.value-1;
          actor.update({"data.resources.focus.value":currentpoints});
         }
