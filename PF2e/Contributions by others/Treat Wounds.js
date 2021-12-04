@@ -1,3 +1,5 @@
+//contributed by Mother of God
+
 function CheckFeat(slug) {
     if (token.actor.items.find((i) => i.data.data.slug === slug && i.type === "feat")) {
         return true;
