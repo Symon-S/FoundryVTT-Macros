@@ -1,5 +1,5 @@
 /*This version of the Magic Missile Macro Automatically expends slots(prepared), spell uses(spontaneous), charges(wands), and consumes scrolls.
-When Wand of Manifold Missile is used, it places an effect on the character that allows it to tell if you are using the lingering effect of those wands. This adds the option to terminate the effect from within the dialog boc through a checkbox (nothing else happens), or select the effect and have it shoot Magic Missiles as per the wand's description.
+When Wand of Manifold Missile is used, it places an effect on the character that allows it to tell if you are using the lingering effect of those wands. This adds the option to terminate the effect from within the dialog box through a checkbox (nothing else happens), or select the effect and have it shoot Magic Missiles as per the wand's description.
 Do not make spellcasting entries for your wands or scrolls. If you would like to use that method, please use the original macro.
 For staves please use a spellcasting entry due to the nature of how staves work.*/
 
