@@ -60,6 +60,8 @@ if (token.actor.itemTypes.effect.some(e => e.slug === "maniEF")) {
 	mm.push({name: `${effect.name}`, level: effect.data.data.level.value, prepared: false, entryId: null, wand: false, scroll: false, spont: false });
 }
 
+if (mm.length === 0) { return ui.notifications.warn("You currently have no available means of casting Magic Missile");}
+
 const mmdd = [{label: 'Which spell?', type: 'select', options: mm.map(n => n.name)},
 	      {label: 'Number of Actions?', type: 'select', options: [3,2,1]}
 	     ];
