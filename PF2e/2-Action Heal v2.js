@@ -1,8 +1,10 @@
 /*This version of the 2-action heal macro automatically expends spells from your spell list*/
 
+if (!token.actor.itemTypes.spell.some(h => h.slug === 'heal')) { return ui.notifications.error('You do not possess the heal spell') }
+
 if (token === undefined) {
 	return ui.notifications.warn('No token is selected.');
-} 
+}
 
 async function CheckFeat(slug) {
 	if (token.actor.items.find((i) => i.slug === slug && i.type === 'feat')) {
@@ -79,7 +81,7 @@ for (const token of canvas.tokens.controlled) {
 		}
 	});
 
-
+        if(h.length === 0) { return ui.notifications.warn('You currently have no means of casting the heal spell') }
 	const hdd = [{label: 'Which spell?', type: 'select', options: h.map(n => n.name)}];
 	
 	let ahi,hhi;
