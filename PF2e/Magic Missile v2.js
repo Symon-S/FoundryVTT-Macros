@@ -1,5 +1,5 @@
 /*This version of the Magic Missile Macro Automatically expends slots(prepared), spell uses(spontaneous), charges(wands), and consumes scrolls.
-Do not make spellcasting enties for your wands or scrolls. If you would like to use that method, please use the original macro.
+Do not make spellcasting entries for your wands or scrolls. If you would like to use that method, please use the original macro.
 For staves please use a spellcasting entry due to the nature of how staves work.*/
 
 const mani = ["wand-of-manifold-missiles-1st-level-spell","wand-of-manifold-missiles-3rd-level-spell","wand-of-manifold-missiles-5th-level-spell","wand-of-manifold-missiles-7th-level-spell"]
