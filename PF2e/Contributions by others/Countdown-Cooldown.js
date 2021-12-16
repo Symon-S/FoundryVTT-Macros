@@ -1,4 +1,9 @@
 //Macro created by ArthurTrumpe with some help from Tik.
+//Create an effect in the items section
+//Open the console by hitting the F12 key
+//Type in the console console.log(await.game.items); 
+//Then press the enter key
+//Look at the last entry key/id and replace "ddA2kj2MdCsoXzVe" with it, do not forget that the "" are a part of it.
 
 const effect = await game.items.find(a => a.id == "ddA2kj2MdCsoXzVe").toObject();
 countdownEffect();
