@@ -196,8 +196,8 @@ if (mmch.wand) {
 	}
 	else {
 		const w = token.actor.itemTypes.consumable.find(id => id.id === mmch.entryId);
-		const wData = duplicate(w.data)
-		wData.data.charges.value --
+		const wData = duplicate(w.data);
+		wData.data.charges.value --;
 		w.update(wData);
 	}
 }
@@ -205,7 +205,12 @@ if (mmch.wand) {
 /* Scroll */
 if(mmch.scroll){
 	const s = token.actor.itemTypes.consumable.find(id => id.id === mmch.entryId);
-	await s.delete();
+	if (s.data.data.quantity.value > 1) {
+		const sData = duplicate(s.data);
+		sData.data.quantity.value --;
+		s.update(sData);
+	}
+	else { await s.delete(); }
 }
 
 
