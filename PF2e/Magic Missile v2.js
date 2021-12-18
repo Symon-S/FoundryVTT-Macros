@@ -91,6 +91,8 @@ targets.forEach(t => {
 	tdata.push({label: t.name, type: 'number', options: [1]});
 });
 
+if (targetIds.length === 1) { tdata[0].options = [multi]; }
+
 const tdiag = await quickDialog({data : tdata, title : `Distribute ${multi} Missiles`});
 
 let tot = 0;
