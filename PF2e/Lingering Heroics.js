@@ -156,7 +156,7 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
 	    event
 	    //for callback: ,(Roll) => {console.log(Roll);}
 	);
-        if (roll.data.degreeOfSuccess != 1 && choice[2]) { 
+        if (roll.data.degreeOfSuccess != 1) { 
           const currentpoints = actor.data.data.resources.focus.value-1;
          actor.update({"data.resources.focus.value":currentpoints});
         }
