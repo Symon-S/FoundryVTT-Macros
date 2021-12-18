@@ -73,11 +73,12 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
 	let DCbyLevel = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50]
       
       	let level;
+	let levels = [];
+
       	if (choice[0] === 'Dirge of Doom') {
                 options.push(`secret`)
       		const ids = game.user.targets.ids;
       		
-      		let levels = [];
       		ids.forEach(id => {
       		if (canvas.tokens.placeables.find((t) => t.id === id).actor.type === `npc`) { levels.push(canvas.tokens.placeables.find((t) => t.id === id).actor.level);}
 		})
@@ -85,7 +86,10 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
    	        if (game.user.targets.size < 1 || levels.length === 0) { ui.notifications.warn('Please target at least 1 enemy'); return;}
                 else { level = Math.max(...levels);}
 	      }
-        else { level = token.actor.data.data.details.level.value; }
+        else { 
+		canvas.tokens.placeables.filter(pc => pc.actor.hasPlayerOwner && pc.actor.type === "character").forEach(x => { levels.push(x.actor.level) });
+		level = Math.max(...levels);
+	}
       
       
         let DC;
@@ -152,7 +156,7 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
 	    event
 	    //for callback: ,(Roll) => {console.log(Roll);}
 	);
-        if (roll.data.degreeOfSuccess != 1) { 
+        if (roll.data.degreeOfSuccess != 1 && choice[2]) { 
           const currentpoints = actor.data.data.resources.focus.value-1;
          actor.update({"data.resources.focus.value":currentpoints});
         }
