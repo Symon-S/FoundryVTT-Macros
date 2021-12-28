@@ -1,11 +1,20 @@
-//Macro created by ArthurTrumpe with some help from Tik.
-//Create an effect in the items section with a duration in rounds.
-//Open the console by hitting the F12 key.
-//Type in the console console.log(await.game.items); 
-//Press the enter key.
-//Look at the last entry key/id and replace "ddA2kj2MdCsoXzVe" with it, do not forget that the "" are a part of it.
+const effect = {
+    type: 'effect',
+    name: 'Countdown',
+    img: this.data.img,
+    data: {
+      tokenIcon: {
+          show: true
+      },       
+      duration: {
+          value: 1,
+          unit: 'rounds',
+          sustained: false,
+          expiry: 'turn-start'
+      }
+    },
+  };
 
-const effect = await game.items.find(a => a.id == "ddA2kj2MdCsoXzVe").toObject();
 countdownEffect();
 
 function countdownEffect() {
