@@ -76,25 +76,6 @@ if (picks[0] === "Treasures") {
 
 // Permanents
 if (picks[0] === "Permanents") {
-	const wands = [
-		"wand-of-widening-1st-level-spell",
-		"wand-of-widening-2nd-level-spell",
-		"wand-of-widening-3rd-level-spell",
-		"wand-of-widening-4th-level-spell",
-		"wand-of-widening-6th-level-spell",
-		"wand-of-widening-7th-level-spell",
-		"wand-of-widening-8th-level-spell",
-		"wand-of-widening-9th-level-spell",
-		"wand-of-continuation-1st-level-spell",
-		"wand-of-continuation-2nd-level-spell",
-		"wand-of-continuation-3rd-level-spell",
-		"wand-of-continuation-4th-level-spell",
-		"wand-of-continuation-5th-level-spell",
-		"wand-of-continuation-6th-level-spell",
-		"wand-of-continuation-7th-level-spell",
-		"wand-of-continuation-8th-level-spell"
-
-	]
 	if(Noan(picks[1])) { return ui.notifications.error("Level of at least 0 must be entered");}
 	const treasure = items.filter(t => t.type === "armor" || t.type === "weapon" || t.type === "equipment" || t.slug.search("magic-wand") > -1);
 	const treasures = treasure.filter( l => l.level === picks[1] );
