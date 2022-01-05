@@ -214,7 +214,13 @@ async function Spellstrike()
         
 	      /* Compendium Link for spell */
         const comp_id = `${ndspell.sourceId.substr(27)}`;
-        
+       
+	/* Calculate spell DC temporary patch */
+	let spellDC = 10;
+	s_entry.data.data.statisticData.modifiers.forEach(dc => {
+		spellDC = spellDC + dc.modifier;
+		console.log(spellDC)
+	})
          
         /* Expend slots */
         /* Spontaneous, Innate, and Flexible */
