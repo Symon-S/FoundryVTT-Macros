@@ -47,24 +47,24 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
          var actionName = "Inspire Heroics";
          let ihc = effects.find(e => e.data.name.includes(`${choice[0].substr(8)}, +3`));
          let ihs = effects.find(e => e.data.name.includes(`${choice[0].substr(8)}, +2`));
-         notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${ihs.id}">${ihs.name}</a></p>`});
-         notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${ihc.id}">${ihc.name}</a></p>`});
-         notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> You don't spend the Focus Point for casting the spell</p>`});
+         notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${ihs.id}">${ihs.name}</a></p>`});
+         notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${ihc.id}">${ihc.name}</a></p>`});
+         notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> You don't spend the Focus Point for casting the spell</p>`});
        }
       else { ui.notifications.warn('Inspire Heroics is only applicable to Inspire Courage or Defense'); return; }
       }
       else if (effect != undefined) {
- notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 3 rounds</p>`});
-         notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 4 rounds</p>`});
-         notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
+ notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 3 rounds</p>`});
+         notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 4 rounds</p>`});
+         notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
        }
       else{
-        notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${com_id}">${choice[0]}</a> lasts 3 rounds</p>`});
-        notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${com_id}">${choice[0]}</a> lasts 4 rounds</p>`});
-        notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${com_id}">${choice[0]}</a> lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
+        notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${com_id}">${choice[0]}</a> lasts 3 rounds</p>`});
+        notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${com_id}">${choice[0]}</a> lasts 4 rounds</p>`});
+        notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${com_id}">${choice[0]}</a> lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
       }
  // add more notes if necessary
-	  // Syntax for a note: {"outcome":["success"], "selector":"performance", "text":'<p><a class="entity-link" draggable="true" data-entity="Item" data-id="TSxkmgfLWwNQnAnA"> Overdrive II</a><strong>Critical Success</strong></p><p><a class="entity-link" draggable="true" data-entity="Item" data-id="MDGROvBFqiOFm8Iv"> Overdrive I</a><strong>Success</strong></p>'}//
+	  // Syntax for a note: {"outcome":["success"], "selector":"performance", "text":'<p><a class="entity-link content-link" draggable="true" data-entity="Item" data-id="TSxkmgfLWwNQnAnA"> Overdrive II</a><strong>Critical Success</strong></p><p><a class="entity-link" draggable="true" data-entity="Item" data-id="MDGROvBFqiOFm8Iv"> Overdrive I</a><strong>Success</strong></p>'}//
 	
 	const options = token.actor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
 	options.push(`action:${actionSlug}`); // add more traits here in new lines
