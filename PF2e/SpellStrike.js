@@ -219,7 +219,6 @@ async function Spellstrike()
 	let spellDC = 10;
 	s_entry.data.data.statisticData.modifiers.forEach(dc => {
 		spellDC = spellDC + dc.modifier;
-		console.log(spellDC)
 	})
          
         /* Expend slots */
@@ -406,7 +405,6 @@ var flav0 = `<strong>Spellstrike</strong><br><a class="entity-link content-link"
               flavor = `<strong>Spellstrike</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)`;
               critt_flav = `<strong>Spellstrike</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)`;
           }
-console.log(flavor);
           if (critt && ndspell.data.data.spellType.value !== 'save' && ndspell.slug !== 'heal'){
             var droll = new Roll(tdamage);
             droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
