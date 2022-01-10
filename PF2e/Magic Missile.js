@@ -72,7 +72,7 @@ fmm.forEach(a => {
         if(a.num === 0 || a.num === undefined) { return; }
 	let dam = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? formula.repeat(a.num).replace(/]{/g,'] + {') + ` + {${mmch.level}}[status,force]` : formula.repeat(a.num).replace(/]{/g,'] + {');
 	var droll = new Roll(dam);
-        droll.toMessage({ flavor: `<strong>${a.num} Magic Missile(s) targeting ${a.name}</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="gKKqvLohtrSJj3BM"><strong>Magic Missile</strong></a>`, speaker: ChatMessage.getSpeaker() });
+        droll.toMessage({ flavor: `<strong>${a.num} Magic Missile(s) targeting ${a.name}</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="gKKqvLohtrSJj3BM"><strong>Magic Missile</strong></a>`, speaker: ChatMessage.getSpeaker() });
 });
 
 const s_entry = mmE.find(e => e.id === mmch.entryId);
