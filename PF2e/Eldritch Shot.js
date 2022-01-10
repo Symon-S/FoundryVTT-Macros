@@ -303,30 +303,36 @@ async function Eldritch_shot()
              } 
           });
         }
-        console.log(damage,tdamage);
+        console.log(damage,tdamage,ndspell);
+        let pers;
           if (ndspell.slug === 'acid-splash') {
-            var dtype = 'acid'
+            var dtype = 'acid';
             if (actor.level < 5) {
-              var damage = `{1d6}[acid] + {1}[splash,acid]`
+              pers = 1;
+              var damage = `{1d6}[acid] + {1}[splash,acid]`;
               if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { tdamage = `{2*1d6}[acid] + {1}[splash,acid]`;}
               else { tdamage = `{2d6}[acid] + {1}[splash,acid]`}
             }
             else if (actor.level >= 5 && actor.level < 9) {
+              pers = 2;
               var damage = `{1d6${s_mod}}[acid] + {1}[splash,acid]`;
               if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { tdamage = `{2*1d6${critmod}}[acid] + {1}[splash,acid]`;}
               else { tdamage = `{2d6${critmod}}[acid] + {1}[splash,acid]`}
             }
             else if (actor.level >= 9 && actor.level < 13) {
+              pers = 3;
               var damage = `{2d6${s_mod}}[acid] + {2}[splash,acid]`;
               if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { tdamage = `{2*2d6${critmod}}[acid] + {2}[splash,acid]`;}
               else { tdamage = `{4d6${critmod}}[acid] + {2}[splash,acid]`}
             }
             else if (actor.level >= 13 && actor.level < 18) {
+              pers = 4;
               var damage = `{3d6${s_mod}}[acid] + {3}[splash,acid]`;
               if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { tdamage = `{2*3d6${critmod}}[acid] + {3}[splash,acid]`;} 
               else { tdamage = `{6d6${critmod}}[acid] + {3}[splash,acid]`}
             }
             else { 
+              pers = 5;
               var damage = `{4d6${s_mod}}[acid] + {4}[splash,acid]`;
               if (critt && game.settings.get("pf2e","critRule") === 'doubledamage') { tdamage = `{2*4d6${critmod}}[acid] + {4}[splash,acid]`;}
               else { tdamage = `{8d6${critmod}}[acid] + {4}[splash,acid]`}
@@ -343,7 +349,16 @@ async function Eldritch_shot()
         var critt_flav = `<strong>Eldritch Shot</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)`;
         }
 
+
+
           if (critt){
+            if(ndspell.slug === 'acid-splash') {
+              var critt_flav = critt_flav + `<br><a class="inline-roll roll persistent-link" title="{${pers}}[persistent,acid]" data-mode="roll" data-flavor="" data-formula="{${pers}}[persistent,acid]" draggable="true" data-value="${pers}" data-damage-type="acid" ondragstart="PF2EPersistentDamage._startDrag(event)">Persistent Damage [Acid ${pers}]</a>`
+            }
+            if(ndspell.slug === 'produce-flame'){
+              pers = Math.ceil(actor.level / 2) + "d4";
+              var critt_flav = critt_flav + `<br><a class="inline-roll roll persistent-link" title="{${pers}}[persistent,fire]" data-mode="roll" data-flavor="" data-formula="{${pers}}[persistent,fire]" draggable="true" data-value="${pers}" data-damage-type="fire" ondragstart="PF2EPersistentDamage._startDrag(event)">Persistent Damage [Fire ${pers}]</a>`
+            }
             var droll = new Roll(tdamage);
             console.log(droll);
             droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });   
