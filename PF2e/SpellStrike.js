@@ -252,7 +252,6 @@ async function Spellstrike()
             }
           })
         }
-        
 
 	      /* Create chat message if it is not a damage spell */
         const traits = ndspell.data.data.traits.value.join();
@@ -261,7 +260,7 @@ async function Spellstrike()
           var flav0 = `<strong>Spellstrike</strong><br><strong>${sp_choice}</strong>`;
           }
           else { 
-var flav0 = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a><br><span data-pf2-check='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.spelldc.dc}' data-pf2-traits='${traits}' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.spelldc.dc} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;}
+var flav0 = `<strong>Spellstrike</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a><br><span data-pf2-check='${ndspell.data.data.save.value}' data-pf2-dc='${spellDC}' data-pf2-traits='${traits}' data-pf2-label='${ndspell.name} DC'><strong>DC ${spellDC} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;}
           let message = ChatMessage.applyRollMode({ flavor: flav0, content: desc_sp, speaker: ChatMessage.getSpeaker() }, game.settings.get("core", "rollMode"));
           ChatMessage.create(message);
         }
@@ -389,24 +388,25 @@ var flav0 = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="p
             }
             
           }
+ 
           let flavor,critt_flav;
           if (ndspell.data.data.spellType.value === 'save') {
-            flavor = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (${dtype} damage)<br><span data-pf2-check='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.spelldc.dc}' data-pf2-traits='${traits},damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.spelldc.dc} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
+            flavor = `<strong>Spellstrike</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (${dtype} damage)<br><span data-pf2-check='${ndspell.data.data.save.value}' data-pf2-dc='${spellDC}' data-pf2-traits='${traits},damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${spellDC} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
           }
          if (ndspell.slug === 'heal') {
-            flavor = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (${dtype} damage)<br><span data-pf2-check='fortitude' data-pf2-dc='${s_entry.data.data.spelldc.dc}' data-pf2-traits='${traits},damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.spelldc.dc} </strong>Basic Fortitude save</span>`;
+            flavor = `<strong>Spellstrike</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (${dtype} damage)<br><span data-pf2-check='fortitude' data-pf2-dc='${spellDC}' data-pf2-traits='${traits},damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${spellDC} </strong>Basic Fortitude save</span>`;
             critt_flav = flavor;
           }
           
           if (ndspell.data.data.save.value !== ''){
-              flavor = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)<br><span data-pf2-check='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.spelldc.dc}' data-pf2-traits='${traits},damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.spelldc.dc} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
-              critt_flav = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)<br><span data-pf2-check='${ndspell.data.data.save.value}' data-pf2-dc='${s_entry.data.data.spelldc.dc}' data-pf2-traits='${traits},damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${s_entry.data.data.spelldc.dc} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
+              flavor = `<strong>Spellstrike</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)<br><span data-pf2-check='${ndspell.data.data.save.value}' data-pf2-dc='${spellDC}' data-pf2-traits='${traits},damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${spellDC} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
+              critt_flav = `<strong>Spellstrike</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)<br><span data-pf2-check='${ndspell.data.data.save.value}' data-pf2-dc='${spellDC}' data-pf2-traits='${traits},damaging-effect' data-pf2-label='${ndspell.name} DC'><strong>DC ${spellDC} </strong>${ndspell.data.data.save.basic} ${ndspell.data.data.save.value} save</span>`;
           }
           else{
-              flavor = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)`;
-              critt_flav = `<strong>Spellstrike</strong><br><a class="entity-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)`;
+              flavor = `<strong>Spellstrike</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Success) (${dtype} damage)`;
+              critt_flav = `<strong>Spellstrike</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${comp_id}"><strong>${sp_choice}</strong></a> (Critical Success) (${dtype} damage)`;
           }
-
+console.log(flavor);
           if (critt && ndspell.data.data.spellType.value !== 'save' && ndspell.slug !== 'heal'){
             var droll = new Roll(tdamage);
             droll.toMessage({ flavor: critt_flav, speaker: ChatMessage.getSpeaker() });
