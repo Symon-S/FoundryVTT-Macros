@@ -202,11 +202,7 @@ async function Eldritch_shot()
         const traits = ndspell.data.data.traits.value.join();
 
         //Spell DC
-        let spellDC = 10;
-	s_entry.data.data.statisticData.modifiers.forEach(dc => {
-		spellDC = spellDC + dc.modifier;
-	})
-
+        const spellDC = s_entry.data.data.statisticData.dc.value;
          
 	/* Create chat message if it is not a damage spell */
         if (dam === 0) { 
