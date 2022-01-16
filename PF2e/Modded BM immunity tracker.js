@@ -1,4 +1,5 @@
 /* Author ArthurTrumpet Modded by Symon S.
+The original version of this macro is in the Contributed by others section of the git.
 Uses the built in Battle medicine immunity effect to track who has healed whom.
 GM selects the token being healed, and chooses the healer from the drop down.
 The effect icon won't appear on the token, as you can potentially be battle medicined several times, and it would just clutter up the token. 
