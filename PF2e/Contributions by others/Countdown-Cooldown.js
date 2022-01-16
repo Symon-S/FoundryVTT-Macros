@@ -1,3 +1,5 @@
+//Author ArthurTrumpet
+
 const effect = {
     type: 'effect',
     name: 'Countdown',
