@@ -1,5 +1,7 @@
-//Author ArthurTrumpet
-
+/*Author ArthurTrumpet
+ This Macro gives you an easy way to add new named cooldown effects to actors.
+ Enter your desired duration in either a numerical value or a roll, like 1d4(default).
+*/
 const effect = {
     type: 'effect',
     name: 'Countdown',
