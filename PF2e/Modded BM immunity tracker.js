@@ -63,7 +63,6 @@ function battlemedicineEffect() {
 async function main(html) {
 
     const bmEffect = (await fromUuid(bm_UUID)).toObject();
-    console.log(bmEffect);
     bmEffect.data.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
     bmEffect.flags.core ??= {};
     bmEffect.flags.core.sourceId = bm_UUID;
