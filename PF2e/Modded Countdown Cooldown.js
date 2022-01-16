@@ -62,7 +62,6 @@ function countdownEffect() {
 
 async function main(html) {
     let duration = html.find("#countdowninput")[0].value;
-    console.log(html.find("#countdownunits"));
     const unit = html.find("#countdownunits")[0].value;  
     const isCooldown = html.find("#cooldown")[0].checked; 
     effect.name = html.find("#countdownname")[0].value;
