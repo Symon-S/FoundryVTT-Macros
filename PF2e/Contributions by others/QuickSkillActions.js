@@ -1,4 +1,4 @@
-/*
+/* Author ArthurTrumpet
 This allows you to quickly roll a skill action using the built in system macros.
 It lists 4 buttons to make it quicker than selecting from a drop down. Simply click the one you want.
 Edit the first four lines to customise the skill actions you wish to perform (always use lower case).
