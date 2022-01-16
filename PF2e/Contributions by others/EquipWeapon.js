@@ -1,4 +1,4 @@
-/*
+/* Author ArthurTrumpet
 In order to roll an attack from the strikes tab, a weapon must first be equipped.
 Because it takes time to swap weapons, many players equip everything, which is faster but makes it hard to track which weapon is currently being wielded.
 This macro lists all your available weapons, and equips the one you click (whilst unequipping all the others).
