@@ -61,6 +61,7 @@ async function Eldritch_shot()
                if (slot[1].value > 0 && parseInt(slot[0].substr(4)) === spell.level) { spells_items.push(spell)}
               })
     if(spell.isCantrip && !spells_items.includes(spell) ) {spells_items.push(spell)}
+    if(spell.isFocusSpell && !spells_items.includes(spell)) { spells_items.push(spell)}
     }
     
 	});
