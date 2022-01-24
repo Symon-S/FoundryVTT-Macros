@@ -210,7 +210,7 @@ for (const token of canvas.tokens.controlled) {
 	if ( await CheckFeat('communal-healing') && target !== metok) {
           const c_roll = new Roll(`{${hlvl}}[positive]`);
           if (i_comm) { c_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong>Extra healing from Improved Communal Healing to any one creature within the range of your heal spell </strong>`});}
-          else { c_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong>Extra healing from Improved Communal Healing to ${token.actor.name} </strong>`});}
+          else { c_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong>Extra healing from Communal Healing to ${token.actor.name} </strong>`});}
 	}
 
 	
