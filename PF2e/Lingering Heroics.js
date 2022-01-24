@@ -152,8 +152,8 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
 	  new game.pf2e.CheckModifier(
 	    `<span class="pf2-icon">A</span> <b>${actionName}</b> - <p class="compact-text">${skillName } Skill Check</p>`,
 	    token.actor.data.data.skills[skillKey], modifiers ),
-	    { actor: token.actor, type: 'skill-check', options, notes, dc: { value: DC } }, // add dc: { value: 25 } in the object to roll against a dc
-	    event
+	    { actor: token.actor, type: 'skill-check', options, notes, dc: { value: DC } }, skipDialog: true // add dc: { value: 25 } in the object to roll against a dc
+	    null
 	    //for callback: ,(Roll) => {console.log(Roll);}
 	);
         if (roll.data.degreeOfSuccess != 1) { 
