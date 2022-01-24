@@ -83,25 +83,10 @@ for (const token of canvas.tokens.controlled) {
 
         if(h.length === 0) { return ui.notifications.warn('You currently have no means of casting the heal spell') }
 	const hdd = [{label: 'Which spell?', type: 'select', options: h.map(n => n.name)}];
-	
-	let ahi,hhi;
-	if (await CheckSpell('angelic-halo')) { 
-		hdd.push({label: 'Angelic Halo', type: 'checkbox'});
-		ahi = hdd.findIndex(e => e.label === 'Angelic Halo');
-	}
-	if (await CheckFeat('healers-halo')) { 
-		hdd.push({label: `Healer's Halo`, type: 'checkbox'}) ;
-		hhi = hdd.findIndex(e => e.label === `Healer's Halo`);
-	}
-
-	const hdiag = await quickDialog({data : hdd, title : `2-Action Heal`});
-
-
-	const hch = h.find(n => n.name === hdiag[0]);
 
 	const heals = await CheckSpell('heal');
 	/*Informs the player that they do not possess the heal spell in their character sheet*/
-    	if (heals === false && token.actor.data.type != 'npc') {  return ui.notifications.warn('Actor does not possess the heal spell'); }
+    	if (heals === false && token.actor.data.type !== 'npc') {  return ui.notifications.warn('Actor does not possess the heal spell'); }
     	if (game.user.targets.size < 1) { return ui.notifications.warn('Please target a token'); }
     	if (game.user.targets.size > 1) { return ui.notifications.warn('2-Action Heal can only affect 1 target per cast'); }
 
@@ -111,6 +96,27 @@ for (const token of canvas.tokens.controlled) {
     	if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.find((t) => t === 'undead' || t=== 'construct')) {
     		 var tt = true; }
     	else { var tt = false; }
+
+
+	let ahi,hhi,ich;
+	if (await CheckSpell('angelic-halo')) { 
+		hdd.push({label: 'Angelic Halo', type: 'checkbox'});
+		ahi = hdd.findIndex(e => e.label === 'Angelic Halo');
+	}
+	if (await CheckFeat('healers-halo')) { 
+		hdd.push({label: `Healer's Halo`, type: 'checkbox'}) ;
+		hhi = hdd.findIndex(e => e.label === `Healer's Halo`);
+	}
+        if (await CheckFeat('improved-communal-healing') && metok !== target) {
+               hdd.push({label: `Improved Communal Healing`, type: 'checkbox'})
+               ich = hdd.findIndex(e => e.label === `Improved Communal Healing`);
+        }
+
+	const hdiag = await quickDialog({data : hdd, title : `2-Action Heal`});
+
+
+	const hch = h.find(n => n.name === hdiag[0]);
+
     	
 	/*Staff of Healing*/
     	const staff = await CheckStaff('staff-of-healing');
@@ -132,7 +138,10 @@ for (const token of canvas.tokens.controlled) {
     
     	/*Healer's Halo Ancestry Feat*/
     	const h_halo = hdiag[hhi];
-    
+        
+        /*Improved Communal Healing Feat*/
+        const i_comm = hdiag[ich];
+
     	/*Holy Prayer Beads*/
     	const hpbeads = await CheckEquip('holy-prayer-beads');
     	const ghpbeads = await CheckEquip('holy-prayer-beads-greater');
@@ -171,7 +180,7 @@ for (const token of canvas.tokens.controlled) {
     		let h_roll = new Roll(`{${h_heal}}[positive]`);
     		h_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong> Extra healing from Healer's Halo </strong>` });
     	}
-
+        
     	if ( await CheckFeat('life-mystery') === true) {
      		if ((minc === true || modc === true || majc === true) && target === metok) { 
       		if (Math.floor(plevel / 2) === 0) { var hpenal = 1; }
@@ -183,7 +192,7 @@ for (const token of canvas.tokens.controlled) {
     	else if (hpbeads === true || ghpbeads === true) { let beadroll = new Roll(bbeads); beadroll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong> Prayer Beads recovery that either you or targeted player get`});}
     	const roll = new Roll(`{${healt}}[positive]`);
     	let healf = `2-Action Lv ${hlvl} Heal spell targeting ${tname}`;
-    	roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong> ${healf} </strong>`});
+    	await roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong> ${healf} </strong>`});
     
     	if (modc === true) {  
     		let broll = new Roll(`{${hlvl}}[positive]`);
@@ -197,6 +206,13 @@ for (const token of canvas.tokens.controlled) {
       		croll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong> You disperse positive energy in a 30-foot burst with the effects of a 3-action heal spell with a level 4 lower than that of the spell you cast. This healing occurs immediately after you finish Casting the Spell. You don't benefit from this healing. Instead, you lose double the number of Hit Points rolled for the heal spell. </strong>`});
     
     	}
+
+	if ( await CheckFeat('communal-healing') && target !== metok) {
+          const c_roll = new Roll(`{${hlvl}}[positive]`);
+          if (i_comm) { c_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong>Extra healing from Improved Communal Healing to any one creature within the range of your heal spell </strong>`});}
+          else { c_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong>Extra healing from Improved Communal Healing to ${token.actor.name} </strong>`});}
+	}
+
 	
 	const s_entry = hE.find(e => e.id === hch.entryId);
 
