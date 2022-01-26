@@ -98,7 +98,7 @@ for (const token of canvas.tokens.controlled) {
     	else { var tt = false; }
 
 
-	let ahi,hhi;
+	let ahi,hhi,mhi;
 	if (await CheckSpell('angelic-halo')) { 
 		hdd.push({label: 'Angelic Halo', type: 'checkbox'});
 		ahi = hdd.findIndex(e => e.label === 'Angelic Halo');
@@ -107,7 +107,10 @@ for (const token of canvas.tokens.controlled) {
 		hdd.push({label: `Healer's Halo`, type: 'checkbox'}) ;
 		hhi = hdd.findIndex(e => e.label === `Healer's Halo`);
 	}
-
+        if(await CheckFeat('martyr') && target !== metok) { 
+		hdd.push({label: `Martyr`, type: 'checkbox'}) ;
+		mhi = hdd.findIndex(e => e.label === `Martyr`);
+	}
 	const hdiag = await quickDialog({data : hdd, title : `2-Action Heal`});
 
 
@@ -134,6 +137,9 @@ for (const token of canvas.tokens.controlled) {
     
     	/*Healer's Halo Ancestry Feat*/
     	const h_halo = hdiag[hhi];
+
+        /*Martyr*/
+        const martyr = hdiag[mhi];
 
     	/*Holy Prayer Beads*/
     	const hpbeads = await CheckEquip('holy-prayer-beads');
@@ -167,12 +173,6 @@ for (const token of canvas.tokens.controlled) {
      		var healt = healt + "+" + odice;
     	}	
     	var healt = a_halo ? healt + "+" + hlvl * 2 : healt;
-	
-    	if(h_halo === true) { 
-    		let h_heal = '1d6';
-    		let h_roll = new Roll(`{${h_heal}}[positive]`);
-    		h_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong> Extra healing from Healer's Halo </strong>` });
-    	}
         
     	if ( await CheckFeat('life-mystery') === true) {
      		if ((minc === true || modc === true || majc === true) && target === metok) { 
@@ -184,8 +184,21 @@ for (const token of canvas.tokens.controlled) {
     	if (target === metok && (hpbeads === true || ghpbeads === true)) { var healt = healt + "+" + bbeads;}
     	const roll = new Roll(`{${healt}}[positive]`);
     	let healf = `2-Action Lv ${hlvl} Heal spell targeting ${tname}`;
-    	await roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong> ${healf} </strong>`});
+    	await roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong>${healf}</strong>`});
+
+        if(martyr) {
+         const mroll = new Roll(`{${hlvl}d8}[positive]`);
+         await mroll.toMessage({speaker: ChatMessage.getSpeaker(), flavor:`<strong>Martyr caused ${token.actor.name} to lose Hit Points and ${tname}to gain as many Hit Points</strong>`});
+        }
+        
+        if(h_halo === true) { 
+    		let h_heal = '1d6';
+    		let h_roll = new Roll(`{${h_heal}}[positive]`);
+    		await h_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong>${tname} received extra healing from Healer's Halo and is immune to Healer's Halo for 10 minutes</a></strong>` });
+    	}
+
         if (target !== metok && (hpbeads === true || ghpbeads === true)) { let beadroll = new Roll(`${bbeads}[positive]`); beadroll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong> Prayer Beads recovery that either you or targeted player get`});}
+
     	if (modc === true) {  
     		let broll = new Roll(`{${hlvl}}[positive]`);
       		broll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong> Hit Points equal to the spell level to your choice of either one target of the spell or the creature nearest to you. You can't heal yourself in this way.</strong> This healing has the healing, necromancy, and positive traits, as well as the tradition trait of the spell.`});}
@@ -203,7 +216,7 @@ for (const token of canvas.tokens.controlled) {
           const c_roll = new Roll(`{${hlvl}}[positive]`);
           if (await CheckFeat('improved-communal-healing') && target === metok) { c_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong>Extra healing from Improved Communal Healing to any one creature within the range of your heal spell other than yourself </strong>`});}
           if (await CheckFeat('improved-communal-healing') && target !== metok) { c_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong>Extra healing from Improved Communal Healing to any one creature within the range of your heal spell</strong>`});}
-          if (!await CheckFeat('improved-communal-healing') && target !== metok) { c_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong>Extra healing from Improved Communal Healing to ${token.actor.name} </strong>`});}
+          if (!await CheckFeat('improved-communal-healing') && target !== metok) { c_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong>Extra healing from Communal Healing to ${token.actor.name} </strong>`});}
 	}
 
 	
