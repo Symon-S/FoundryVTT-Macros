@@ -1,6 +1,10 @@
-//To use this macro, you need to have the lingering composition feat on your character sheet.
-//To use inspire heroics, you must have the inspire heroics feat on your character sheet.
-//Effects with extended durations due to lingering composition need to be manually edited after they are dragged on the characters.
+/*To use this macro, you need to have the lingering composition feat on your character sheet.
+To use inspire heroics, you must have the inspire heroics feat on your character sheet.
+Ask your DM to import spell effects for the following spells if you have them:
+Inspire Courage, Inspire Defense, Triple Time, and Song of Strength
+The DM should then duplicate each imported entry.
+Have the DM edit the duration of one of the effects to 3 rounds and the other to 4
+The DM may rename them to illustrate success or critical success, but this is not necessary*/
 
 if (!actor || token.actor.type !== 'character') {
 	ui.notifications.warn("You must have a PC token selected"); return;}
@@ -22,7 +26,7 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
       
       
       let label;
-      if (cantrips.find(f => f.slug === 'dirge-of-doom') != undefined) { label = `Choose a Spell : <br>(Target all affected enemies for Dirge of Doom)` }
+      if (cantrips.find(f => f.slug === 'dirge-of-doom') !== undefined) { label = `Choose a Spell : <br>(Target all affected enemies for Dirge of Doom)` }
       else { label = `Choose a Spell : ` }
       
       let lc_data = [
@@ -30,7 +34,7 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
 	{ label: `Custom DC : `, type: `number` }
       ];
       
-      if (token.actor.itemTypes.feat.some(s => s.slug === 'inspire-heroics')) { lc_data.push( { label: `Inspire Heroics (Defense or Courage Only) : `, type: `checkbox` } ) }     
+      if (token.actor.itemTypes.feat.some(s => s.slug === 'inspire-heroics')) { lc_data.push( { label: `Inspire Heroics (Defense, Courage, and Song of Strength Only) : `, type: `checkbox` } ) }     
 
       const choice = await quickDialog({data: lc_data, title: `Lingering Composition`});
       
@@ -46,7 +50,7 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
       const notes = [...token.actor.data.data.skills[skillKey].notes];
       
       if (choice[2] === true) {
-       if ( choice[0] === 'Inspire Courage' || choice[0] === 'Inspire Defense') {  
+       if ( choice[0] === 'Inspire Courage' || choice[0] === 'Inspire Defense' || choice[0] === 'Song of Strength') {  
          var actionSlug = "inspire-heroics";
          var actionName = "Inspire Heroics";
          let ihc = effects.find(e => e.data.name.includes(`${choice[0].substr(8)}, +3`));
@@ -55,13 +59,22 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
          notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${ihc.id}">${ihc.name}</a></p>`});
          notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> You don't spend the Focus Point for casting the spell</p>`});
        }
-      else { ui.notifications.warn('Inspire Heroics is only applicable to Inspire Courage or Defense'); return; }
+      else { ui.notifications.warn('Inspire Heroics is only applicable to Inspire Courage, Inspire Defense, or Song of Strength'); return; }
       }
-      else if (effect != undefined) {
- notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 3 rounds</p>`});
-         notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 4 rounds</p>`});
-         notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
-       }
+      else if (effect !== undefined) {
+        if(game.items.some(i => i.slug === effect.slug)) {
+          const success = game.items.find(s => s.slug === effect.slug && s.data.data.duration.value === 3);
+          const cs = game.items.find(s => s.slug === effect.slug && s.data.data.duration.value === 4);
+          notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-type="Item" data-entity="Item" data-id="${success.id}">${success.name}</a> lasts 3 rounds</p>`});
+          notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-type="Item" data-entity="Item" data-id="${cs.id}">${cs.name}</a> lasts 4 rounds</p>`});
+          notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
+        }
+        else{
+          notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 3 rounds</p>`});
+          notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 4 rounds</p>`});
+          notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
+        }
+      }
       else{
         notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${com_id}">${choice[0]}</a> lasts 3 rounds</p>`});
         notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${com_id}">${choice[0]}</a> lasts 4 rounds</p>`});
