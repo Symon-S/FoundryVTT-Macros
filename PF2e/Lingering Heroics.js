@@ -1,5 +1,6 @@
 //To use this macro, you need to have the lingering composition feat on your character sheet.
 //To use inspire heroics, you must have the inspire heroics feat on your character sheet.
+//Effects with extended durations due to lingering composition need to be manually edited after they are dragged on the characters.
 
 if (!actor || token.actor.type !== 'character') {
 	ui.notifications.warn("You must have a PC token selected"); return;}
