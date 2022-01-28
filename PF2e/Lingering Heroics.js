@@ -1,3 +1,6 @@
+//To use this macro, you need to have the lingering composition feat on your character sheet.
+//To use inspire heroics, you must have the inspire heroics feat on your character sheet.
+
 if (!actor || token.actor.type !== 'character') {
 	ui.notifications.warn("You must have a PC token selected"); return;}
 if (token.actor.itemTypes.feat.find(lc => lc.slug === "lingering-composition") === undefined) { ui.notifications.warn("The actor does not possess the Lingering Composition feat"); return; }
@@ -26,7 +29,7 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
 	{ label: `Custom DC : `, type: `number` }
       ];
       
-      if (token.actor.itemTypes.spell.some(s => s.data.data.slug === 'inspire-heroics')) { lc_data.push( { label: `Inspire Heroics (Defense or Courage Only) : `, type: `checkbox` } ) }     
+      if (token.actor.itemTypes.feat.some(s => s.slug === 'inspire-heroics')) { lc_data.push( { label: `Inspire Heroics (Defense or Courage Only) : `, type: `checkbox` } ) }     
 
       const choice = await quickDialog({data: lc_data, title: `Lingering Composition`});
       
