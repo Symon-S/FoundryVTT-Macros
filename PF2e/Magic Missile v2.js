@@ -1,7 +1,8 @@
 /*This version of the Magic Missile Macro Automatically expends slots(prepared), spell uses(spontaneous), charges(wands), and consumes scrolls.
 When Wand of Manifold Missile is used, it places an effect on the character that allows it to tell if you are using the lingering effect of those wands. This adds the option to terminate the effect from within the dialog box through a checkbox (nothing else happens), or select the effect and have it shoot Magic Missiles as per the wand's description.
 Do not make spellcasting entries for your wands or scrolls. If you would like to use that method, please use the original macro.
-For staves please use a spellcasting entry due to the nature of how staves work.*/
+For staves please use a spellcasting entry due to the nature of how staves work.
+This also works for all NPCs. If it doesn't work with an NPC, just remove magic missile and re-add as it may be an outdated version of the spell*/
 
 const mani = ["wand-of-manifold-missiles-1st-level-spell","wand-of-manifold-missiles-3rd-level-spell","wand-of-manifold-missiles-5th-level-spell","wand-of-manifold-missiles-7th-level-spell"]
 if (!token.actor.itemTypes.spell.some(s => s.slug === 'magic-missile') && token.actor.itemTypes.consumable.some(s => s.slug.search('magic-missile') === -1) && !token.actor.itemTypes.equipment.some(s => mani.includes(s.slug))) { return ui.notifications.error('You do not have Magic Missile') }if (game.user.targets.ids === undefined || game.user.targets.ids.length === 0) { return ui.notifications.error('At least 1 target is required'); }
