@@ -3,7 +3,7 @@ The original version of this macro is in the Contributed by others section of th
 Uses the built in Battle medicine immunity effect to track who has healed whom.
 GM selects the token being healed, and chooses the healer from the drop down.
 The effect icon won't appear on the token, as you can potentially be battle medicined several times, and it would just clutter up the token. 
-If you don't want to show the icons, update the variable showIcons on line #2 to true.
+If you want to show the icons, update the variable const showIcons to true instead of false.
 Immunity duration is set depending on several factors. Default is 24 hours. 
 If healed by an Investigator with the Forensic Medicine methodology, it is 1 hour. 
 A character with godless healing feat will get a 1 hour immunity.
