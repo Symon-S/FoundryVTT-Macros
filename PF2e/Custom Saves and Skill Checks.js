@@ -43,7 +43,6 @@ async function postSave($html) {
     const save = $html.find('[name="save"]')[0].value || 'fortitude';
     const traits = $html.find('[name="traits"]')[0].value || '';
     const flavor = $html.find('[name="flavor"]')[0].value || '';
-    console.log(lbdc,DC);
     let flavorText = ''
     if (flavor) {
         flavorText = `<p>${flavor}</p>`
@@ -187,22 +186,19 @@ new Dialog({
     },
  }).render(true);
 });
-console.log(skillType);
+
 async function postSkill($html) {
     const adjDif = parseInt($html.find('[name="adj"]')[0].value);
     const lbdc = parseInt($html.find('[name="lbdc"]')[0].value);
     if (lbdc > 25 || lbdc < 0) { return ui.notifications.warn("Level Based DC's are between level 0 and 25"); }
     let DC;
-    console.log(DC);
     if (lbdc !== NaN) { DC = ldc[lbdc]; }
-    console.log(DC);
     const dc = parseInt($html.find('[name="dc"]')[0].value) || '';
     if (DC === undefined && (dc === '' || dc < 0)) { DC = 10; }
     if (dc !== '' && (dc > DC || DC === undefined)) { DC = dc; }
     const traits = $html.find('[name="traits"]')[0].value || '';
     const flavor = $html.find('[name="flavor"]')[0].value || '';
     DC = DC + adjDif
-    console.log(lbdc,DC,dc,adjDif);
     let flavorText = ''
     if (flavor) {
         flavorText = `<p>${flavor}</p>`
