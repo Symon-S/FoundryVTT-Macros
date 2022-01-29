@@ -1,7 +1,6 @@
 /* A quick Macro to pop up a notification with the DCs for spells based on level and rarity.
 These DCs are used for counteract checks, learning a spell, etc.
-These are NOT DCs for saves against these spells.
-*/
+These are NOT DCs for saves against these spells.*/
 
 const rarity = await new Promise((resolve) => {
  new Dialog({
