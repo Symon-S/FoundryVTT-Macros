@@ -6,6 +6,8 @@ or you can set a custom DC. The difficulty adjustment changes the difficulty by 
 Setting a difficulty adjustement will also change the custom DC that is set.
 If no values are entered, the macro defaults to DC 10.
 If the custom value and the level based DC are used simultaniously, the larger DC is used (before adjustment for skill checks)
+Add whatever text you would like to post along with the check to chat in the flavor section.
+Add traits to ensure applicable mods will trigger if needed.
 */
 
 const ldc = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50];
