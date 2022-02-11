@@ -28,8 +28,7 @@ async function Scroll() {
   if (scroll.length === 0) { return ui.notifications.warn("You do don't have scrolls to cast from.");}
   const choiceS = await choose(scroll.map(n => n.data.name),`Pick a Scroll`);
   const chosen = scroll.find(x => x.data.name === choiceS);
-  const cd = await chosen.toMessage();
-  console.log(cd);
+  await chosen.toMessage();
 }
  
 async function Wand(){
