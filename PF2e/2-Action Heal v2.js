@@ -1,3 +1,5 @@
+// A simple 2-action heal macro that covers all of the bases, from consuming spell slots and lowering uses, to consuming scrolls and expending charges in wands. Also integrates pretty much everything that could affect heal.
+
 if (!token.actor.itemTypes.spell.some(h => h.slug === 'heal')) { return ui.notifications.error('You do not possess the heal spell') }
 
 if (token === undefined) {
