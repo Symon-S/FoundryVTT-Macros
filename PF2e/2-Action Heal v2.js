@@ -1,5 +1,3 @@
-/*This version of the 2-action heal macro automatically expends spells from your spell list*/
-
 if (!token.actor.itemTypes.spell.some(h => h.slug === 'heal')) { return ui.notifications.error('You do not possess the heal spell') }
 
 if (token === undefined) {
@@ -80,6 +78,20 @@ for (const token of canvas.tokens.controlled) {
 			});
 		}
 	});
+
+token.actor.itemTypes.consumable.forEach(s => {
+        console.log(s);
+	if (!s.data.data.traits.value.includes("wand") && !s.data.data.traits.value.includes("scroll")) { return; }
+	if (s.data.data.spell.data.data.slug === 'heal') { 
+		if (s.data.data.traits.value.includes("wand") && s.data.data.charges.value > 0) {
+			h.push({name: `${s.name}`, level: parseInt(s.slug.substr(11,1)), prepared: false, entryId: s.id , wand: true, scroll: false, spont: false,  }) 
+		}
+		if (s.data.data.traits.value.includes("scroll")) {
+			h.push({name: `${s.name}`, level: s.data.data.spell.heightenedLevel, prepared: false, entryId: s.id, wand: false, scroll: true, spont: false })
+		}
+	}
+});
+
 
         if(h.length === 0) { return ui.notifications.warn('You currently have no means of casting the heal spell') }
 	const hdd = [{label: 'Which spell?', type: 'select', options: h.map(n => n.name)}];
@@ -224,7 +236,7 @@ for (const token of canvas.tokens.controlled) {
 
 	/* Expend slots */
 	/* Spontaneous, Innate, and Flexible */
-	if (!hch.prepared) {
+	if (!hch.prepared && !hch.wand && !hch.scroll) {
 		let data = duplicate(s_entry.data);
         	Object.entries(data.data.slots).forEach(slot => {
             		if (parseInt(slot[0].substr(4)) === hch.level && slot[1].value > 0) { 
@@ -245,6 +257,25 @@ for (const token of canvas.tokens.controlled) {
         	})
 
 	}
+	/* Wand */
+	if (hch.wand) {
+		const w = token.actor.itemTypes.consumable.find(id => id.id === hch.entryId);
+		const wData = duplicate(w.data);
+		wData.data.charges.value --;
+		w.update(wData);
+	}
+
+	/* Scroll */
+	if(hch.scroll){
+		const s = token.actor.itemTypes.consumable.find(id => id.id === hch.entryId);
+		if (s.data.data.quantity.value > 1) {
+			const sData = duplicate(s.data);
+			sData.data.quantity.value --;
+			s.update(sData);
+		}
+		else { await s.delete(); }
+	}
+       
 }	
 
 
