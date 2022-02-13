@@ -37,13 +37,13 @@ async function Wand(){
   const wand = [];
  
   token.actor.itemTypes.consumable.forEach(s => {
-   if (s.data.data.consumableType.value === "wand") { wand.push(s); }
+   if (s.data.data.consumableType.value === "wand" && s.data.data.charges.value > 0) { wand.push(s); }
   });
 
   if (wand.length === 0) { return ui.notifications.warn("You do don't have wands to cast from.");}
   const choiceW = await choose(wand.map(n => n.data.name),`Pick a Wand`);
   const chosen = await wand.find(x => x.data.name === choiceW);
-  chosen.toMessage();
+  await chosen.toMessage();
 }
 /*
   Choose
@@ -57,7 +57,6 @@ async function choose(options = [], prompt = ``){
       let dialog_options = (options[0] instanceof Array)
         ? options.map(o => `<option value="${o[0]}">${o[1]}</option>`).join(``)
         : options.map(o => `<option value="${o}">${o}</option>`).join(``);
-      console.log(dialog_options);
       let content = `
       <table style="width=100%">
         <tr><th>${prompt}</th></tr>
