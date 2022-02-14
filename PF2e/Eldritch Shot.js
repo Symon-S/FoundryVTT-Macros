@@ -152,9 +152,9 @@ async function Eldritch_shot()
         if (critt === 'criticalSuccess'){ strike.critical({ event }); }
       }
       if (critt === 'success' || critt === 'criticalSuccess') {
-        if (spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.data.item.data.data.damage.value).length === 0){
-          const message = ChatMessage.applyRollMode({ flavor: flavor, content: spc.desc, speaker: ChatMessage.getSpeaker() });
-          return ChatMessage.create(message);
+        if (spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.data.item.data.data.damage.value).length === 0 || !spc.spell.chatData.isAttack){
+          spc.spell.spell.data.data.level.value = spc.lvl;
+          spc.spell.spell.toMessage();
         }
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { spc.formula = ddice; } 
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledamage')) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }   
