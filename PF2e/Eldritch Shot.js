@@ -74,6 +74,12 @@ async function Eldritch_shot()
 		  /* Get the strike actions and roll strike */
 		  const strike = token.actor.data.data.actions.find(a => a.type === 'strike' && a.name === spell_choice[1]);
       const spc = spells.find(sp => sp.name === spell_choice[0]);
+      const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);
+      let pers;
+      const key = s_entry.ability;
+      const s_mod = ` + ${token.actor.data.data.abilities[key].mod}`
+      const c_mod = ` + ${token.actor.data.data.abilities[key].mod *2}`
+
       if (spc.slug === 'telekinetic-projectile') {
         const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["bludgeoning","piercing","slashing"]}, title: `Choose a damage type`});
         spc.formula = spc.formula.replace("untyped",type);
@@ -86,12 +92,45 @@ async function Eldritch_shot()
         spc.formula = spc.formula + `[${spc.data.item.data.data.damage.value[0].type.value}]`;
       }
       const fsplit = spc.formula.split(" ");
-      let ddice = '';
+      let ddam,ddice = '';
       fsplit.forEach(f => {
-        if (f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || []) === null) { return ddice = ddice + f; }
+        if (f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || []) === null ) { return ddice = ddice + f; }
         const double = `${parseInt(f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || [])[0]) * 2}`;
         ddice = ddice + f.replace(f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || [])[0], double)
       });
+
+      /* Acid Splash */
+      if (spc.slug === 'acid-splash') {
+        const dtype = 'acid';
+        if (actor.level < 5) {
+          pers = 1;
+          spc.formula = `{1d6}[acid] + {1}[splash,acid]`;
+          ddice = `{2d6}[acid] + {1}[splash,acid]`;
+        }
+        else if (actor.level >= 5 && actor.level < 9) {
+          pers = 2;
+          spc.formula = `{1d6${s_mod}}[acid] + {1}[splash,acid]`;
+          ddice = `{2d6${c_mod}}[acid] + {1}[splash,acid]`;
+        }
+        else if (actor.level >= 9 && actor.level < 13) {
+          pers = 3;
+          spc.formula = `{2d6${s_mod}}[acid] + {2}[splash,acid]`;
+          ddice = `{4d6${c_mod}}[acid] + {2}[splash,acid]`;
+        }
+        else if (actor.level >= 13 && actor.level < 18) {
+          pers = 4;
+          spc.formula = `{3d6${s_mod}}[acid] + {3}[splash,acid]`;
+          ddice = `{6d6${c_mod}}[acid] + {3}[splash,acid]`;
+        }
+        else { 
+          pers = 5;
+          spc.formula = `{4d6${s_mod}}[acid] + {4}[splash,acid]`;
+          ddice = `{8d6${c_mod}}[acid] + {4}[splash,acid]`;
+        }
+            
+      }
+
+
       await strike.attack({ event });
       const critt = game.messages.contents.reverse().find(x => x.isCheckRoll && x.actor === token.actor).data.flags.pf2e.context.outcome;
       let traits = spc.data.item.data.data.traits.value.join();
@@ -124,7 +163,6 @@ async function Eldritch_shot()
       }
       /* Expend slots */
       /* Spontaneous, Innate, and Flexible */
-      const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);
 
       if (spc.type === 'spontaneous') {
         if ( spc.data.item.isCantrip ) { return; }
