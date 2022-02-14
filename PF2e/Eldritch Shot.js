@@ -143,8 +143,17 @@ async function Eldritch_shot()
       if (critt === 'criticalSuccess') { dos = 'Critical Success' }
       if (spc.data.item.data.data.damage.value !== '' || spc.data.item.data.data.damage.value !== undefined || Object.entries(spc.data.item.data.data.damage.value).length !== 0){ traits = traits + `,damaging-effect`; }
       let flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${spc.cId}"><strong>${spc.data.item.name}</strong></a> (${dos})<div class="tags">${ttags}</div><hr>`;
+      if (spc.slug === 'acid-splash') { flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${spc.cId}"><strong>${spc.data.item.name}</strong></a> (${dos})<div class="tags">${ttags}</div>` }
       if (spc.isSave) {
         flavor = flavor + `<span data-pf2-check='${spc.data.item.data.data.save.value}' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>${spc.data.item.data.data.save.basic} ${spc.data.item.data.data.save.value} save</span>`;
+      }
+
+      if(spc.slug === 'acid-splash' && critt === 'criticalSuccess') {
+        flavor = flavor + `<hr><a class="inline-roll roll persistent-link" title="{${pers}}[persistent,acid]" data-mode="roll" data-flavor="" data-formula="{${pers}}[persistent,acid]" draggable="true" data-value="${pers}" data-damage-type="acid" ondragstart="PF2EPersistentDamage._startDrag(event)">Persistent Damage [Acid ${pers}]</a>`
+      }
+      if(spc.slug === 'produce-flame' && critt === 'criticalSuccess') {
+        pers = Math.ceil(actor.level / 2) + "d4";
+        flavor = flavor + `<br><a class="inline-roll roll persistent-link" title="{${pers}}[persistent,fire]" data-mode="roll" data-flavor="" data-formula="{${pers}}[persistent,fire]" draggable="true" data-value="${pers}" data-damage-type="fire" ondragstart="PF2EPersistentDamage._startDrag(event)">Persistent Damage [Fire ${pers}]</a>`
       }
 
       if (game.modules.has('xdy-pf2e-workbench') && game.modules.get('xdy-pf2e-workbench').active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
