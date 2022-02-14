@@ -115,11 +115,13 @@ async function Spellstrike()
       }
       const fsplit = spc.formula.split(" ");
       let ddam,ddice = '';
-      fsplit.forEach(f => {
-        if (f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || []) === null) { return ddice = ddice + f; }
-        const double = `${parseInt(f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || [])[0]) * 2}`;
-        ddice = ddice + f.replace(f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || [])[0], double)
-      });
+      if (spc.spell.chatData.isAttack){
+        fsplit.forEach(f => {
+          if (f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || []) === null) { return ddice = ddice + f; }
+          const double = `${parseInt(f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || [])[0]) * 2}`;
+          ddice = ddice + f.replace(f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || [])[0], double)
+        });
+      }
 
       /* Acid Splash */
       if (spc.slug === 'acid-splash') {
@@ -152,7 +154,7 @@ async function Spellstrike()
             
       }
 
-
+      console.log(spc);
       await strike.attack({ event });
       const critt = game.messages.contents.reverse().find(x => x.isCheckRoll && x.actor === token.actor).data.flags.pf2e.context.outcome;
       let traits = spc.data.item.data.data.traits.value.join();
@@ -174,18 +176,21 @@ async function Spellstrike()
         if (critt === 'criticalSuccess'){ strike.critical({ event }); }
       }
       if (critt === 'success' || critt === 'criticalSuccess') {
-        if (spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.data.item.data.data.damage.value).length === 0){
+        if (spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.data.item.data.data.damage.value).length === 0 || !spc.spell.chatData.isAttack){
           const message = ChatMessage.applyRollMode({ flavor: flavor, content: spc.desc, speaker: ChatMessage.getSpeaker() });
-          return ChatMessage.create(message);
+          spc.spell.spell.data.data.level.value = spc.lvl;
+          spc.spell.spell.toMessage();
         }
-        if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { spc.formula = ddice; } 
-        if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledamage')) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }   
-        const droll = new Roll(spc.formula);
-        await droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
+        else {
+          if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { spc.formula = ddice; } 
+          if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledamage')) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }   
+          const droll = new Roll(spc.formula);
+          await droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
+        }
       }
-      /* Expend slots */
-      /* Spontaneous, Innate, and Flexible */
-      if (spc.type === 'spontaneous') {
+        /* Expend slots */
+        /* Spontaneous, Innate, and Flexible */
+        if (spc.type === 'spontaneous') {
         if ( spc.data.item.isCantrip ) { return; }
 	      let data = duplicate(s_entry.data);
         Object.entries(data.data.slots).forEach(slot => {
