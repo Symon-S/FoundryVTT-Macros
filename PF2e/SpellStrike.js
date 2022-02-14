@@ -87,8 +87,8 @@ async function Spellstrike()
 
       /* Build dialog data */
       const es_data = [
-        { label : `Choose a Spell : `, type : `select`, options : spells.map(p=> p.name) },
-        { label : `Weapons : `, type : `select`, options : map_weap },
+        { label : `Choose a Spell:`, type : `select`, options : spells.map(p=> p.name) },
+        { label : `Weapon:`, type : `select`, options : map_weap },
       ]
         	
 		  /* Run dialog and alot data */
