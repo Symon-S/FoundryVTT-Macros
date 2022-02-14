@@ -1,9 +1,11 @@
-/* 
-This is a complete rewrite of the old Eldritch Shot Macro.
-To use this, simply click on the macro, it will automatically roll the attack and the damage if applicable.
-Critical damage for double dice setting has been implemented, but double damage is yet to be implemented at some point.
-For now, the double damage button can be used instead.
+/*
+This is complete rewrite of the Eldritch Shot macro.
+To use this macro, you just have to target someone and use it.
+It will automatically roll damage based on degree of success.
+At the moment critical hits will only double dice if that setting is applied.
+I may integrate double damage again in the future, for now, just apply damage with the double button when applying.
 */
+
 
 Eldritch_shot();
 
@@ -17,7 +19,7 @@ async function Eldritch_shot()
 
     for (let token of canvas.tokens.controlled) {
       /* Check for eldritch archer dedication and warn if not present */
-      if (!token.actor.itemTypes.feat.find(e => e.slug === "eldritch-archer-dedication")) {
+      if (!token.actor.itemTypes.feat.some(e => e.slug === "eldritch-archer-dedication")) {
       return ui.notifications.warn('Does not have Eldritch Archer Dedication.');
       }
       
