@@ -177,7 +177,6 @@ async function Spellstrike()
       }
       if (critt === 'success' || critt === 'criticalSuccess') {
         if (spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.data.item.data.data.damage.value).length === 0 || !spc.spell.chatData.isAttack){
-          const message = ChatMessage.applyRollMode({ flavor: flavor, content: spc.desc, speaker: ChatMessage.getSpeaker() });
           spc.spell.spell.data.data.level.value = spc.lvl;
           spc.spell.spell.toMessage();
         }
