@@ -1,5 +1,3 @@
-// A simple 2-action heal macro that covers all of the bases, from consuming spell slots and lowering uses, to consuming scrolls and expending charges in wands. Also integrates pretty much everything that could affect heal.
-
 if (!token.actor.itemTypes.spell.some(h => h.slug === 'heal')) { return ui.notifications.error('You do not possess the heal spell') }
 
 if (token === undefined) {
@@ -108,8 +106,8 @@ token.actor.itemTypes.consumable.forEach(s => {
     	const tname = canvas.tokens.placeables.find((t) => t.id === target).name;
         let tt = false;
         let undead = false;
-        if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead' || t === 'dhampir')) { undead = true; }
-    	if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead' || t=== 'construct' || t === 'dhampir')) { tt = true }
+        if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead' || 'dhampir')) { undead = true; }
+    	if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead' || t === 'construct')) { tt = true }
 
 	let ahi,hhi,mhi;
 	if (await CheckSpell('angelic-halo') && !undead) { 
@@ -125,9 +123,51 @@ token.actor.itemTypes.consumable.forEach(s => {
 		mhi = hdd.findIndex(e => e.label === `Martyr`);
 	}
 	const hdiag = await quickDialog({data : hdd, title : `2-Action Heal`});
-
-
 	const hch = h.find(n => n.name === hdiag[0]);
+
+	const s_entry = hE.find(e => e.id === hch.entryId);
+
+	/* Expend slots */
+	/* Spontaneous, Innate, and Flexible */
+	if (!hch.prepared && !hch.wand && !hch.scroll) {
+		let data = duplicate(s_entry.data);
+        	Object.entries(data.data.slots).forEach(slot => {
+            		if (parseInt(slot[0].substr(4)) === hch.level && slot[1].value > 0) { 
+              			slot[1].value-=1;
+              			s_entry.update(data);
+            		}
+        	})
+	}
+      
+	/* Prepared */
+	if (hch.prepared) { 
+		let data = duplicate(s_entry.data);
+        	Object.entries(data.data.slots).forEach(slot => {
+            		if (slot[0] === hch.slot) {
+              			slot[1].prepared[hch.prepkey].expended = true;
+              			s_entry.update(data);
+            		}
+        	})
+
+	}
+	/* Wand */
+	if (hch.wand) {
+		const w = token.actor.itemTypes.consumable.find(id => id.id === hch.entryId);
+		const wData = duplicate(w.data);
+		wData.data.charges.value --;
+		w.update(wData);
+	}
+
+	/* Scroll */
+	if(hch.scroll){
+		const s = token.actor.itemTypes.consumable.find(id => id.id === hch.entryId);
+		if (s.data.data.quantity.value > 1) {
+			const sData = duplicate(s.data);
+			sData.data.quantity.value --;
+			s.update(sData);
+		}
+		else { await s.delete(); }
+	}
 
     	
 	/*Staff of Healing*/
@@ -197,6 +237,10 @@ token.actor.itemTypes.consumable.forEach(s => {
     	if (target === metok && (hpbeads === true || ghpbeads === true)) { var healt = healt + "+" + bbeads;}
     	const roll = new Roll(`{${healt}}[positive]`);
     	let healf = `2-Action Lv ${hlvl} Heal spell targeting ${tname}`;
+        if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'dhampir')) {
+          const message = ChatMessage.applyRollMode({flavor: `<strong>${healf}</strong>`, speaker: ChatMessage.getSpeaker(), content: `You attempt to heal ${tname} but it does not appear to work`});
+          return ChatMessage.create(message);
+        }
         if (undead) {
          const uroll = new Roll(`{${heal1}}[positive]`);
          return await uroll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong>${healf}</strong>`});
@@ -235,52 +279,6 @@ token.actor.itemTypes.consumable.forEach(s => {
           if (await CheckFeat('improved-communal-healing') && target !== metok) { c_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong>Extra healing from Improved Communal Healing to any one creature within the range of your heal spell</strong>`});}
           if (!await CheckFeat('improved-communal-healing') && target !== metok) { c_roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor:`<strong>Extra healing from Communal Healing to ${token.actor.name} </strong>`});}
 	}
-
-	
-	const s_entry = hE.find(e => e.id === hch.entryId);
-
-	/* Expend slots */
-	/* Spontaneous, Innate, and Flexible */
-	if (!hch.prepared && !hch.wand && !hch.scroll) {
-		let data = duplicate(s_entry.data);
-        	Object.entries(data.data.slots).forEach(slot => {
-            		if (parseInt(slot[0].substr(4)) === hch.level && slot[1].value > 0) { 
-              			slot[1].value-=1;
-              			s_entry.update(data);
-            		}
-        	})
-	}
-      
-	/* Prepared */
-	if (hch.prepared) { 
-		let data = duplicate(s_entry.data);
-        	Object.entries(data.data.slots).forEach(slot => {
-            		if (slot[0] === hch.slot) {
-              			slot[1].prepared[hch.prepkey].expended = true;
-              			s_entry.update(data);
-            		}
-        	})
-
-	}
-	/* Wand */
-	if (hch.wand) {
-		const w = token.actor.itemTypes.consumable.find(id => id.id === hch.entryId);
-		const wData = duplicate(w.data);
-		wData.data.charges.value --;
-		w.update(wData);
-	}
-
-	/* Scroll */
-	if(hch.scroll){
-		const s = token.actor.itemTypes.consumable.find(id => id.id === hch.entryId);
-		if (s.data.data.quantity.value > 1) {
-			const sData = duplicate(s.data);
-			sData.data.quantity.value --;
-			s.update(sData);
-		}
-		else { await s.delete(); }
-	}
-       
 }	
 
 
