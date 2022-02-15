@@ -107,21 +107,22 @@ token.actor.itemTypes.consumable.forEach(s => {
     	const target = game.user.targets.ids[0];
     	const metok = token.id;
     	const tname = canvas.tokens.placeables.find((t) => t.id === target).name;
-    	if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.find((t) => t === 'undead' || t=== 'construct')) {
-    		 var tt = true; }
-    	else { var tt = false; }
-
+        let tt = false;
+        let undead = false;
+        if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead')) { undead = true; }
+    	if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead' || t=== 'construct')) { tt = true }
+        console.log(undead)
 
 	let ahi,hhi,mhi;
-	if (await CheckSpell('angelic-halo')) { 
+	if (await CheckSpell('angelic-halo') && !undead) { 
 		hdd.push({label: 'Angelic Halo', type: 'checkbox'});
 		ahi = hdd.findIndex(e => e.label === 'Angelic Halo');
 	}
-	if (await CheckFeat('healers-halo')) { 
+	if (await CheckFeat('healers-halo') && !undead) { 
 		hdd.push({label: `Healer's Halo`, type: 'checkbox'}) ;
 		hhi = hdd.findIndex(e => e.label === `Healer's Halo`);
 	}
-        if(await CheckFeat('martyr') && target !== metok) { 
+        if(await CheckFeat('martyr') && target !== metok && !undead) { 
 		hdd.push({label: `Martyr`, type: 'checkbox'}) ;
 		mhi = hdd.findIndex(e => e.label === `Martyr`);
 	}
@@ -163,7 +164,7 @@ token.actor.itemTypes.consumable.forEach(s => {
     	const plevel = token.actor.level;
     	const healingHands = await CheckFeat('healing-hands');
     	var hdice = healingHands ? 'd10' : 'd8';
-    	if (tt === false )  {
+    	if (!tt)  {
     	var hdice = modc ? 'd12' : hdice;
     	var hdice = majc ? 'd12' : hdice;
     	}
@@ -171,7 +172,7 @@ token.actor.itemTypes.consumable.forEach(s => {
     	let heal1 = hlvl + hdice;
     	let heal2 = hlvl * 8;
     	var healt;
-    
+
     	/*Staves of Life */
     	if (tstaff === true) { var staffb = 4; var healt = heal1 + "+" + heal2 + "+" + staffb; }
     	else if (mstaff === true) { var staffb = 3; var healt = heal1 + "+" + heal2 + "+" + staffb; }
@@ -198,6 +199,10 @@ token.actor.itemTypes.consumable.forEach(s => {
     	if (target === metok && (hpbeads === true || ghpbeads === true)) { var healt = healt + "+" + bbeads;}
     	const roll = new Roll(`{${healt}}[positive]`);
     	let healf = `2-Action Lv ${hlvl} Heal spell targeting ${tname}`;
+        if (undead) {
+         const uroll = new Roll(`{${heal1}}[positive]`);
+         return await uroll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong>${healf}</strong>`});
+        }
     	await roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong>${healf}</strong>`});
 
         if(martyr) {
