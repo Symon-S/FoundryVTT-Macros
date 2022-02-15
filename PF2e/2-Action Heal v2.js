@@ -82,7 +82,6 @@ for (const token of canvas.tokens.controlled) {
 	});
 
 token.actor.itemTypes.consumable.forEach(s => {
-        console.log(s);
 	if (!s.data.data.traits.value.includes("wand") && !s.data.data.traits.value.includes("scroll")) { return; }
 	if (s.data.data.spell.data.data.slug === 'heal') { 
 		if (s.data.data.traits.value.includes("wand") && s.data.data.charges.value > 0) {
@@ -109,9 +108,8 @@ token.actor.itemTypes.consumable.forEach(s => {
     	const tname = canvas.tokens.placeables.find((t) => t.id === target).name;
         let tt = false;
         let undead = false;
-        if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead')) { undead = true; }
+        if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead' || t === 'dhampir')) { undead = true; }
     	if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead' || t=== 'construct')) { tt = true }
-        console.log(undead)
 
 	let ahi,hhi,mhi;
 	if (await CheckSpell('angelic-halo') && !undead) { 
