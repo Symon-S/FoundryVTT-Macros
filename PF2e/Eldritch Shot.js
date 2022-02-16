@@ -57,6 +57,8 @@ async function Eldritch_shot()
         return a.lvl - b.lvl;
       });
 
+      if(spells.length === 0) { return ui.notifications.info("You have no spells available"); }
+
 		  /* Get them bows baby */
       const weapons = token.actor.itemTypes.weapon.filter(i => i.isEquipped && i.data.data.group === 'bow');
       const map_weap = weapons.map(p => p.data.name);
@@ -156,7 +158,13 @@ async function Eldritch_shot()
         flavor = flavor + `<br><a class="inline-roll roll persistent-link" title="{${pers}}[persistent,fire]" data-mode="roll" data-flavor="" data-formula="{${pers}}[persistent,fire]" draggable="true" data-value="${pers}" data-damage-type="fire" ondragstart="PF2EPersistentDamage._startDrag(event)">Persistent Damage [Fire ${pers}]</a>`
       }
 
-      if (game.modules.has('xdy-pf2e-workbench') && game.modules.get('xdy-pf2e-workbench').active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
+      if (game.modules.has('xdy-pf2e-workbench')) {
+       if (game.modules.get('xdy-pf2e-workbench').active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
+        if (critt === 'success') { strike.damage({ event }); }
+        if (critt === 'criticalSuccess'){ strike.critical({ event }); }
+       }
+      }
+      if(!game.modules.has('xdy-pf2e-workbench')) { 
         if (critt === 'success') { strike.damage({ event }); }
         if (critt === 'criticalSuccess'){ strike.critical({ event }); }
       }
