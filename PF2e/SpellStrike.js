@@ -64,6 +64,8 @@ async function Spellstrike()
         return a.lvl - b.lvl;
       });
 
+      if(spells.length === 0) { return ui.notifications.info("You have no spells available"); }
+
   /* Get them weapons baby */
   let weapons = [];
   if (token.actor.itemTypes.feat.some(f => f.slug === 'starlit-span')) { weapons = actor.data.data.actions.filter(i => i.type === "strike"); }
@@ -179,7 +181,13 @@ async function Spellstrike()
       }
 
 
-      if (game.modules.has('xdy-pf2e-workbench') && game.modules.get('xdy-pf2e-workbench').active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
+      if (game.modules.has('xdy-pf2e-workbench')) {
+       if (game.modules.get('xdy-pf2e-workbench').active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
+        if (critt === 'success') { strike.damage({ event }); }
+        if (critt === 'criticalSuccess'){ strike.critical({ event }); }
+       }
+      }
+      if(!game.modules.has('xdy-pf2e-workbench')) { 
         if (critt === 'success') { strike.damage({ event }); }
         if (critt === 'criticalSuccess'){ strike.critical({ event }); }
       }
