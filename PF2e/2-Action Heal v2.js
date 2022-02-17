@@ -106,7 +106,7 @@ token.actor.itemTypes.consumable.forEach(s => {
     	const tname = canvas.tokens.placeables.find((t) => t.id === target).name;
         let tt = false;
         let undead = false;
-        if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead' || 'dhampir')) { undead = true; }
+        if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead' || t === 'dhampir')) { undead = true; }
     	if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead' || t === 'construct')) { tt = true }
 
 	let ahi,hhi,mhi;
