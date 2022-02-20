@@ -126,32 +126,38 @@ async function Spellstrike()
       }
 
       /* Acid Splash */
+      let splash = 0;
       if (spc.slug === 'acid-splash') {
         const dtype = 'acid';
         if (actor.level < 5) {
           pers = 1;
-          spc.formula = `{1d6}[acid] + {1}[splash,acid]`;
-          ddice = `{2d6}[acid] + {1}[splash,acid]`;
+          spc.formula = `{1d6}[acid]`;
+          ddice = `{2d6}[acid]`;
+          splash = '{1}[acid]'
         }
         else if (actor.level >= 5 && actor.level < 9) {
           pers = 2;
-          spc.formula = `{1d6${s_mod}}[acid] + {1}[splash,acid]`;
-          ddice = `{2d6${c_mod}}[acid] + {1}[splash,acid]`;
+          spc.formula = `{1d6${s_mod}}[acid]`;
+          ddice = `{2d6${c_mod}}[acid]`;
+          splash = '{1}[acid]'
         }
         else if (actor.level >= 9 && actor.level < 13) {
           pers = 3;
-          spc.formula = `{2d6${s_mod}}[acid] + {2}[splash,acid]`;
-          ddice = `{4d6${c_mod}}[acid] + {2}[splash,acid]`;
+          spc.formula = `{2d6${s_mod}}[acid]`;
+          ddice = `{4d6${c_mod}}[acid]`;
+          splash = '{2}[acid]'
         }
         else if (actor.level >= 13 && actor.level < 18) {
           pers = 4;
-          spc.formula = `{3d6${s_mod}}[acid] + {3}[splash,acid]`;
-          ddice = `{6d6${c_mod}}[acid] + {3}[splash,acid]`;
+          spc.formula = `{3d6${s_mod}}[acid]`;
+          ddice = `{6d6${c_mod}}[acid]`;
+          splash = '{3}[acid]'
         }
         else { 
           pers = 5;
-          spc.formula = `{4d6${s_mod}}[acid] + {4}[splash,acid]`;
-          ddice = `{8d6${c_mod}}[acid] + {4}[splash,acid]`;
+          spc.formula = `{4d6${s_mod}}[acid]`;
+          ddice = `{8d6${c_mod}}[acid]`;
+          splash = `{4}[acid]`
         }
             
       }
@@ -183,13 +189,13 @@ async function Spellstrike()
 
       if (game.modules.has('xdy-pf2e-workbench')) {
        if (game.modules.get('xdy-pf2e-workbench').active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
-        if (critt === 'success') { await strike.damage({ event }); }
-        if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
+        if (critt === 'success') { strike.damage({ event }); }
+        if (critt === 'criticalSuccess'){ strike.critical({ event }); }
        }
       }
       if(!game.modules.has('xdy-pf2e-workbench')) { 
-        if (critt === 'success') { await strike.damage({ event }); }
-        if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
+        if (critt === 'success') { strike.damage({ event }); }
+        if (critt === 'criticalSuccess'){ strike.critical({ event }); }
       }
       if (critt === 'success' || critt === 'criticalSuccess') {
         if (spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.data.item.data.data.damage.value).length === 0 || !spc.spell.chatData.isAttack){
@@ -201,6 +207,10 @@ async function Spellstrike()
           if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledamage')) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }   
           const droll = new Roll(spc.formula);
           await droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
+          if ( spc.slug === 'acid-splash' ) {
+            const sroll = new Roll(splash);
+            await sroll.toMessage({flavor: `<strong>${spc.data.item.name} Splash Damage</strong><div class="tags">${ttags}</div><hr>`, speaker: ChatMessage.getSpeaker() });
+          }
         }
       }
         /* Expend slots */
