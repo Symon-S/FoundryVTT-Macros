@@ -166,13 +166,13 @@ async function Eldritch_shot()
 
       if (game.modules.has('xdy-pf2e-workbench')) {
        if (game.modules.get('xdy-pf2e-workbench').active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
-        if (critt === 'success') { strike.damage({ event }); }
-        if (critt === 'criticalSuccess'){ strike.critical({ event }); }
+        if (critt === 'success') { await strike.damage({ event }); }
+        if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
        }
       }
       if(!game.modules.has('xdy-pf2e-workbench')) { 
-        if (critt === 'success') { strike.damage({ event }); }
-        if (critt === 'criticalSuccess'){ strike.critical({ event }); }
+        if (critt === 'success') { await strike.damage({ event }); }
+        if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
       }
       if (critt === 'success' || critt === 'criticalSuccess') {
         if (spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.data.item.data.data.damage.value).length === 0 || !spc.spell.chatData.isAttack){
