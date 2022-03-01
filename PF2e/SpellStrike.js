@@ -227,7 +227,7 @@ async function Spellstrike()
       }
 
       /* Focus */
-      if (s_entry.isFocusPool && !spc.data.item.isCantripe && actor.data.data.resources.focus.value > 0) {
+      if (s_entry.isFocusPool && !spc.data.item.isCantrip && actor.data.data.resources.focus.value > 0) {
         const currentpoints = actor.data.data.resources.focus.value-1;
         actor.update({"data.resources.focus.value":currentpoints});
       }
