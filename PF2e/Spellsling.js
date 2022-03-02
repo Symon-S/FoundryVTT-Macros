@@ -11,7 +11,8 @@ Spellsling();
 async function Spellsling()
 {
 	/* Throw warning if token is not selected*/
-	if (token === undefined) { return ui.notifications.warn('No token is selected.'); }
+    if (canvas.tokens.controlled.length < 1) { return ui.notifications.warn('No token is selected.'); }
+    if (canvas.tokens.controlled.length > 1) { return ui.notifications.warn('Only 1 token should be selected'); }
     if (game.user.targets.size < 1) { return ui.notifications.warn('Please target a token'); }
     if (game.user.targets.size > 1) { return ui.notifications.warn('Spellsling can only affect 1 target'); }
 
