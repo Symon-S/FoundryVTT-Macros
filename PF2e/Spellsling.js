@@ -175,7 +175,8 @@ async function Spellsling()
       }
       if (critt === 'success' || critt === 'criticalSuccess') {
         if (spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.data.item.data.data.damage.value).length === 0 || !spc.spell.chatData.isAttack){
-          spc.spell.spell.data.data.level.value = spc.lvl;
+          if (spc.spell.spell.data.data.heightenedLevel === undefined) { spc.spell.spell.data.data.heightenedLevel = {value: spc.lvl}; }
+          else {spc.spell.spell.data.data.heightenedLevel.value = spc.lvl;}
           spc.spell.spell.toMessage();
         }
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { spc.formula = ddice; } 
