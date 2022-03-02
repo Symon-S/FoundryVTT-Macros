@@ -35,6 +35,7 @@ async function Eldritch_shot()
 					  if(spa === null) { return; }
 					  if(!spa.chatData.isAttack) { return; }
             if(spa.expended) { return; }
+            if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.data.data.resources.focus.value === 0){ return; }
             let level = `lv${sp.level}`
             const name = spa.spell.name;
             const spRD = spa.spell.getRollData({spellLvl: sp.level});
