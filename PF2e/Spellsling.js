@@ -150,8 +150,8 @@ async function Spellsling()
       let dos;
       if (critt === 'success') { dos = 'Success' }
       if (critt === 'criticalSuccess') { dos = 'Critical Success' }
-      if (spc.data.item.data.data.damage.value !== '' || spc.data.item.data.data.damage.value !== undefined || Object.entries(spc.data.item.data.data.damage.value).length !== 0){ traits = traits + `,damaging-effect`; }
-      let flavor = `<strong>Spellsling</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${spc.cId}"><strong>${spc.data.item.name}</strong></a> (${dos})<div class="tags">${ttags}</div><hr>`;
+if (spc.data.item.data.data.damage.value !== '' || spc.data.item.data.data.damage.value !== undefined || Object.entries(spc.spell.chatData.damage.value).length > 0){ traits = traits + `,damaging-effect`; }      
+let flavor = `<strong>Spellsling</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${spc.cId}"><strong>${spc.data.item.name} cast at Lv${spc.lvl}</strong></a> (${dos})<div class="tags">${ttags}</div><hr>`;
       if (spc.slug === 'acid-splash') { flavor = `<strong>Spellsling</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${spc.cId}"><strong>${spc.data.item.name}</strong></a> (${dos})<div class="tags">${ttags}</div>` }
       if (spc.isSave) {
         flavor = flavor + `<span data-pf2-check='${spc.data.item.data.data.save.value}' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>${spc.data.item.data.data.save.basic} ${spc.data.item.data.data.save.value} save</span>`;
@@ -176,15 +176,18 @@ async function Spellsling()
         if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
       }
       if (critt === 'success' || critt === 'criticalSuccess') {
-        if (spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.data.item.data.data.damage.value).length === 0 || !spc.spell.chatData.isAttack){
+        if (spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.spell.chatData.damage.value).length === 0 || !spc.spell.chatData.isAttack){
           if (spc.spell.spell.data.data.heightenedLevel === undefined) { spc.spell.spell.data.data.heightenedLevel = {value: spc.lvl}; }
           else {spc.spell.spell.data.data.heightenedLevel.value = spc.lvl;}
-          spc.spell.spell.toMessage();
+          await spc.spell.spell.toMessage();
         }
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { spc.formula = ddice; } 
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledamage')) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }   
-        const droll = new Roll(spc.formula);
-        await droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
+        if ( Object.entries(spc.spell.chatData.damage.value).length > 0 ){
+          const droll = new Roll(spc.formula);
+          await droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
+        }
+
         if ( spc.slug === 'acid-splash' ) {
          const sroll = new Roll(splash);
          await sroll.toMessage({flavor: `<strong>${spc.data.item.name} Splash Damage</strong><div class="tags">${ttags}</div><hr>`, speaker: ChatMessage.getSpeaker() });
