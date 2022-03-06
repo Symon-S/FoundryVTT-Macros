@@ -87,6 +87,10 @@ async function Spellsling()
         const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["bludgeoning","piercing","slashing"]}, title: `Choose a damage type`});
         spc.formula = spc.formula.replace("untyped",type);
       }
+      if (spc.slug === 'gouging-claw') {
+        const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["piercing","slashing"]}, title: `Choose a damage type`});
+        spc.formula = spc.formula.replace("untyped",type);
+      }
       if (spc.slug === 'magnetic-acceleration' && token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery')) {
         const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["bludgeoning","piercing"]}, title: `Choose a damage type`});
         spc.formula = spc.formula + `[${type}]`;
@@ -165,6 +169,10 @@ let flavor = `<strong>Spellsling</strong><br><a class="entity-link content-link"
       if(spc.slug === 'produce-flame' && critt === 'criticalSuccess') {
         pers = Math.ceil(actor.level / 2) + "d4";
         flavor = flavor + `<br><a class="inline-roll roll persistent-link" title="{${pers}}[persistent,fire]" data-mode="roll" data-flavor="" data-formula="{${pers}}[persistent,fire]" draggable="true" data-value="${pers}" data-damage-type="fire" ondragstart="PF2EPersistentDamage._startDrag(event)">Persistent Damage [Fire ${pers}]</a>`
+      }
+      if(spc.slug === 'gouging-claw' && critt === 'criticalSuccess') {
+        pers = Math.ceil(actor.level / 2) + "d4";
+        flavor = flavor + `<br><a class="inline-roll roll persistent-link" title="{${pers}}[persistent,bleed]" data-mode="roll" data-flavor="" data-formula="{${pers}}[persistent,bleed]" draggable="true" data-value="${pers}" data-damage-type="bleed" ondragstart="PF2EPersistentDamage._startDrag(event)">Persistent Damage [Bleed ${pers}]</a>`
       }
 
       if (game.modules.has('xdy-pf2e-workbench')) {
