@@ -1,5 +1,14 @@
-//contributed by Mother of God, modded originally from a script by Drental
-// Maintained by the Macro Fairies
+/*
+Contributed by Mother of God
+Maintained and mofdified by The Macro Fairies
+This Macro works just like the system's Treat Wounds macro, except for the following additions:
+- Adds the ability to roll with assurance
+- Adds godless healing integration
+- Adds Battle Medicine integration
+- Removes any skill that is not applicable if you have Chirurgeon and/or Natural Medicine (if you don't have medicine trained)
+- Fires off a warning notification if Medicine is not trained and you do not possess a feat/feature that allows you to roll a different skill.
+*/
+
 function CheckFeat(slug) {
 	if (token.actor.items.find((i) => i.data.data.slug === slug && i.type === "feat")) {
 			return true;
@@ -7,8 +16,9 @@ function CheckFeat(slug) {
 	return false;
 }
 
+
 let bmtw = "Treat Wounds";
-const rollTreatWounds = async ({ DC, bonus, med, riskysurgery, mortalhealing, healType, battleMed}) => {
+const rollTreatWounds = async ({ DC, bonus, med, riskysurgery, mortalhealing, healType, battleMed, assurance}) => {
 	const options = token.actor.getRollOptions(["all", "skill-check", "medicine"]);
 	options.push("treat wounds");
 	options.push("action:treat-wounds");
@@ -24,51 +34,109 @@ const rollTreatWounds = async ({ DC, bonus, med, riskysurgery, mortalhealing, he
 	if (riskysurgery) {
 			options.push("risky-surgery");
 	}
-	med.roll({
-			dc: dc,
-			event: event,
-			options: options,
-			callback: async (roll) => {
-					let healFormula, successLabel;
-					const magicHands = CheckFeat("magic-hands");
-					const bonusString = bonus > 0 ? `+ ${bonus}` : "";
-					if (roll.data.degreeOfSuccess === 2 && mortalhealing && !battleMed) {
-							healFormula = `4d8${bonusString}`;
-							successLabel = "Mortal Healing Success";
-					} else if (roll.data.degreeOfSuccess === 3) {
-							healFormula = magicHands ? `32${bonusString}` : `4d8${bonusString}`;
-							successLabel = "Critical Success";
-					} else if (roll.data.degreeOfSuccess === 2) {
-							healFormula = magicHands ? `16${bonusString}` : `2d8${bonusString}`;
-							successLabel = "Success";
-					} else if (roll.data.degreeOfSuccess === 1) {
-							successLabel = "Failure";
-					} else if (roll.data.degreeOfSuccess === 0) {
-							healFormula = "1d8";
-							successLabel = "Critical Failure";
-					}
-					if (riskysurgery) {
-              ChatMessage.create({
-                    user: game.user.id,
-                    type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-                    flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
-                    roll: await new Roll("{1d8}[slashing]").roll({ async: true }),
-                    speaker: ChatMessage.getSpeaker(),
-              });
-					}
-					if (healFormula !== undefined) {
-                const healRoll = await new Roll(`{${healFormula}}[healing]`).roll({ async: true });
-                const rollType = roll.data.degreeOfSuccess > 1 ? "Healing" : "Damage";
-                ChatMessage.create({
-                    user: game.user.id,
-                    type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-                    flavor: `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`,
-                    roll: healRoll,
-                    speaker: ChatMessage.getSpeaker(),
-                });
-					}
-			},
-	});
+
+	const magicHands = CheckFeat("magic-hands");
+	const bonusString = bonus > 0 ? `+ ${bonus}` : "";
+	let healFormula, successLabel;
+
+
+	if (assurance) {
+		const aroll = await new Roll(`${med.totalModifier} + 10`).roll({ async: true });
+		console.log(med);
+    ChatMessage.create({
+      user: game.user.id,
+      type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+      flavor: `<strong>Assurance ${med.name[0].toUpperCase() + med.name.substring(1)}</strong>`,
+      roll: aroll,
+      speaker: ChatMessage.getSpeaker(),
+    });
+
+		const atot = aroll.total - DC;
+		if (atot >= 0 && atot < 10 && mortalhealing && !battleMed) {
+			healFormula = `4d8${bonusString}`;
+			successLabel = "Mortal Healing Success";
+		} 
+		else if (atot >= 10) {
+			healFormula = magicHands ? `32${bonusString}` : `4d8${bonusString}`;
+			successLabel = "Critical Success";
+		} 
+		else if (atot >= 0 && atot < 10) {
+			healFormula = magicHands ? `16${bonusString}` : `2d8${bonusString}`;
+			successLabel = "Success";
+		} 
+		else if (atot > -10 && (a.roll.total -DC) < 0) {
+			successLabel = "Failure";
+		} else if (atot <= -10) {
+			healFormula = "1d8";
+			successLabel = "Critical Failure";
+		}
+
+		if (riskysurgery) {
+      ChatMessage.create({
+        user: game.user.id,
+        type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+        flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
+        roll: aroll,
+        speaker: ChatMessage.getSpeaker(),
+      });
+		}
+		if (healFormula !== undefined) {
+      const healRoll = await new Roll(`{${healFormula}}[healing]`).roll({ async: true });
+      const rollType = atot > 0 ? "Healing" : "Damage";
+      ChatMessage.create({
+      	user: game.user.id,
+      	type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+      	flavor: `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`,
+        roll: healRoll,
+        speaker: ChatMessage.getSpeaker(),
+      });
+		}
+	}
+
+	else{
+		med.roll({
+				dc: dc,
+				event: event,
+				options: options,
+				callback: async (roll) => {
+						if (roll.data.degreeOfSuccess === 2 && mortalhealing && !battleMed) {
+								healFormula = `4d8${bonusString}`;
+								successLabel = "Mortal Healing Success";
+						} else if (roll.data.degreeOfSuccess === 3) {
+								healFormula = magicHands ? `32${bonusString}` : `4d8${bonusString}`;
+								successLabel = "Critical Success";
+						} else if (roll.data.degreeOfSuccess === 2) {
+								healFormula = magicHands ? `16${bonusString}` : `2d8${bonusString}`;
+								successLabel = "Success";
+						} else if (roll.data.degreeOfSuccess === 1) {
+								successLabel = "Failure";
+						} else if (roll.data.degreeOfSuccess === 0) {
+								healFormula = "1d8";
+								successLabel = "Critical Failure";
+						}
+						if (riskysurgery) {
+								ChatMessage.create({
+											user: game.user.id,
+											type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+											flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
+											roll: await new Roll("{1d8}[slashing]").roll({ async: true }),
+											speaker: ChatMessage.getSpeaker(),
+								});
+						}
+						if (healFormula !== undefined) {
+									const healRoll = await new Roll(`{${healFormula}}[healing]`).roll({ async: true });
+									const rollType = roll.data.degreeOfSuccess > 1 ? "Healing" : "Damage";
+									ChatMessage.create({
+											user: game.user.id,
+											type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+											flavor: `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`,
+											roll: healRoll,
+											speaker: ChatMessage.getSpeaker(),
+									});
+						}
+				},
+		});
+	}
 };
 
 async function applyChanges($html) {
@@ -81,6 +149,7 @@ async function applyChanges($html) {
 			const { name } = token;
 			const level = token.actor.data.data.details.level.value;
 			const mod = parseInt($html.find('[name="modifier"]').val()) || 0;
+			const assurance = $html.find('[name="assurance_bool"]')[0]?.checked;
 			const requestedProf = parseInt($html.find('[name="dc-type"]')[0].value) || 1;
 			const battleMed = $html.find('[name="battleMed"]')[0].checked;
 			const riskysurgery = $html.find('[name="risky_surgery_bool"]')[0]?.checked;
@@ -117,21 +186,22 @@ async function applyChanges($html) {
 			}
 			const medicBonus = CheckFeat("medic-dedication") ? (usedProf - 1) * 5 : 0;
 			const battleBonus = CheckFeat("forensic-medicine-methodology") ? level : 0;
+			const godlessBonus = CheckFeat("godless-healing") ? 5 : 0; 
 			let healType 
 			
 			if (battleMed) {
 					healType = "Battle Medicine";
-                                        bmtw = "Battle Medicine";
+          bmtw = "Battle Medicine";
 			} else {
 					healType = "Treat Wounds";
 					battleBonus == 0;
 			}
 			const roll = [
 					() => ui.notifications.warn(`${name} is not trained in Medicine and doesn't know how to ${healType}.`),
-					() => rollTreatWounds({ DC: 15 + mod, bonus: 0 + medicBonus + battleBonus, med, riskysurgery, mortalhealing, healType, battleMed}),
-					() => rollTreatWounds({ DC: 20 + mod, bonus: 10 + medicBonus + battleBonus, med, riskysurgery, mortalhealing, healType, battleMed}),
-					() => rollTreatWounds({ DC: 30 + mod, bonus: 30 + medicBonus + battleBonus, med, riskysurgery, mortalhealing, healType, battleMed}),
-					() => rollTreatWounds({ DC: 40 + mod, bonus: 50 + medicBonus + battleBonus, med, riskysurgery, mortalhealing, healType, battleMed}),
+					() => rollTreatWounds({ DC: 15 + mod, bonus: 0 + medicBonus + battleBonus + godlessBonus, med, riskysurgery, mortalhealing, healType, battleMed, assurance}),
+					() => rollTreatWounds({ DC: 20 + mod, bonus: 10 + medicBonus + battleBonus + godlessBonus, med, riskysurgery, mortalhealing, healType, battleMed, assurance}),
+					() => rollTreatWounds({ DC: 30 + mod, bonus: 30 + medicBonus + battleBonus + godlessBonus, med, riskysurgery, mortalhealing, healType, battleMed, assurance}),
+					() => rollTreatWounds({ DC: 40 + mod, bonus: 50 + medicBonus + battleBonus + godlessBonus, med, riskysurgery, mortalhealing, healType, battleMed, assurance}),
 			][usedProf];
 
 			roll();
@@ -143,6 +213,9 @@ if (token === undefined) {
 } else {
 	const chirurgeon = CheckFeat("chirurgeon");
 	const naturalMedicine = CheckFeat("natural-medicine");
+	let tmed = false;
+	if (token.actor.data.data.skills["med"].rank > 0) { tmed = true }
+	if (!tmed && !chirurgeon && !naturalMedicine) { return ui.notifications.warn("Medicine is not trained and you do not possess a feat or feature to use another skill"); }
 	const dialog = new Dialog({
 			title: "Treat Wounds",
 			content: `
@@ -155,7 +228,7 @@ ${
 <div class="form-group">
 <label>Treat Wounds Skill:</label>
 <select id="skill" name="skill">
-<option value="med">Medicine</option>
+${tmed ? `<option value="med">Medicine</option>` : `` }
 ${chirurgeon ? `<option value="cra">Crafting</option>` : ``}
 ${naturalMedicine ? `<option value="nat">Nature</option>` : ``}
 </select>
@@ -187,6 +260,14 @@ ${naturalMedicine ? `<option value="nat">Nature</option>` : ``}
 <input id="battleMed" name="battleMed" type="checkbox" value="battleMed"/>
 </div>
 </form>
+${
+  (chirurgeon && (token.actor.itemTypes.feat.some(a => a.slug === "assurance" && a.name === "Assurance (Crafting)") || token.actor.itemTypes.feat.some(a => a.slug === "assurance-crafting"))) || (naturalMedicine && (token.actor.itemTypes.feat.some(a => a.slug === "assurance" && a.name === "Assurance (Nature)") || token.actor.itemTypes.feat.some(a => a.slug === "assurance-nature"))) || (token.actor.itemTypes.feat.some(a => a.slug === "assurance" && a.name === "Assurance (Medicine)") || token.actor.itemTypes.feat.some(a => a.slug === "assurance-medicine"))
+			? `<form><div class="form-group">
+<label>Assurance</label>
+<input type="checkbox" id="assurance" name="assurance_bool"></input>
+</div></form>`
+			: ``
+}
 ${
 	CheckFeat("risky-surgery")
 			? `<form><div class="form-group">
