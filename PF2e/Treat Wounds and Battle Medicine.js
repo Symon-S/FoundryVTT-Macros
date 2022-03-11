@@ -1,5 +1,15 @@
-//contributed by Mother of God
-// Maintained by The Macro Fairies
+/*
+Contributed by Mother of God
+Maintained and mofdified by The Macro Fairies
+This Macro works just like the system's Treat Wounds macro, except for the following additions:
+- Adds the ability to roll with assurance
+- Adds godless healing integration
+- Adds Battle Medicine integration
+- Removes any skill that is not applicable if you have Chirurgeon and/or Natural Medicine (if you don't have medicine trained)
+- Fires off a warning notification if Medicine is not trained and you do not possess a feat/feature that allows you to roll a different skill.
+- Adds the ability to use the macro with clever improviser.
+*/
+
 function CheckFeat(slug) {
 	if (token.actor.items.find((i) => i.data.data.slug === slug && i.type === "feat")) {
 			return true;
