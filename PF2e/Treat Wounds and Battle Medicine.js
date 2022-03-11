@@ -43,7 +43,6 @@ const rollTreatWounds = async ({ DC, bonus, med, riskysurgery, mortalhealing, he
 
 	if (assurance) {
 		const aroll = await new Roll(`${med.modifiers.find(m => m.type === "proficiency").modifier} + 10`).roll({ async: true });
-		console.log(med);
     ChatMessage.create({
       user: game.user.id,
       type: CONST.CHAT_MESSAGE_TYPES.ROLL,
@@ -77,7 +76,7 @@ const rollTreatWounds = async ({ DC, bonus, med, riskysurgery, mortalhealing, he
         user: game.user.id,
         type: CONST.CHAT_MESSAGE_TYPES.ROLL,
         flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
-        roll: aroll,
+        roll: await new Roll("{1d8}[slashing]").roll({ async: true }),
         speaker: ChatMessage.getSpeaker(),
       });
 		}
