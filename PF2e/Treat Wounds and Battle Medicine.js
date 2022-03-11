@@ -146,6 +146,7 @@ async function applyChanges($html) {
 			const riskysurgery = $html.find('[name="risky_surgery_bool"]')[0]?.checked;
 			const mortalhealing = $html.find('[name="mortal_healing_bool"]')[0]?.checked;
 			const skill = $html.find('[name="skill"]')[0]?.value;
+      const godless = $html.find('[id="godless"]')[0]?.checked;
 			// Handle Rule Interpretation
 			if (game.user.isGM) {
 					await game.settings.set(
@@ -163,7 +164,9 @@ async function applyChanges($html) {
 							med = token.actor.data.data.skills["nat"];
 					}
 					usedProf = requestedProf <= med.rank ? requestedProf : med.rank;
-			} else {
+			} 
+
+			else {
 					usedProf = requestedProf <= med.rank ? requestedProf : med.rank;
 					if (skill === "cra") {
 							med = token.actor.data.data.skills["cra"];
@@ -175,9 +178,10 @@ async function applyChanges($html) {
 							}
 					}
 			}
+			if (token.actor.itemTypes.feat.some(f => f.slug === "clever-improviser") && usedProf === 0) { usedProf = 1;}
 			const medicBonus = CheckFeat("medic-dedication") ? (usedProf - 1) * 5 : 0;
 			const battleBonus = CheckFeat("forensic-medicine-methodology") ? level : 0;
-			const godlessBonus = CheckFeat("godless-healing") ? 5 : 0; 
+			const godlessBonus = godless ? 5 : 0; 
 			let healType 
 			
 			if (battleMed) {
@@ -206,7 +210,7 @@ if (token === undefined) {
 	const naturalMedicine = CheckFeat("natural-medicine");
 	let tmed = false;
 	if (token.actor.data.data.skills["med"].rank > 0) { tmed = true }
-	if (!tmed && !chirurgeon && !naturalMedicine) { return ui.notifications.warn("Medicine is not trained and you do not possess a feat or feature to use another skill"); }
+	if (!tmed && !chirurgeon && !naturalMedicine && !token.actor.itemTypes.feat.some(f => f.slug === "clever-improviser")) { return ui.notifications.warn("Medicine is not trained and you do not possess a feat or feature to use another skill"); }
 	const dialog = new Dialog({
 			title: "Treat Wounds",
 			content: `
@@ -259,6 +263,10 @@ ${
 </div></form>`
 			: ``
 }
+<form><div class="form-group">
+<label>Godless Healing</label>
+<input type="checkbox" id="godless" name="godless"></input>
+</div></form>
 ${
 	CheckFeat("risky-surgery")
 			? `<form><div class="form-group">
