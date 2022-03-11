@@ -71,6 +71,11 @@ const rollTreatWounds = async ({ DC, bonus, med, riskysurgery, mortalhealing, he
 			successLabel = "Critical Failure";
 		}
 
+		if ( atot >= 0 && ( riskysurgery || mortalhealing)) {
+				healFormula = magicHands ? `32${bonusString}` : `4d8${bonusString}`;
+				successLabel = "Critical Success";
+		}  
+
 		if (riskysurgery) {
       ChatMessage.create({
         user: game.user.id,
