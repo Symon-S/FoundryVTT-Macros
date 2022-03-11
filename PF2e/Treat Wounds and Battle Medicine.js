@@ -1,14 +1,5 @@
-/*
-Contributed by Mother of God
-Maintained and mofdified by The Macro Fairies
-This Macro works just like the system's Treat Wounds macro, except for the following additions:
-- Adds the ability to roll with assurance
-- Adds godless healing integration
-- Adds Battle Medicine integration
-- Removes any skill that is not applicable if you have Chirurgeon and/or Natural Medicine (if you don't have medicine trained)
-- Fires off a warning notification if Medicine is not trained and you do not possess a feat/feature that allows you to roll a different skill.
-*/
-
+//contributed by Mother of God
+// Maintained by The Macro Fairies
 function CheckFeat(slug) {
 	if (token.actor.items.find((i) => i.data.data.slug === slug && i.type === "feat")) {
 			return true;
@@ -41,7 +32,8 @@ const rollTreatWounds = async ({ DC, bonus, med, riskysurgery, mortalhealing, he
 
 
 	if (assurance) {
-	const aroll = await new Roll(`${med.totalModifier} + 10`).roll({ async: true });
+		const aroll = await new Roll(`${med.modifiers.find(m => m.type === "proficiency").modifier} + 10`).roll({ async: true });
+		console.log(med);
     ChatMessage.create({
       user: game.user.id,
       type: CONST.CHAT_MESSAGE_TYPES.ROLL,
