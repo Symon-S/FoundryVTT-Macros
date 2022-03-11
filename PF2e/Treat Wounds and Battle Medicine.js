@@ -41,8 +41,7 @@ const rollTreatWounds = async ({ DC, bonus, med, riskysurgery, mortalhealing, he
 
 
 	if (assurance) {
-		const aroll = await new Roll(`${med.totalModifier} + 10`).roll({ async: true });
-		console.log(med);
+	const aroll = await new Roll(`${med.totalModifier} + 10`).roll({ async: true });
     ChatMessage.create({
       user: game.user.id,
       type: CONST.CHAT_MESSAGE_TYPES.ROLL,
