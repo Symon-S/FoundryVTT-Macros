@@ -203,7 +203,7 @@ async function applyChanges($html) {
           bmtw = "Battle Medicine";
 			} else {
 					healType = "Treat Wounds";
-					battleBonus === 0;
+					battleBonus = 0;
 			}
 			const roll = [
 					() => ui.notifications.warn(`${name} is not trained in Medicine and doesn't know how to ${healType}.`),
