@@ -105,18 +105,18 @@ const script = async function Spells(id){
 				buttons[index] = {label: value.name, value: value.spell.spell ,callback: async () => {  await Cast(); await Consume(); }}
 			});
 			await Diag({title: "Pick a Spell to Cast", buttons});
-			spells.forEach(s => {
-        const elements = document.getElementsByClassName("dialog-button");
+			spells.forEach( async s => {
+        const elements = await document.getElementsByClassName("dialog-button");
         let element;
 				for (var i = 0; i < elements.length; i++) {
           if (elements[i].innerText === s.name) {
             element = elements[i];
+						await $(element).bind("contextmenu", function () { 
+        		s.spell.spell.sheet.render(true);
+						});
           }
       	}
-        $(element).bind("contextmenu", function () { 
-        	s.spell.spell.sheet.render(true);
-				});
-			})
+			});
 		};
 	}
 	async function Diag({title,buttons,content} = {}) {
