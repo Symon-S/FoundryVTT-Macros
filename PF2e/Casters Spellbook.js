@@ -107,10 +107,21 @@ const script = async function Spells(id){
 			await Diag({title: "Pick a Spell to Cast", buttons});
 			spells.forEach( async s => {
         const elements = await document.getElementsByClassName("dialog-button");
+        let myElem1 = [...document.getElementsByClassName("app window-app dialog")].pop();
+        myElem1.style.display = "flex";
+        myElem1.style.flexWrap = "wrap";
+        myElem1.style.height = "auto";
+        myElem1.style.width = "auto";
+        myElem1.style.gap = "5px 5px"
+        let myElem2 = [...document.getElementsByClassName("dialog-buttons")].pop();
+        myElem2.style.display = "flex";
+        myElem2.style.flexFlow = "column wrap";
         let element;
 				for (var i = 0; i < elements.length; i++) {
           if (elements[i].innerText === s.name) {
             element = elements[i];
+
+						element.style.lineHeight = "normal";
 						await $(element).bind("contextmenu", function () { 
         		s.spell.spell.sheet.render(true);
 						});
@@ -125,7 +136,7 @@ const script = async function Spells(id){
 				title,
 				buttons,
 			}).render(true);
-      setTimeout(resolve,1);
+      setTimeout(resolve,10);
 		});
 	}
  }
@@ -148,15 +159,19 @@ token.actor.itemTypes.spellcastingEntry.forEach((value,index) => {
   if (test.isFocusPool && !test.levels.some(x => x.isCantrip) && token.actor.data.data.resources.focus.value === 0){ return; }
   content = content + `<button name="button${index}" class="psya-buttons ${index}" type="button" value="${value.name}" onclick="Spells('${value.id}')">${value.name}</button>`
 });  
+
 await new Promise(async (resolve) => {
+    setTimeout(resolve,200);
  await new Dialog({
     title:"Caster's Spellbook",
     content,
     buttons:{ Close: { label: "Close" } },
     }).render(true);
-    setTimeout(resolve,1);
 });
 
-document.getElementsByClassName("app window-app dialog")[document.getElementsByClassName("app window-app dialog").length - 1].style.width = "200px";
-document.getElementsByClassName("app window-app dialog")[document.getElementsByClassName("app window-app dialog").length - 1].style.resize = "both";
-document.getElementsByClassName("app window-app dialog")[document.getElementsByClassName("app window-app dialog").length - 1].style.overflow = "auto";
+
+let myElem = [...document.getElementsByClassName("app window-app dialog")].pop();
+if (myElem.style === undefined) { myElem = [...document.getElementsByClassName("app window-app dialog")].pop(); }
+myElem.style.width = "200px";
+myElem.style.resize = "both";
+myElem.style.overflow = "auto";
