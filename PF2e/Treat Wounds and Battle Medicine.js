@@ -194,7 +194,7 @@ async function applyChanges($html) {
 			}
 			if (token.actor.itemTypes.feat.some(f => f.slug === "clever-improviser") && usedProf === 0) { usedProf = 1;}
 			const medicBonus = CheckFeat("medic-dedication") ? (usedProf - 1) * 5 : 0;
-			const battleBonus = CheckFeat("forensic-medicine-methodology") ? level : 0;
+			let battleBonus = CheckFeat("forensic-medicine-methodology") ? level : 0;
 			const godlessBonus = godless ? 5 : 0; 
 			let healType 
 			
@@ -203,7 +203,7 @@ async function applyChanges($html) {
           bmtw = "Battle Medicine";
 			} else {
 					healType = "Treat Wounds";
-					battleBonus == 0;
+					battleBonus === 0;
 			}
 			const roll = [
 					() => ui.notifications.warn(`${name} is not trained in Medicine and doesn't know how to ${healType}.`),
