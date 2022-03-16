@@ -87,7 +87,7 @@ const rollTreatWounds = async ({ DC, bonus, med, riskysurgery, mortalhealing, he
 		}
 		if (healFormula !== undefined) {
       const healRoll = await new Roll(`{${healFormula}}[healing]`).roll({ async: true });
-      const rollType = atot > 0 ? "Healing" : "Damage";
+      const rollType = atot >= 0 ? "Healing" : "Damage";
       ChatMessage.create({
       	user: game.user.id,
       	type: CONST.CHAT_MESSAGE_TYPES.ROLL,
