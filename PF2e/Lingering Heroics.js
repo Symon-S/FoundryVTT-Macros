@@ -104,7 +104,7 @@ if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.foc
                 else { level = Math.max(...levels);}
 	      }
         else { 
-		canvas.tokens.placeables.filter(pc => pc.actor.hasPlayerOwner && pc.actor.type === "character").forEach(x => { levels.push(x.actor.level) });
+		canvas.tokens.placeables.filter(pc => pc?.actor?.hasPlayerOwner && pc?.actor?.type === "character").forEach(x => { levels.push(x.actor.level) });
 		level = Math.max(...levels);
 	}
       
