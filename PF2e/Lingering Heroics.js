@@ -1,7 +1,7 @@
 /*
 To use this macro, you need to have the lingering composition feat on your character sheet.
 To use inspire heroics, you must have the inspire heroics feat on your character sheet.
-If you are using PF2e Workbench, the macro will automatically use the effects in the workbench compendium.
+If you are using PF2e Workbench and the effects compendium is visible to players, the macro will automatically use the effects in the workbench compendium.
 If you are not using workbench, ask your DM to import spell effects for the following spells if you have them:
 Inspire Courage, Inspire Defense, Triple Time, and Song of Strength
 The DM should then duplicate each imported entry.
