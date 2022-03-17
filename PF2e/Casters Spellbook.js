@@ -72,12 +72,12 @@ const script = async function Spells(id){
 				}
 				async function Cast() { value.spell.spell.toMessage(); }
 				async function Consume(){
-					const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spells.sEId);
-					if (spells.type === 'spontaneous') {
-						if ( spells.spell.spell.isCantrip ) { return; }
+					const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === value.sEId);
+					if (value.type === 'spontaneous') {
+						if ( value.spell.isCantrip ) { return; }
 						let data = duplicate(s_entry.data);
 						Object.entries(data.data.slots).forEach(slot => {
-								if (parseInt(slot[0].substr(4)) === spells.lvl && slot[1].value > 0) { 
+								if (parseInt(slot[0].substr(4)) === value.lvl && slot[1].value > 0) { 
 									slot[1].value-=1;
 									s_entry.update(data);
 								}
@@ -85,24 +85,24 @@ const script = async function Spells(id){
 					}
 		
 					/* Focus */
-					if (spells.type === 'focus' && !spells.spell.spell.isCantrip && token.actor.data.data.resources.focus.value > 0) {
+					if (value.type === 'focus' && !value.spell.spell.isCantrip && token.actor.data.data.resources.focus.value > 0) {
 						const currentpoints = token.actor.data.data.resources.focus.value-1;
 						token.actor.update({"data.resources.focus.value":currentpoints});
 					}
 					
 					/* Prepared */
-					if (spells.type === 'prepared') { 
-						if ( spells.spell.spell.isCantrip ) { return; }
+					if (value.type === 'prepared') { 
+						if ( value.spell.spell.isCantrip ) { return; }
 						let data = duplicate(s_entry.data);
 						Object.entries(data.data.slots).forEach(slot => {
-								if (slot[0] === `slot${spells.lvl}`) {
-									slot[1].prepared[spells.index].expended = true;
+								if (slot[0] === `slot${value.lvl}`) {
+									slot[1].prepared[value.index].expended = true;
 									s_entry.update(data);
 								}
 						})
 					}
 				};
-				buttons[index] = {label: value.name, value: value.spell.spell ,callback: async () => {  await Cast(); await Consume(); }}
+				buttons[index] = {label: value.name, value: value.spell.spell ,callback: async () => {  await Consume(); await Cast(); }}
 			});
 			await Diag({title: "Pick a Spell to Cast", buttons});
 			spells.forEach( async s => {
@@ -111,9 +111,8 @@ const script = async function Spells(id){
         myElem1.style.display = "flex";
         myElem1.style.flexWrap = "wrap";
         myElem1.style.height = "auto";
-        myElem1.style.width = "auto";
+        myElem1.style.width = "200px";
         myElem1.style.gap = "5px 5px";
-		myElem1.style.width = "200px";
         let myElem2 = [...document.getElementsByClassName("dialog-buttons")].pop();
         myElem2.style.display = "flex";
         myElem2.style.flexFlow = "column wrap";
