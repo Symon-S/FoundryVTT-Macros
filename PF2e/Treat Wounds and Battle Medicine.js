@@ -6,9 +6,14 @@ This Macro works just like the system's Treat Wounds macro, except for the follo
 - Shows the assurance roll result during option selection
 - Adds godless healing integration
 - Adds Battle Medicine integration
+- Adds Forensic Medicine integration
+- Shows the Medic Dedication healing bonus during option selection
+- Shows tooltips for many of the options during option selection
 - Removes any skill that is not applicable if you have Chirurgeon and/or Natural Medicine (if you don't have medicine trained)
 - Fires off a warning notification if Medicine is not trained and you do not possess a feat/feature that allows you to roll a different skill.
 - Adds the ability to use the macro with clever improviser.
+Recent Changes:
+- Fixed Risky Surgery not applicable when using Battle Medicine
 */
 
 /**
@@ -57,18 +62,16 @@ const getRollOptions = ({ isRiskySurgery } = {}) => [
  * @param {Object} options
  * @param {0|1|2|3} options.success Level of success
  * @param {boolean} options.hasMagicHands Actor has the feat magic-hands
- * @param {boolean} options.hasMortalHealing Actor has the feat mortal healing
- * @param {boolean} options.isRiskySurgery Actor has the feat mortal healing
- * @param {boolean} options.hasBattleMedicine Actor has the feat battle medicine
+ * @param {boolean} options.useMortalHealing Actor uses the feat mortal healing
+ * @param {boolean} options.isRiskySurgery Actor uses the feat risky surgery 
  * @param {string} options.bonusString Bonus String for this throw
  * @returns {{healFormula: string, successLabel: string}} Dice heal formula and success label
  */
 const getHealSuccess = ({
   success,
   hasMagicHands,
-  hasMortalHealing,
+  useMortalHealing,
   isRiskySurgery,
-  hasBattleMedicine,
   bonusString,
 }) => {
   let healFormula;
@@ -85,8 +88,9 @@ const getHealSuccess = ({
       if (isRiskySurgery) {
         healFormula = hasMagicHands ? `32${bonusString}` : `4d8${bonusString}`;
         successLabel = 'Success with risky surgery';
-      } else if (hasMortalHealing && !hasBattleMedicine) {
-        healFormula = hasMagicHands ? `16${bonusString}` : `4d8${bonusString}`;
+      } else if (useMortalHealing) {
+        // Mortal Healing (can't have a deity) + Magic Hands (must have a deity) is not possible.
+        healFormula = `4d8${bonusString}`;
         successLabel = 'Success with mortal healing';
       } else {
         healFormula = hasMagicHands ? `16${bonusString}` : `2d8${bonusString}`;
@@ -114,8 +118,7 @@ const getHealSuccess = ({
  * @param {number} options.bonus Bonus on this roll
  * @param {number} options.med Medical skill
  * @param {boolean} options.isRiskySurgery Is a risky surgery
- * @param {boolean} options.hasMortalHealing Has mortal healing
- * @param {boolean} options.hasBattleMedicine Is a battle med
+ * @param {boolean} options.useMortalHealing Uses mortal healing
  * @param {boolean} options.assurance Has assurance
  * @param {number} options.bmtw bmtw
  */
@@ -124,8 +127,7 @@ const rollTreatWounds = async ({
   bonus,
   med,
   isRiskySurgery,
-  hasMortalHealing,
-  hasBattleMedicine,
+  useMortalHealing,
   assurance,
   bmtw,
 }) => {
@@ -133,7 +135,7 @@ const rollTreatWounds = async ({
     value: DC,
     visibility: 'all',
   };
-  if (isRiskySurgery || hasMortalHealing) {
+  if (isRiskySurgery || useMortalHealing) {
     dc.modifiers = {
       success: 'one-degree-better',
     };
@@ -149,9 +151,9 @@ const rollTreatWounds = async ({
     ChatMessage.create({
       user: game.user.id,
       type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-      flavor: `<strong>Assurance ${
+      flavor: `<strong>Assurance Roll: ${
         med.name[0].toUpperCase() + med.name.substring(1)
-      }</strong> vs DC ${DC}`,
+      }</strong> vs DC ${DC}<br><small>Do not apply any other bonuses, penalties, or modifiers</small>`,
       roll: aroll,
       speaker: ChatMessage.getSpeaker(),
     });
@@ -163,9 +165,8 @@ const rollTreatWounds = async ({
     const { healFormula, successLabel } = getHealSuccess({
       success,
       hasMagicHands,
-      hasMortalHealing,
+      useMortalHealing,
       isRiskySurgery,
-      hasBattleMedicine,
       bonusString,
     });
 
@@ -200,9 +201,8 @@ const rollTreatWounds = async ({
         const { healFormula, successLabel } = getHealSuccess({
           success: roll.data.degreeOfSuccess,
           hasMagicHands,
-          hasMortalHealing,
+          useMortalHealing,
           isRiskySurgery,
-          hasBattleMedicine,
           bonusString,
         });
         if (isRiskySurgery) {
@@ -247,12 +247,14 @@ async function applyChanges($html) {
     const assurance = $html.find('[name="assurance_bool"]')[0]?.checked;
     const requestedProf =
       parseInt($html.find('[name="dc-type"]')[0].value) || 1;
-    const hasBattleMedicine =
-      parseInt($html.find('[name="hasBattleMedicine"]')[0]?.value) === 1;
-    const isRiskySurgery = $html.find('[name="risky_surgery_bool"]')[0]
-      ?.checked;
-    const hasMortalHealing = $html.find('[name="mortal_healing_bool"]')[0]
-      ?.checked;
+    const useBattleMedicine =
+      parseInt($html.find('[name="useBattleMedicine"]')[0]?.value) === 1;
+    // Risky Surgery does not apply when Battle Medicine is used.
+    const isRiskySurgery = !useBattleMedicine &&
+      $html.find('[name="risky_surgery_bool"]')[0]?.checked;
+    // Mortal Healing does not apply when Battle Medicine is used.
+    const useMortalHealing = !useBattleMedicine && 
+      $html.find('[name="mortal_healing_bool"]')[0]?.checked;
     const hasGodlessHealing = $html.find('[name="godless_healing_bool"]')[0]
       ?.checked;
     const forensicMedicine = checkFeat('forensic-medicine-methodology');
@@ -293,10 +295,10 @@ async function applyChanges($html) {
       usedProf = 1;
     }
     const medicBonus = checkFeat('medic-dedication') ? (usedProf - 1) * 5 : 0;
-    const hasBattleMedicineBonus = hasBattleMedicine * level * forensicMedicine;
+    const useBattleMedicineBonus = useBattleMedicine * level * forensicMedicine;
     const godlessHealingBonus = hasGodlessHealing ? 5 : 0;
 
-    const bmtw = hasBattleMedicine ? 'Battle Medicine' : 'Treat Wounds';
+    const bmtw = useBattleMedicine ? 'Battle Medicine' : 'Treat Wounds';
 
     switch (usedProf) {
       case 0:
@@ -307,11 +309,10 @@ async function applyChanges($html) {
       case 1:
         rollTreatWounds({
           DC: 15 + mod,
-          bonus: 0 + medicBonus + godlessHealingBonus + hasBattleMedicineBonus,
+          bonus: 0 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
           med,
           isRiskySurgery,
-          hasMortalHealing,
-          hasBattleMedicine,
+          useMortalHealing,
           assurance,
           bmtw,
         });
@@ -319,11 +320,10 @@ async function applyChanges($html) {
       case 2:
         rollTreatWounds({
           DC: 20 + mod,
-          bonus: 10 + medicBonus + godlessHealingBonus + hasBattleMedicineBonus,
+          bonus: 10 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
           med,
           isRiskySurgery,
-          hasMortalHealing,
-          hasBattleMedicine,
+          useMortalHealing,
           assurance,
           bmtw,
         });
@@ -331,11 +331,10 @@ async function applyChanges($html) {
       case 3:
         rollTreatWounds({
           DC: 30 + mod,
-          bonus: 30 + medicBonus + godlessHealingBonus + hasBattleMedicineBonus,
+          bonus: 30 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
           med,
           isRiskySurgery,
-          hasMortalHealing,
-          hasBattleMedicine,
+          useMortalHealing,
           assurance,
           bmtw,
         });
@@ -343,11 +342,10 @@ async function applyChanges($html) {
       case 4:
         rollTreatWounds({
           DC: 40 + mod,
-          bonus: 50 + medicBonus + godlessHealingBonus + hasBattleMedicineBonus,
+          bonus: 50 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
           med,
           isRiskySurgery,
-          hasMortalHealing,
-          hasBattleMedicine,
+          useMortalHealing,
           assurance,
           bmtw,
         });
@@ -379,14 +377,15 @@ const renderDialogContent = ({
   totalAssurance,
 }) => `
   <div>
-    Attempt to heal the target by 2d8 hp.<br>You have to hold healer's tools, or you are wearing them and have a hand free!
+    Attempt to heal the target by 2d8 hp.<br>You have to hold healer's tools, or you are wearing them and have a hand free!<br>
+    <small>Hover the options for more information.</small>
   </div>
   <hr/>
   ${
     hasChirurgeon || hasNaturalMedicine
       ? `<form>
           <div class="form-group">
-          <label>Treat Wounds Skill:</label>
+          <label title="Select the skill you want to use.">Treat Wounds Skill:</label>
             <select id="skill" name="skill">
               ${tmed ? `<option value="med">Medicine</option>` : ``}
               ${hasChirurgeon ? `<option value="cra">Crafting</option>` : ``}
@@ -398,7 +397,7 @@ const renderDialogContent = ({
   }
   <form>
       <div class="form-group">
-          <select id="hasBattleMedicine" name="hasBattleMedicine">
+          <select id="useBattleMedicine" name="useBattleMedicine">
               ${
                 hasBattleMedicine
                   ? '<option value="1">Battle Medicine</option>'
@@ -408,6 +407,15 @@ const renderDialogContent = ({
           </select>
       </div>
   </form>
+  ${
+    checkFeat('forensic-medicine-methodology')
+      ? `<form>
+          <div class="form-group">
+              <label title="When you use Battle Medicine, on a success the target recovers additional Hit Points equal to your level.">Forensic Medicine Bonus applies when selecting Battle Medicine.</label>
+          </div>
+        </form>`
+      : ``
+  }
   ${
     (hasChirurgeon &&
       (checkItemTypeFeat('assurance', 'Assurance (Crafting)') ||
@@ -427,24 +435,30 @@ const renderDialogContent = ({
   }
   <form>
       <div class="form-group">
-          <label>Medicine DC:</label>
+          <label title="Select a target DC. Remember that you can't attempt a heal above your proficiency. Attempting to do so will downgrade the DC and amount healed to the highest you're capable of.">Medicine DC:</label>
           <select id="dc-type" name="dc-type">
               <option value="1" selected>Trained DC 15</option>
-              <option value="2">Expert DC 20, +10 Healing</option>
-              <option value="3">Master DC 30, +30 Healing</option>
-              <option value="4">Legendary DC 40, +50 Healing</option>
+          ${
+            checkFeat('medic-dedication') 
+              ? ` <option value="2">Expert DC 20, +15 Healing</option>
+                  <option value="3">Master DC 30, +40 Healing</option>
+                  <option value="4">Legendary DC 40, +65 Healing</option>`
+              : ` <option value="2">Expert DC 20, +10 Healing</option>
+                  <option value="3">Master DC 30, +30 Healing</option>
+                  <option value="4">Legendary DC 40, +50 Healing</option>`
+          }
           </select>
       </div>
   </form>
   <form>
       <div class="form-group">
-          <label>DC Modifier:</label>
+          <label title="Any circumstance or other dc modifiers at your GMs decission.">DC Modifier:</label>
           <input id="modifier" name="modifier" type="number"/>
       </div>
   </form>
   <form>
     <div class="form-group">
-      <label>Godless Healing</label>
+      <label title="+5 Healing if the *target* has this feat.">Godless Healing</label>
       <input type="checkbox" id="godless_healing_bool" name="godless_healing_bool"></input>
     </div>
   </form>
@@ -452,7 +466,7 @@ const renderDialogContent = ({
     checkFeat('risky-surgery')
       ? `<form>
           <div class="form-group">
-            <label>Risky Surgery</label>
+            <label title"Will not be applied when using Battle Medicine.">Risky Surgery</label>
             <input type="checkbox" id="risky_surgery_bool" name="risky_surgery_bool"></input>
           </div>
         </form>`
@@ -462,7 +476,8 @@ const renderDialogContent = ({
     checkFeat('mortal-healing')
       ? `<form>
           <div class="form-group">
-            <label>Mortal Healing</label>
+            <label title="Target creature must not have regained Hit Points from divine magic in the past 24 hours.
+                          Will not be applied when using Battle Medicine.">Mortal Healing</label>
             <input type="checkbox" id="mortal_healing_bool" name="mortal_healing_bool" checked></input>
           </div>
         </form>`
