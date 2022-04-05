@@ -22,7 +22,7 @@ const script = async function Spells(id){
 		let buttons = {};
 		const spellData = token.actor.itemTypes.spellcastingEntry.find( i => i.id === id).getSpellData();
 				spellData.levels.forEach(sp => {
-					if(!spellData.isRitual && !spellData.isPrepared && !spellData.isFlexible && !spellData.isFocusPool && !sp.isCantrip && sp.uses.value < 1) { return; }
+					if(!spellData.isRitual && !spellData.isPrepared && !spellData.isInnate && !spellData.isFlexible && !spellData.isFocusPool && !sp.isCantrip && sp.uses.value < 1) { return; }
 					sp.active.forEach((spa,index) => {
 						if(spa === null) { return; }
 						if(spa.expended) { return; }
