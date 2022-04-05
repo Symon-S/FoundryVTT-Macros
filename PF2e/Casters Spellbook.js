@@ -27,9 +27,7 @@ const script = async function Spells(id){
 						if(spa === null) { return; }
 						if(spa.expended) { return; }
 						if(spa.spell.isFocusSpell && !spa.spell.isCantrip && token.actor.data.data.resources.focus.value === 0) { return; }
-						let type = 'spontaneous';
-						if (spellData.isPrepared && !spellData.isFlexible) { type = 'prepared'; }
-						if (spellData.isFocusPool) { type = 'focus'; }
+						let type = '';
 						if (spellData.isRitual) { type = 'ritual'}
 						spells.push({name: spa.spell.name, spell: spa, lvl: sp.level, type: type, index: index, sEId: spellData.id});
 					});
@@ -73,33 +71,10 @@ const script = async function Spells(id){
 				async function Cast() { value.spell.spell.toMessage(); }
 				async function Consume(){
 					const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === value.sEId);
-					if (value.type === 'spontaneous') {
+					if (value.type !== 'ritual') {
 						if ( value.spell.isCantrip ) { return; }
-						let data = duplicate(s_entry.data);
-						Object.entries(data.data.slots).forEach(slot => {
-								if (parseInt(slot[0].substr(4)) === value.lvl && slot[1].value > 0) { 
-									slot[1].value-=1;
-									s_entry.update(data);
-								}
-						})
-					}
-		
-					/* Focus */
-					if (value.type === 'focus' && !value.spell.spell.isCantrip && token.actor.data.data.resources.focus.value > 0) {
-						const currentpoints = token.actor.data.data.resources.focus.value-1;
-						token.actor.update({"data.resources.focus.value":currentpoints});
-					}
-					
-					/* Prepared */
-					if (value.type === 'prepared') { 
-						if ( value.spell.spell.isCantrip ) { return; }
-						let data = duplicate(s_entry.data);
-						Object.entries(data.data.slots).forEach(slot => {
-								if (slot[0] === `slot${value.lvl}`) {
-									slot[1].prepared[value.index].expended = true;
-									s_entry.update(data);
-								}
-						})
+						if ( spc.data.item.isCantrip ) { return; }
+						await s_entry.cast(value.spell.spell,{slot: value.index,level: value.lvl,message: false});
 					}
 				};
 				buttons[index] = {label: value.name, value: value.spell.spell ,callback: async () => {  await Consume(); await Cast(); }}
