@@ -73,7 +73,6 @@ const script = async function Spells(id){
 					const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === value.sEId);
 					if (value.type !== 'ritual') {
 						if ( value.spell.isCantrip ) { return; }
-						if ( spc.data.item.isCantrip ) { return; }
 						await s_entry.cast(value.spell.spell,{slot: value.index,level: value.lvl,message: false});
 					}
 				};
