@@ -30,7 +30,7 @@ async function Eldritch_shot()
         if (e.isRitual) { return; }
 			  const spellData = e.getSpellData();
 			  spellData.levels.forEach(sp => {
-          if(!e.isPrepared && !e.isFlexible && !e.isFocusPool && !sp.isCantrip && sp.uses.value < 1) { return; }
+          if(!e.isPrepared && !e.isFlexible && !e.isInnate && !e.isFocusPool && !sp.isCantrip && sp.uses.value < 1) { return; }
 				  sp.active.forEach((spa,index) => {
 					  if(spa === null) { return; }
 					  if(!spa.chatData.isAttack) { return; }
@@ -40,12 +40,9 @@ async function Eldritch_shot()
             const name = spa.spell.name;
             const spRD = spa.spell.getRollData({spellLvl: sp.level});
             const formula = spa.spell.getDamageFormula(sp.level, spRD);
-            let type = 'spontaneous';
-            if (spellData.isPrepared && !spellData.isFlexible) { type = 'prepared'; }
-            if (spellData.isFocusPool) { type = 'focus'; }
-		        if(sp.isCantrip) { level = `[Cantrip]`}
+            if(sp.isCantrip) { level = `[Cantrip]`}
 				    const sname = `${name} ${level} (${e.name})`;
-            spells.push({name: sname, formula:formula, sEId: spellData.id, lvl: sp.level, type: type, spId: spa.spell.id, slug: spa.spell.slug, desc: spa.spell.description, DC: e.data.data.statisticData.dc.value, data: spRD, spell: spa, index: index, isSave: spa.chatData.isSave, cId: spa.spell.sourceId.substr(27)});
+            spells.push({name: sname, formula:formula, sEId: spellData.id, lvl: sp.level, spId: spa.spell.id, slug: spa.spell.slug, desc: spa.spell.description, DC: e.data.data.statisticData.dc.value, data: spRD, spell: spa, index: index, isSave: spa.chatData.isSave, cId: spa.spell.sourceId.substr(27)});
 					});
 				});
 		  });
@@ -204,37 +201,8 @@ async function Eldritch_shot()
         }
       }
       /* Expend slots */
-      /* Spontaneous, Innate, and Flexible */
-
-      if (spc.type === 'spontaneous') {
-        if ( spc.data.item.isCantrip ) { return; }
-	      let data = duplicate(s_entry.data);
-        Object.entries(data.data.slots).forEach(slot => {
-            if (parseInt(slot[0].substr(4)) === spc.lvl && slot[1].value > 0) { 
-              slot[1].value-=1;
-              s_entry.update(data);
-            }
-        })
-      }
-
-      /* Focus */
-      if (s_entry.isFocusPool && !spc.data.item.isCantrip && actor.data.data.resources.focus.value > 0) {
-        const currentpoints = actor.data.data.resources.focus.value-1;
-        actor.update({"data.resources.focus.value":currentpoints});
-      }
-      
-      /* Prepared */
-      if (spc.type === 'prepared') { 
-        if ( spc.data.item.isCantrip ) { return; }
-	      let data = duplicate(s_entry.data);
-        Object.entries(data.data.slots).forEach(slot => {
-            if (slot[0] === `slot${spc.lvl}`) {
-              slot[1].prepared[spc.index].expended = true;
-              s_entry.update(data);
-            }
-        })
-      }
-
+			if ( spc.data.item.isCantrip ) { return; }
+			await s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: false});
 	}
 
 }
