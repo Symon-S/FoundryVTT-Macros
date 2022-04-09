@@ -1,8 +1,7 @@
 /*This version of the Magic Missile Macro Automatically expends slots(prepared), spell uses(spontaneous), charges(wands), and consumes scrolls.
 When Wand of Manifold Missile is used, it places an effect on the character that allows it to tell if you are using the lingering effect of those wands. This adds the option to terminate the effect from within the dialog box through a checkbox (nothing else happens), or select the effect and have it shoot Magic Missiles as per the wand's description.
 Do not make spellcasting entries for your wands or scrolls. If you would like to use that method, please use the original macro.
-For staves please use a spellcasting entry due to the nature of how staves work.
-This also works for all NPCs. If it doesn't work with an NPC, just remove magic missile and re-add as it may be an outdated version of the spell*/
+For staves please use a spellcasting entry due to the nature of how staves work.*/
 
 const mani = ["wand-of-manifold-missiles-1st-level-spell","wand-of-manifold-missiles-3rd-level-spell","wand-of-manifold-missiles-5th-level-spell","wand-of-manifold-missiles-7th-level-spell"]
 if (!token.actor.itemTypes.spell.some(s => s.slug === 'magic-missile') && token.actor.itemTypes.consumable.some(s => s.slug.search('magic-missile') === -1) && !token.actor.itemTypes.equipment.some(s => mani.includes(s.slug))) { return ui.notifications.error('You do not have Magic Missile') }if (game.user.targets.ids === undefined || game.user.targets.ids.length === 0) { return ui.notifications.error('At least 1 target is required'); }
@@ -18,26 +17,21 @@ const mm = [];
 const formula =  `{1d4 + 1}[force]`;
 
 mmE.forEach(e => {
-	if (e.isPrepared && !e.isFlexible) {
-		Object.entries(e.data.data.slots).forEach(sl => {
-			let lv = parseInt(sl[0].substr(4));
-			Object.entries(sl[1].prepared).forEach(p => {
-				if(mmIds.includes(p[1].id) && !p[1].expended) {
-					mm.push({name: `Magic Missile lv${lv} (${e.name})`, level: lv, prepared: true, slot: sl[0], prepkey: p[0], entryId: e.id, wand: false, scroll: false, spont: false })
-				}
-			})
-		});
-	}
-	else {
-		const spellData = e.getSpellData();
-		spellData.levels.forEach(sp => {
-			if(sp.isCantrip || sp.uses.value === 0 || sp.uses.max === 0 ) { return; }
-			sp.active.forEach(spa => {
-				if(spa.chatData.slug === 'magic-missile'){ mm.push({name: `Magic Missile lv${sp.level} (${e.name})`, level: sp.level, prepared: false, entryId: e.id, wand: false, scroll: false, spont: true })}
-			})
-		});
-	}
-});
+          const spellData = e.getSpellData();
+	  spellData.levels.forEach(sp => {
+            if(!e.isPrepared && !e.isFlexible && !e.isInnate && !e.isFocusPool && !sp.isCantrip && sp.uses.value < 1) { return; }
+	    sp.active.forEach((spa,index) => {
+	      if(spa === null) { return; }
+              if(spa.spell.slug !== "magic-missile") { return; }
+              if(spa.expended) { return; }
+              if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.data.data.resources.focus.value === 0){ return; }
+              let level = `lv${sp.level}`
+              const name = spa.spell.name;
+	      const sname = `${name} ${level} (${e.name})`;
+              mm.push({name: sname, entryId: spellData.id, level: sp.level, spId: spa.spell.id, slug: spa.spell.slug, DC: e.data.data.statisticData.dc.value, spell: spa.spell, index: index});
+	    });
+	  });
+});	
 
 token.actor.itemTypes.consumable.forEach(s => {
 	if (!s.data.data.traits.value.includes("wand") && !s.data.data.traits.value.includes("scroll")) { return; }
@@ -119,27 +113,10 @@ fmm.forEach(a => {
 const s_entry = mmE.find(e => e.id === mmch.entryId);
 
 /* Expend slots */
-/* Spontaneous, Innate, and Flexible */
-if (mmch.spont) {
-	let data = duplicate(s_entry.data);
-        Object.entries(data.data.slots).forEach(slot => {
-            if (parseInt(slot[0].substr(4)) === mmch.level && slot[1].value > 0) { 
-              slot[1].value-=1;
-              s_entry.update(data);
-            }
-        })
+if (!mmch.wand && !mmch.scroll) { 
+  await s_entry.cast(mmch.spell,{slot: mmch.index,level: mmch.level,message: false});
 }
-      
-/* Prepared */
-if (mmch.prepared) { 
-	let data = duplicate(s_entry.data);
-        Object.entries(data.data.slots).forEach(slot => {
-            if (slot[0] === mmch.slot) {
-              slot[1].prepared[mmch.prepkey].expended = true;
-              s_entry.update(data);
-            }
-        })
-}
+
 
 /* Wand */
 if (mmch.wand) {
@@ -208,9 +185,9 @@ if (mmch.wand) {
 /* Scroll */
 if(mmch.scroll){
 	const s = token.actor.itemTypes.consumable.find(id => id.id === mmch.entryId);
-	if (s.data.data.quantity.value > 1) {
+	if (s.data.data.quantity > 1) {
 		const sData = duplicate(s.data);
-		sData.data.quantity.value --;
+		sData.data.quantity --;
 		s.update(sData);
 	}
 	else { await s.delete(); }
