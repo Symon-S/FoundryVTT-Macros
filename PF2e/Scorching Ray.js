@@ -64,6 +64,7 @@ srch.spell.data.data.traits.value.forEach( t => {
 let dam = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? `{${srch.level + 2}d6}[fire] + {${srch.level}}[status,force]` : `{${srch.level + 2}d6}[fire]`;
 if ( srdiag[1] > 1 ) { dam = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? `{${(2*srch.level) + 4}d6}[fire] + {${srch.level}}[status,force]` : `{${(2*srch.level) + 4}d6}[fire]`; }
 
+/*Temporarily disable Workbench, if present and setting available, for the macro to work right*/
 let aRDSA = false;
 if (game.modules.has('xdy-pf2e-workbench') && game.modules.get('xdy-pf2e-workbench').active && game.settings.get("xdy-pf2e-workbench","autoRollDamageForSpellAttack")) {
  aRDSA = true;
@@ -95,6 +96,7 @@ targets.forEach(async a => {
 
 game.user.updateTokenTargets(targetIds);
 
+/*Re-enable setting in Workbench if previously turned enabled*/
 if (aRDSA) { await game.settings.set("xdy-pf2e-workbench","autoRollDamageForSpellAttack",true); }
 
 const s_entry = srE.find(e => e.id === srch.entryId);
