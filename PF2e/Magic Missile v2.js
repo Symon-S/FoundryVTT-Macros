@@ -19,7 +19,7 @@ const formula =  `{1d4 + 1}[force]`;
 mmE.forEach(e => {
           const spellData = e.getSpellData();
 	  spellData.levels.forEach(sp => {
-            if(!e.isPrepared && !e.isFlexible && !e.isInnate && !e.isFocusPool && !sp.isCantrip && sp.uses.value < 1) { return; }
+        if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { return; }
 	    sp.active.forEach((spa,index) => {
 	      if(spa === null) { return; }
               if(spa.spell.slug !== "magic-missile") { return; }
