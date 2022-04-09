@@ -34,7 +34,7 @@ async function Spellstrike()
         if (e.isRitual) { return; }
 			  const spellData = e.getSpellData();
 			  spellData.levels.forEach(sp => {
-          if(!e.isPrepared && !e.isFlexible && !e.isFocusPool && !e.isInnate && !sp.isCantrip && sp.uses.value < 1) { return; }
+          if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { return; }
 				  sp.active.forEach((spa,index) => {
 					  if(spa === null) { return; }
 					  if(!spa.chatData.isAttack && !token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike')) { return; }
