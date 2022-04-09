@@ -132,9 +132,9 @@ token.actor.itemTypes.consumable.forEach(s => {
 	/* Scroll */
 	if(hch.scroll){
 		const s = token.actor.itemTypes.consumable.find(id => id.id === hch.entryId);
-		if (s.data.data.quantity.value > 1) {
+		if (s.data.data.quantity > 1) {
 			const sData = duplicate(s.data);
-			sData.data.quantity.value --;
+			sData.data.quantity --;
 			s.update(sData);
 		}
 		else { await s.delete(); }
