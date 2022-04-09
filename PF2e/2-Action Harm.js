@@ -51,35 +51,30 @@ for (const token of canvas.tokens.controlled) {
 	const h = [];
 
 	hE.forEach(e => {
-		if (e.isPrepared && !e.isFlexible) {
-			Object.entries(e.data.data.slots).forEach(sl => {
-				let lv = parseInt(sl[0].substr(4));
-				Object.entries(sl[1].prepared).forEach(p => {
-					if(hIds.includes(p[1].id) && !p[1].expended) {
-						h.push({name: `Harm lv${lv} (${e.name})`, level: lv, prepared: true, slot: sl[0], prepkey: p[0], entryId: e.id })
-					}
-				})
-			});
-		}
-		else {
-			const spellData = e.getSpellData();
-			spellData.levels.forEach(sp => {
-				if(sp.isCantrip || sp.uses.value === 0 || sp.uses.max === 0 ) { return; }
-				sp.active.forEach(spa => {
-					if(spa.chatData.slug === 'harm'){ h.push({name: `Harm lv${sp.level} (${e.name})`, level: sp.level, prepared: false, entryId: e.id })}
-				})
-			});
-		}
-	});
+          const spellData = e.getSpellData();
+	  spellData.levels.forEach(sp => {
+            if(!e.isPrepared && !e.isFlexible && !e.isInnate && !e.isFocusPool && !sp.isCantrip && sp.uses.value < 1) { return; }
+	    sp.active.forEach((spa,index) => {
+	      if(spa === null) { return; }
+              if(spa.spell.slug !== "harm") { return; }
+              if(spa.expended) { return; }
+              if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.data.data.resources.focus.value === 0){ return; }
+              let level = `lv${sp.level}`
+              const name = spa.spell.name;
+	      const sname = `${name} ${level} (${e.name})`;
+              h.push({name: sname, entryId: spellData.id, level: sp.level, spId: spa.spell.id, slug: spa.spell.slug, DC: e.data.data.statisticData.dc.value, spell: spa.spell, index: index});
+	    });
+	  });
+	});	
 
 token.actor.itemTypes.consumable.forEach(s => {
 	if (!s.data.data.traits.value.includes("wand") && !s.data.data.traits.value.includes("scroll")) { return; }
 	if (s.data.data.spell.data.data.slug === 'harm') { 
 		if (s.data.data.traits.value.includes("wand") && s.data.data.charges.value > 0) {
-			h.push({name: `${s.name}`, level: parseInt(s.slug.substr(11,1)), prepared: false, entryId: s.id , wand: true, scroll: false, spont: false,  }) 
+			h.push({name: `${s.name}`, level: parseInt(s.slug.substr(11,1)), entryId: s.id , wand: true, scroll: false  }) 
 		}
 		if (s.data.data.traits.value.includes("scroll")) {
-			h.push({name: `${s.name}`, level: s.data.data.spell.heightenedLevel, prepared: false, entryId: s.id, wand: false, scroll: true, spont: false })
+			h.push({name: `${s.name}`, level: s.data.data.spell.heightenedLevel, entryId: s.id, wand: false, scroll: true })
 		}
 	}
 });
@@ -122,27 +117,8 @@ token.actor.itemTypes.consumable.forEach(s => {
 	const s_entry = hE.find(e => e.id === hch.entryId);
 
 	/* Expend slots */
-	/* Spontaneous, Innate, and Flexible */
-	if (!hch.prepared && !hch.wand && !hch.scroll) {
-		let data = duplicate(s_entry.data);
-        	Object.entries(data.data.slots).forEach(slot => {
-            		if (parseInt(slot[0].substr(4)) === hch.level && slot[1].value > 0) { 
-              			slot[1].value-=1;
-              			s_entry.update(data);
-            		}
-        	})
-	}
-      
-	/* Prepared */
-	if (hch.prepared && !hch.wand && !hch.scroll) { 
-		let data = duplicate(s_entry.data);
-        	Object.entries(data.data.slots).forEach(slot => {
-            		if (slot[0] === hch.slot) {
-              			slot[1].prepared[hch.prepkey].expended = true;
-              			s_entry.update(data);
-            		}
-        	})
-
+	if (!hch.wand && !hch.scroll) { 
+	await s_entry.cast(hch.spell,{slot: hch.index,level: hch.level,message: false});
 	}
 
 	/* Wand */
