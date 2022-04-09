@@ -30,7 +30,7 @@ async function Eldritch_shot()
         if (e.isRitual) { return; }
 			  const spellData = e.getSpellData();
 			  spellData.levels.forEach(sp => {
-          if(!e.isPrepared && !e.isFlexible && !e.isInnate && !e.isFocusPool && !sp.isCantrip && sp.uses.value < 1) { return; }
+          if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { return; }
 				  sp.active.forEach((spa,index) => {
 					  if(spa === null) { return; }
 					  if(!spa.chatData.isAttack) { return; }
