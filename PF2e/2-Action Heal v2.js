@@ -58,38 +58,35 @@ for (const token of canvas.tokens.controlled) {
 	const h = [];
 
 	hE.forEach(e => {
-		if (e.isPrepared && !e.isFlexible) {
-			Object.entries(e.data.data.slots).forEach(sl => {
-				let lv = parseInt(sl[0].substr(4));
-				Object.entries(sl[1].prepared).forEach(p => {
-					if(hIds.includes(p[1].id) && !p[1].expended) {
-						h.push({name: `Heal lv${lv} (${e.name})`, level: lv, prepared: true, slot: sl[0], prepkey: p[0], entryId: e.id })
-					}
-				})
-			});
-		}
-		else {
-			const spellData = e.getSpellData();
-			spellData.levels.forEach(sp => {
-				if(sp.isCantrip || sp.uses.value === 0 || sp.uses.max === 0 ) { return; }
-				sp.active.forEach(spa => {
-					if(spa.chatData.slug === 'heal'){ h.push({name: `Heal lv${sp.level} (${e.name})`, level: sp.level, prepared: false, entryId: e.id })}
-				})
-			});
-		}
-	});
+          const spellData = e.getSpellData();
+	  spellData.levels.forEach(sp => {
+            if(!e.isPrepared && !e.isFlexible && !e.isInnate && !e.isFocusPool && !sp.isCantrip && sp.uses.value < 1) { return; }
+	    sp.active.forEach((spa,index) => {
+	      if(spa === null) { return; }
+              if(spa.spell.slug !== "heal") { return; }
+              if(spa.expended) { return; }
+              if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.data.data.resources.focus.value === 0){ return; }
+              let level = `lv${sp.level}`
+              const name = spa.spell.name;
+	      const sname = `${name} ${level} (${e.name})`;
+              h.push({name: sname, entryId: spellData.id, level: sp.level, spId: spa.spell.id, slug: spa.spell.slug, DC: e.data.data.statisticData.dc.value, spell: spa.spell, index: index});
+	    });
+	  });
+	});	
 
 token.actor.itemTypes.consumable.forEach(s => {
 	if (!s.data.data.traits.value.includes("wand") && !s.data.data.traits.value.includes("scroll")) { return; }
 	if (s.data.data.spell.data.data.slug === 'heal') { 
 		if (s.data.data.traits.value.includes("wand") && s.data.data.charges.value > 0) {
-			h.push({name: `${s.name}`, level: parseInt(s.slug.substr(11,1)), prepared: false, entryId: s.id , wand: true, scroll: false, spont: false,  }) 
+			h.push({name: `${s.name}`, level: parseInt(s.slug.substr(11,1)), entryId: s.id , wand: true, scroll: false  }) 
 		}
 		if (s.data.data.traits.value.includes("scroll")) {
-			h.push({name: `${s.name}`, level: s.data.data.spell.heightenedLevel, prepared: false, entryId: s.id, wand: false, scroll: true, spont: false })
+			h.push({name: `${s.name}`, level: s.data.data.spell.heightenedLevel, entryId: s.id, wand: false, scroll: true })
 		}
 	}
 });
+
+
 
 
         if(h.length === 0) { return ui.notifications.warn('You currently have no means of casting the heal spell') }
@@ -109,7 +106,11 @@ token.actor.itemTypes.consumable.forEach(s => {
         if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead' || t === 'dhampir')) { undead = true; }
     	if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'undead' || t === 'construct')) { tt = true }
 
-	let ahi,hhi,mhi;
+	let ahi,hhi,mhi,ddu;
+        if (canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'dhampir')) {
+           hdd.push({label: 'Does not affect Dhampir', type: 'checkbox'})
+           ddu = hdd.findIndex(e => e.label === 'Does not affect Dhampir');
+        }
 	if (await CheckSpell('angelic-halo') && !undead) { 
 		hdd.push({label: 'Angelic Halo', type: 'checkbox'});
 		ahi = hdd.findIndex(e => e.label === 'Angelic Halo');
@@ -128,28 +129,10 @@ token.actor.itemTypes.consumable.forEach(s => {
 	const s_entry = hE.find(e => e.id === hch.entryId);
 
 	/* Expend slots */
-	/* Spontaneous, Innate, and Flexible */
-	if (!hch.prepared && !hch.wand && !hch.scroll) {
-		let data = duplicate(s_entry.data);
-        	Object.entries(data.data.slots).forEach(slot => {
-            		if (parseInt(slot[0].substr(4)) === hch.level && slot[1].value > 0) { 
-              			slot[1].value-=1;
-              			s_entry.update(data);
-            		}
-        	})
+	if (!hch.wand && !hch.scroll) { 
+	await s_entry.cast(hch.spell,{slot: hch.index,level: hch.level,message: false});
 	}
-      
-	/* Prepared */
-	if (hch.prepared) { 
-		let data = duplicate(s_entry.data);
-        	Object.entries(data.data.slots).forEach(slot => {
-            		if (slot[0] === hch.slot) {
-              			slot[1].prepared[hch.prepkey].expended = true;
-              			s_entry.update(data);
-            		}
-        	})
 
-	}
 	/* Wand */
 	if (hch.wand) {
 		const w = token.actor.itemTypes.consumable.find(id => id.id === hch.entryId);
@@ -161,13 +144,14 @@ token.actor.itemTypes.consumable.forEach(s => {
 	/* Scroll */
 	if(hch.scroll){
 		const s = token.actor.itemTypes.consumable.find(id => id.id === hch.entryId);
-		if (s.data.data.quantity.value > 1) {
+		if (s.data.data.quantity > 1) {
 			const sData = duplicate(s.data);
-			sData.data.quantity.value --;
+			sData.data.quantity --;
 			s.update(sData);
 		}
 		else { await s.delete(); }
 	}
+
 
     	
 	/*Staff of Healing*/
@@ -237,7 +221,7 @@ token.actor.itemTypes.consumable.forEach(s => {
     	if (target === metok && (hpbeads === true || ghpbeads === true)) { var healt = healt + "+" + bbeads;}
     	const roll = new Roll(`{${healt}}[positive]`);
     	let healf = `2-Action Lv ${hlvl} Heal spell targeting ${tname}`;
-        if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'dhampir')) {
+        if(canvas.tokens.placeables.find((t) => t.id === target).actor.data.data.traits.traits.value.some((t) => t === 'dhampir') && hdiag[ddu]) {
           const message = ChatMessage.applyRollMode({flavor: `<strong>${healf}</strong>`, speaker: ChatMessage.getSpeaker(), content: `You attempt to heal ${tname} but it does not appear to work`});
           return ChatMessage.create(message);
         }
