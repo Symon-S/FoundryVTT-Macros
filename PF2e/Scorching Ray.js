@@ -1,6 +1,7 @@
 /*
 Scorching Ray 1 to 3 action macro.
 Target the appropriate amount of targets for the amount of actions spent.
+The macro will roll all attacks first and depending on degree of success, roll the damages.
 */
 
 if (!token.actor.itemTypes.spell.some(s => s.slug === 'scorching-ray') && token.actor.itemTypes.consumable.some(s => s.slug.search('scorching-ray') === -1)) { return ui.notifications.error('You do not have Scorching Ray') }
