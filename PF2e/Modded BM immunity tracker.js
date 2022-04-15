@@ -22,10 +22,7 @@ if (!token) {
 }
 
 function CheckFeat(slug, healer) {
-    if (healer.items.find((i) => i.data.data.slug === slug && i.type === 'feat')) {
-        return true;
-    }
-    return false;
+    return healer.itemTypes.feat.some((i) => i.slug === slug);
 }
 
 function battlemedicineEffect() {
