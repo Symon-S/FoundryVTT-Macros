@@ -73,7 +73,6 @@ if (game.modules.has('xdy-pf2e-workbench') && game.modules.get('xdy-pf2e-workben
 
 async function Aroll(a) {
             game.user.updateTokenTargets([a.id]);
-            console.log(game.user.targets.ids,a.id);
             await srch.spell.rollAttack({event});
 }
 
@@ -85,7 +84,6 @@ await new Promise((resolve) => { setTimeout(resolve, 300) });
 
 targets.forEach(async a => {
               const suc = game.messages.contents.reverse().find(x => x.isCheckRoll && x.actor === token.actor && x.target.token.id === a.id).data.flags.pf2e.context.outcome;
-            console.log(suc,a.id);
             if ( suc === "success" || suc === "criticalSuccess" ) {
                let success = "(Success)"
                if (suc === "criticalSuccess") { success = "(Critical Success)"; }
