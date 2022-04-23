@@ -137,7 +137,7 @@ token.actor.itemTypes.spellcastingEntry.forEach((value,index) => {
 await new Promise(async (resolve) => {
     setTimeout(resolve,200);
  await new Dialog({
-    title:"Caster's Spellbook",
+    title:"Spellbook",
     content,
     buttons:{ Close: { label: "Close" } },
     }).render(true);
@@ -146,6 +146,6 @@ await new Promise(async (resolve) => {
 
 let myElem = [...document.getElementsByClassName("app window-app dialog")].pop();
 if (myElem.style === undefined) { myElem = [...document.getElementsByClassName("app window-app dialog")].pop(); }
-myElem.style.width = "200px";
+myElem.style.width = "210px";
 myElem.style.resize = "both";
 myElem.style.overflow = "auto";
