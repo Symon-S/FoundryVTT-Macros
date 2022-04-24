@@ -1,6 +1,8 @@
 /*
 This is a macro designed to facilitate building a dual class item for the Dual Class Variant Rule.
 Simply select your 2 classes and the macro will create an item you can drag and drop onto your character sheet.
+This will need to be run by a GM or someone with the ability to create items in the system.
+Look for the created class item in the items tab.
 */
 
 const classesPack = game.packs.find(n => n.collection === "pf2e.classes");
