@@ -112,6 +112,9 @@ class2.data.data.trainedSkills.value.forEach( v => {
   dClass.data.trainedSkills.value.push(v);
 });
 
+//Set the image of the Class
+dClass.img = "systems/pf2e/icons/spells/guidance.webp"
+
 Item.create(dClass);
 
 async function quickDialog({data, title = `Quick Dialog`} = {}) {
