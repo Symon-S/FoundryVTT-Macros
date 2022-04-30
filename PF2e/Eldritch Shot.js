@@ -190,7 +190,6 @@ async function Eldritch_shot()
           chroma[3].f = chroma[3].f.replace('25','35');
         }
         const chromaR = new Roll(chromaD).roll({ async : false }).total;
-        console.log(chromaR,spc.slug,spc.lvl,spc.formula);
         if (chromaR < 5) { ddice = chroma[chromaR-1].dd; flavor = flavor + chroma[chromaR-1].f; spc.formula = chroma[chromaR-1].d}
         if (chromaR > 4 && chromaR <= 7) { flavor = flavor + chroma[chromaR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor});}
         if (chromaR === 8) {
@@ -198,13 +197,11 @@ async function Eldritch_shot()
           await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor2});
           if (critt === 'criticalSuccess') {
             const chromaRR = new Roll('1d7').roll({ async : false }).total;
-            console.log(chromaRR);
             if (chromaRR < 5) { ddice = chroma[chromaRR-1].dd; flavor = flavor + chroma[chromaRR-1].f; spc.formula = chroma[chromaRR-1].d }
             if (chromaRR > 4) { flavor = flavor + chroma[chromaRR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor}); spc.formula = ''}
 					}
       	}
       }
-      console.log(spc.formula, ddice);
       if(spc.slug === 'acid-splash' && critt === 'criticalSuccess') {
         flavor = flavor + `<hr><a class="inline-roll roll persistent-link" title="{${pers}}[persistent,acid]" data-mode="roll" data-flavor="" data-formula="{${pers}}[persistent,acid]" draggable="true" data-value="${pers}" data-damage-type="acid" ondragstart="PF2EPersistentDamage._startDrag(event)">Persistent Damage [Acid ${pers}]</a>`
       }
