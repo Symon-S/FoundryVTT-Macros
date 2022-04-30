@@ -161,7 +161,7 @@ let flavor = `<strong>Spellsling</strong><br><a class="entity-link content-link"
       }
 
       if(spc.slug === 'chromatic-ray' && (critt === 'success' || critt === 'criticalSuccess')) {
-        flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${spc.cId}"><strong>${flavName}</strong></a> (${dos})<div class="tags">${ttags}`;
+        flavor = `<strong>Spellsling</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${spc.cId}"><strong>${flavName}</strong></a> (${dos})<div class="tags">${ttags}`;
         spc.formula = '';
         ddice = '';
         const chroma = [
