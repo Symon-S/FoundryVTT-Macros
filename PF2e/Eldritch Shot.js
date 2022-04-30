@@ -140,10 +140,9 @@ async function Eldritch_shot()
         }
             
       }
-
-
+      
       await strike.attack({ event });
-      const critt = game.messages.contents.reverse().find(x => x.isCheckRoll && x.actor === token.actor).data.flags.pf2e.context.outcome;
+      const critt = await game.messages.contents.reverse().find(x => x.isCheckRoll && x.actor === token.actor).data.flags.pf2e.context.outcome;
       let traits = spc.data.item.data.data.traits.value.join();
       let ttags = '';
       spc.data.item.data.data.traits.value.forEach( t => {
@@ -157,10 +156,55 @@ async function Eldritch_shot()
       if (spc.data.item.isCantrip) { flavName = `${spc.data.item.name} (Cantrip)`; }
       let flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${spc.cId}"><strong>${flavName}</strong></a> (${dos})<div class="tags">${ttags}</div><hr>`;
       if (spc.slug === 'acid-splash') { flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${spc.cId}"><strong>${spc.data.item.name} (Cantrip)</strong></a> (${dos})<div class="tags">${ttags}</div>` }
-      if (spc.isSave) {
+      if (spc.isSave && spc.slug !== 'chromatic-ray') {
         flavor = flavor + `<span data-pf2-check='${spc.data.item.data.data.save.value}' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>${spc.data.item.data.data.save.basic} ${spc.data.item.data.data.save.value} save</span>`;
       }
-
+      if(spc.slug === 'chromatic-ray' && (critt === 'success' || critt === 'criticalSuccess')) {
+        flavor = `<strong>Eldritch Shot</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${spc.cId}"><strong>${flavName}</strong></a> (${dos})<div class="tags">${ttags}`;
+        spc.formula = '';
+        ddice = '';
+        const chroma = [
+          {d:`{30}[fire]`,f:`<span class="tag tooltipstered" data-trait="fire" data-description="PF2E.TraitDescriptionFire">Fire</span></div><hr><p class='compact-text'>1.<strong>Red</strong> (fire) The ray deals 30 fire damage to the target. Double on a Critical.</p>`,dd:`{60}[fire]`},
+          {d:`{40}[acid]`,f:`<span class="tag tooltipstered" data-trait="acid" data-description="PF2E.TraitDescriptionAcid">Acid</span></div><hr><p class='compact-text'>2.<strong>Orange</strong> (acid) The ray deals 40 acid damage to the target. Double on a Critical.</p>`,dd:`{80}[acid]`},
+          {d:`{50}[electricity]`,f:`<span class="tag tooltipstered" data-trait="electricity" data-description="PF2E.TraitDescriptionElectricity">Electricity</span></div><hr><p class='compact-text'>3.<strong>Yellow</strong> <br>(electricity) The ray deals 50 electricity damage to the target. Double on a Critical.</p>`,dd:`{100}[electricity]`},
+          {d:`{25}[poison]`,f:`<span class="tag tooltipstered" data-trait="poison" data-description="PF2E.TraitDescriptionPoison">Poison</span></div><hr><p class='compact-text'>4.<strong>Green</strong> (poison) The ray deals 25 poison damage to the target, double on a Critical, and the target must succeed at a <span data-pf2-check='fortitude' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>Fortitude save</span> or be <a class="entity-link content-link" draggable="true" data-pack="pf2e.conditionitems" data-id="MIRkyAjyBeXivMa7"><strong>Enfeebled 1</strong></a> for 1 minute (<a class="entity-link content-link" draggable="true" data-pack="pf2e.conditionitems" data-id="MIRkyAjyBeXivMa7"><strong>Enfeebled 2</strong></a> on a critical failure).</p>`,dd:`{50}[poison]`},
+          {f:`</div><hr><p class='compact-text'>5.<strong>Blue</strong> The ray has the effect of the <a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="znv4ECL7ZtuiagtA"><strong>flesh to stone</strong></a> spell. On a critical hit, the target is <a class="entity-link content-link" draggable="true" data-pack="pf2e.conditionitems" data-id="i3OJZU2nk64Df3xm"><strong>Clumsy 1</strong></a> as long as it’s slowed by the flesh to stone effect.<br><span data-pf2-check='fortitude' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='Stone to Flesh DC'><strong>DC ${spc.DC} </strong>Fortitude save</span></p>`},
+          {f:`<span class="tag tooltipstered" data-trait="emotion" data-description="PF2E.TraitDescriptionEmotion">Emotion</span><span class="tag tooltipstered" data-trait="incapacitation" data-description="PF2E.TraitDescriptionIncapacitation">Incapacitation</span><span class="tag tooltipstered" data-trait="mental" data-description="PF2E.TraitDescriptionMental">Mental</span></div><hr><p class='compact-text'>6.<strong>Indigo</strong> (emotion, incapacitation, mental) The ray has the effect of the <a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="LiGbewa9pO0yjbsY"><strong>confusion</strong></a> spell. On a critical hit, it has the effect of <a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="8kJbiBEjMWG4VUjs"><strong>warp mind</strong></a> instead.<br><span data-pf2-check='will' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits},emotion,incapacitation,mental' data-pf2-label='Indigo DC'><strong>DC ${spc.DC} </strong>Will save</span></p>`},
+          {f:`</div><hr><p class='compact-text'>7.<strong>Violet</strong> <br>The target is <a class="entity-link content-link" draggable="true" data-pack="pf2e.conditionitems" data-id="xYTAsEpcJE1Ccni3"><strong>Slowed</strong></a> for 1 minute. It must also succeed at a <span data-pf2-check='will' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='Violet DC'><strong>DC ${spc.DC} </strong>Will save</span> or be teleported 120 feet directly away from you (if there isn’t room for it to appear there, it appears in the nearest open space); this is a teleportation effect.</p>`},
+          {f:`</div><hr><p class='compact-text'>8.<strong>Intense Color</strong> The target is <a class="entity-link content-link" draggable="true" data-pack="pf2e.conditionitems" data-id="TkIyaNPgTZFBCCuh"><strong>Dazzled</strong></a> until the end of your next turn, or <a class="entity-link content-link" draggable="true" data-pack="pf2e.conditionitems" data-id="XgEqL1kFApUbl5Z2"><strong>Blinded</strong></a> if your attack roll was a critical hit. Roll again and add the effects of another color (rerolling results of 8).</p>`},
+        ];
+        let chromaD = '1d4';
+        if (spc.lvl > 5) { 
+          chromaD = '1d8';
+          chroma[0].d = `{40}[fire]`;
+          chroma[0].dd = `{80}[fire]`;
+          chroma[0].f = chroma[0].f.replace('30','40');
+          chroma[1].d = `{50}[acid]`;
+          chroma[1].dd = `{100}[acid]`;
+          chroma[1].f = chroma[1].f.replace('40','50');
+          chroma[2].d = `{60}[electricity]`;
+          chroma[2].dd = `{120}[electricity]`;
+          chroma[2].f = chroma[2].f.replace('50','60');
+          chroma[3].d = `{35}[poison]`;
+          chroma[3].dd = `{70}[poison]`;
+          chroma[3].f = chroma[3].f.replace('25','35');
+        }
+        const chromaR = new Roll(chromaD).roll({ async : false }).total;
+        console.log(chromaR,spc.slug,spc.lvl,spc.formula);
+        if (chromaR < 5) { ddice = chroma[chromaR-1].dd; flavor = flavor + chroma[chromaR-1].f; spc.formula = chroma[chromaR-1].d}
+        if (chromaR > 4 && chromaR <= 7) { flavor = flavor + chroma[chromaR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor});}
+        if (chromaR === 8) {
+          const flavor2 = flavor + chroma[chromaR-1].f;
+          await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor2});
+          if (critt === 'criticalSuccess') {
+            const chromaRR = new Roll('1d7').roll({ async : false }).total;
+            console.log(chromaRR);
+            if (chromaRR < 5) { ddice = chroma[chromaRR-1].dd; flavor = flavor + chroma[chromaRR-1].f; spc.formula = chroma[chromaRR-1].d }
+            if (chromaRR > 4) { flavor = flavor + chroma[chromaRR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor}); spc.formula = ''}
+					}
+      	}
+      }
+      console.log(spc.formula, ddice);
       if(spc.slug === 'acid-splash' && critt === 'criticalSuccess') {
         flavor = flavor + `<hr><a class="inline-roll roll persistent-link" title="{${pers}}[persistent,acid]" data-mode="roll" data-flavor="" data-formula="{${pers}}[persistent,acid]" draggable="true" data-value="${pers}" data-damage-type="acid" ondragstart="PF2EPersistentDamage._startDrag(event)">Persistent Damage [Acid ${pers}]</a>`
       }
@@ -184,14 +228,14 @@ async function Eldritch_shot()
         if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
       }
       if (critt === 'success' || critt === 'criticalSuccess') {
-        if (spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.spell.chatData.damage.value).length === 0 || !spc.spell.chatData.isAttack){
+        if (spc.slug !== 'chromatic-ray' && ( spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.spell.chatData.damage.value).length === 0 || !spc.spell.chatData.isAttack) ){
           if (spc.spell.spell.data.data.heightenedLevel === undefined) { spc.spell.spell.data.data.heightenedLevel = {value: spc.lvl}; }
           else {spc.spell.spell.data.data.heightenedLevel.value = spc.lvl;}
           await spc.spell.spell.toMessage();
         }
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { spc.formula = ddice; } 
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledamage')) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }
-         if ( Object.entries(spc.spell.chatData.damage.value).length > 0 ){
+         if ( Object.entries(spc.spell.chatData.damage.value).length > 0 || (spc.slug === 'chromatic-ray' && spc.formula !== '') ){
           const droll = new Roll(spc.formula);
           await droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
         }
@@ -201,9 +245,9 @@ async function Eldritch_shot()
         }
       }
       /* Expend slots */
-			if ( spc.data.item.isCantrip ) { return; }
-			await s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: false});
-	}
+      if ( spc.data.item.isCantrip ) { return; }
+      await s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: false});
+      }
 
 }
 
