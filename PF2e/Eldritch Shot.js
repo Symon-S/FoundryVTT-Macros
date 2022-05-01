@@ -58,7 +58,7 @@ async function Eldritch_shot()
 
       if(spells.length === 0) { return ui.notifications.info("You have no spells available"); }
 
-		  /* Get them bows baby */
+      /* Get them bows baby */
       const weapons = token.actor.itemTypes.weapon.filter(i => i.isEquipped && i.data.data.group === 'bow');
       const map_weap = weapons.map(p => p.data.name);
 
@@ -69,11 +69,11 @@ async function Eldritch_shot()
         { label : `Bows : `, type : `select`, options : map_weap },
       ]
         	
-		  /* Run dialog and alot data */
-		  const spell_choice = await quickDialog({data : es_data, title : `Eldritch Shot`});
+      /* Run dialog and alot data */
+      const spell_choice = await quickDialog({data : es_data, title : `Eldritch Shot`});
 		
-		  /* Get the strike actions and roll strike */
-		  const strike = token.actor.data.data.actions.find(a => a.type === 'strike' && a.name === spell_choice[1]);
+      /* Get the strike actions and roll strike */
+      const strike = token.actor.data.data.actions.find(a => a.type === 'strike' && a.name === spell_choice[1]);
       const spc = spells.find(sp => sp.name === spell_choice[0]);
       const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);
       let pers;
@@ -93,7 +93,18 @@ async function Eldritch_shot()
         const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["bludgeoning","piercing"]}, title: `Choose a damage type`});
         spc.formula = spc.formula + `[${type}]`;
       }
-      if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') && spc.slug !== 'magnetic-acceleration' && Object.entries(spc.data.item.data.data.damage.value).length !== 0 && !spc.data.item.isCantrip) {
+      if (spc.slug === 'searing-light'){
+        if ( token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ) {
+          if (!game.user.targets.first().actor.traits.has('undead') && !game.user.targets.first().actor.traits.has('fiend')) { 
+            spc.formula = spc.formula + `[fire]`; 
+          }
+          else {
+            const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["fire","good"]}, title: `Choose a damage type`});
+          spc.formula = `${(spc.lvl-3)*2 + 5}d6[fire] + ${(spc.lvl-3)*2 + 5}d6[good] + ${spc.lvl}[${type}]`;
+        	}
+      	}
+			}
+      if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') && spc.slug !== 'magnetic-acceleration' && spc.slug !== 'searing-light' && Object.entries(spc.data.item.data.data.damage.value).length !== 0 && !spc.data.item.isCantrip ) {
         spc.formula = spc.formula + `[${spc.data.item.data.data.damage.value[0].type.value}]`;
       }
       const fsplit = spc.formula.split(" ");
