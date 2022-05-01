@@ -115,7 +115,18 @@ async function Spellstrike()
         const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["bludgeoning","piercing"]}, title: `Choose a damage type`});
         spc.formula = spc.formula + `[${type}]`;
       }
-      if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') && spc.slug !== 'magnetic-acceleration' && Object.entries(spc.data.item.data.data.damage.value).length !== 0 && !spc.data.item.isCantrip) {
+      if (spc.slug === 'searing-light'){
+        if ( token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ) {
+          if (!game.user.targets.first().actor.traits.has('undead') && !game.user.targets.first().actor.traits.has('fiend')) { 
+            spc.formula = spc.formula + `[fire]`; 
+          }
+          else {
+            const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["fire","good"]}, title: `Choose a damage type`});
+          spc.formula = `${(spc.lvl-3)*2 + 5}d6[fire] + ${(spc.lvl-3)*2 + 5}d6[good] + ${spc.lvl}[${type}]`;
+          }
+        }
+      }
+      if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') && spc.slug !== 'magnetic-acceleration' && spc.slug !== 'searing-light' && Object.entries(spc.data.item.data.data.damage.value).length !== 0 && !spc.data.item.isCantrip ) {
         spc.formula = spc.formula + `[${spc.data.item.data.data.damage.value[0].type.value}]`;
       }
       const fsplit = spc.formula.split(" ");
@@ -178,21 +189,68 @@ async function Spellstrike()
       if (spc.data.item.data.data.damage.value !== '' || spc.data.item.data.data.damage.value !== undefined || Object.entries(spc.spell.chatData.damage.value).length > 0){ traits = traits + `,damaging-effect`; }
       let flavName = `${spc.data.item.name} cast at Lv${spc.lvl}`;
       if (spc.data.item.isCantrip) { flavName = `${spc.data.item.name} (Cantrip)`; }
-      let flavor = `<strong>Spellstrike</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${spc.cId}"><strong>${flavName}</strong></a> (${dos})<div class="tags">${ttags}</div><hr>`;
-      if (spc.slug === 'acid-splash') { flavor = `<strong>Spellstrike</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="${spc.cId}"><strong>${spc.data.item.name} (Cantrip)</strong></a> (${dos})<div class="tags">${ttags}</div>`; }
-      if (spc.isSave) {
+      let flavor = `<strong>Spellstrike</strong><br>${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.${spc.data.item.name}]{${flavName}}`)} (${dos})<div class="tags">${ttags}</div><hr>`;
+      if (spc.slug === 'acid-splash') { flavor = `<strong>Spellstrike</strong>${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.Acid Splash]{${flavName}}`)} (${dos})<div class="tags">${ttags}</div>` }
+      if (spc.isSave && spc.slug !== 'chromatic-ray') {
+        let basic = true;
+        if (spc.data.item.data.data.save.basic === '') { basic = false; }
         flavor = flavor + `<span data-pf2-check='${spc.data.item.data.data.save.value}' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>${spc.data.item.data.data.save.basic} ${spc.data.item.data.data.save.value} save</span>`;
       }
+
+      if(spc.slug === 'chromatic-ray' && (critt === 'success' || critt === 'criticalSuccess')) {
+        flavor = `<strong>Spellstrike</strong><br>${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.${spc.data.item.name}]{${flavName}}`)} (${dos})<div class="tags">${ttags}`;
+        spc.formula = '';
+        ddice = '';
+        const chroma = [
+          {d:`{30}[fire]`,f:`<span class="tag tooltipstered" data-trait="fire" data-description="PF2E.TraitDescriptionFire">Fire</span></div><hr><p class='compact-text'>1.<strong>Red</strong> (fire) The ray deals 30 fire damage to the target. Double on a Critical.</p>`,dd:`{60}[fire]`},
+          {d:`{40}[acid]`,f:`<span class="tag tooltipstered" data-trait="acid" data-description="PF2E.TraitDescriptionAcid">Acid</span></div><hr><p class='compact-text'>2.<strong>Orange</strong> (acid) The ray deals 40 acid damage to the target. Double on a Critical.</p>`,dd:`{80}[acid]`},
+          {d:`{50}[electricity]`,f:`<span class="tag tooltipstered" data-trait="electricity" data-description="PF2E.TraitDescriptionElectricity">Electricity</span></div><hr><p class='compact-text'>3.<strong>Yellow</strong> <br>(electricity) The ray deals 50 electricity damage to the target. Double on a Critical.</p>`,dd:`{100}[electricity]`},
+          {d:`{25}[poison]`,f:`<span class="tag tooltipstered" data-trait="poison" data-description="PF2E.TraitDescriptionPoison">Poison</span></div><hr><p class='compact-text'>4.<strong>Green</strong> (poison) The ray deals 25 poison damage to the target, double on a Critical, and the target must succeed at a <span data-pf2-check='fortitude' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits},poison' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>Fortitude save</span> or be ${TextEditor.enrichHTML('@Compendium[pf2e.conditionitems.Enfeebled]{Enfeebled 1}')} for 1 minute (${TextEditor.enrichHTML('@Compendium[pf2e.conditionitems.Enfeebled]{Enfeebled 2}')} on a critical failure).</p>`,dd:`{50}[poison]`},
+          {f:`</div><hr><p class='compact-text'>5.<strong>Blue</strong> The ray has the effect of the ${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.Flesh to Stone]{Flesh to Stone}`)} spell. On a critical hit, the target is ${TextEditor.enrichHTML('@Compendium[pf2e.conditionitems.Clumsy]{Clumsy 1}')} as long as it’s slowed by the flesh to stone effect.<br><span data-pf2-check='fortitude' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>Fortitude save</span></p>`},
+          {f:`<span class="tag tooltipstered" data-trait="emotion" data-description="PF2E.TraitDescriptionEmotion">Emotion</span><span class="tag tooltipstered" data-trait="incapacitation" data-description="PF2E.TraitDescriptionIncapacitation">Incapacitation</span><span class="tag tooltipstered" data-trait="mental" data-description="PF2E.TraitDescriptionMental">Mental</span></div><hr><p class='compact-text'>6.<strong>Indigo</strong> (emotion, incapacitation, mental) The ray has the effect of the ${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.Confusion]{Confusion}`)} spell. On a critical hit, it has the effect of ${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.Warp Mind]{Warp Mind}`)} instead.<br><span data-pf2-check='will' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits},emotion,incapacitation,mental' data-pf2-label='Indigo DC'><strong>DC ${spc.DC} </strong>Will save</span></p>`},
+          {f:`</div><hr><p class='compact-text'>7.<strong>Violet</strong> <br>The target is ${TextEditor.enrichHTML('@Compendium[pf2e.conditionitems.Slowed]{Slowed}')} for 1 minute. It must also succeed at a <span data-pf2-check='will' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='Violet DC'><strong>DC ${spc.DC} </strong>Will save</span> or be teleported 120 feet directly away from you (if there isn’t room for it to appear there, it appears in the nearest open space); this is a teleportation effect.</p>`},
+          {f:`</div><hr><p class='compact-text'>8.<strong>Intense Color</strong> The target is ${TextEditor.enrichHTML('@Compendium[pf2e.conditionitems.Dazzled]{Dazzled}')} until the end of your next turn, or ${TextEditor.enrichHTML('@Compendium[pf2e.conditionitems.Blinded]{Blinded}')} if your attack roll was a critical hit. Roll again and add the effects of another color (rerolling results of 8).</p>`},
+        ];
+        let chromaD = '1d4';
+        if (spc.lvl > 5) { 
+          chromaD = '1d8';
+          chroma[0].d = `{40}[fire]`;
+          chroma[0].dd = `{80}[fire]`;
+          chroma[0].f = chroma[0].f.replace('30','40');
+          chroma[1].d = `{50}[acid]`;
+          chroma[1].dd = `{100}[acid]`;
+          chroma[1].f = chroma[1].f.replace('40','50');
+          chroma[2].d = `{60}[electricity]`;
+          chroma[2].dd = `{120}[electricity]`;
+          chroma[2].f = chroma[2].f.replace('50','60');
+          chroma[3].d = `{35}[poison]`;
+          chroma[3].dd = `{70}[poison]`;
+          chroma[3].f = chroma[3].f.replace('25','35');
+        }
+        const chromaR = new Roll(chromaD).roll({ async : false }).total;
+        if (chromaR < 5) { ddice = chroma[chromaR-1].dd; flavor = flavor + chroma[chromaR-1].f; spc.formula = chroma[chromaR-1].d}
+        if (chromaR > 4 && chromaR <= 7) { flavor = flavor + chroma[chromaR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor});}
+        if (chromaR === 8) {
+          const flavor2 = flavor + chroma[chromaR-1].f;
+          await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor2});
+          if (critt === 'criticalSuccess') {
+            const chromaRR = new Roll('1d7').roll({ async : false }).total;
+            if (chromaRR < 5) { ddice = chroma[chromaRR-1].dd; flavor = flavor + chroma[chromaRR-1].f; spc.formula = chroma[chromaRR-1].d }
+            if (chromaRR > 4) { flavor = flavor + chroma[chromaRR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor}); spc.formula = ''}
+	  }
+      	}
+      }
+
       if(spc.slug === 'acid-splash' && critt === 'criticalSuccess') {
-        flavor = flavor + `<hr><a class="inline-roll roll persistent-link" title="{${pers}}[persistent,acid]" data-mode="roll" data-flavor="" data-formula="{${pers}}[persistent,acid]" draggable="true" data-value="${pers}" data-damage-type="acid" ondragstart="PF2EPersistentDamage._startDrag(event)">Persistent Damage [Acid ${pers}]</a>`
+        flavor = flavor + `<hr>${TextEditor.enrichHTML(`[[/r {${pers}}[persistent,acid]]] @Compendium[pf2e.conditionitems.Persistent Damage]{Persistent Acid Damage}`)}`
       }
       if(spc.slug === 'produce-flame' && critt === 'criticalSuccess') {
         pers = Math.ceil(token.actor.level / 2) + "d4";
-        flavor = flavor + `<br><a class="inline-roll roll persistent-link" title="{${pers}}[persistent,fire]" data-mode="roll" data-flavor="" data-formula="{${pers}}[persistent,fire]" draggable="true" data-value="${pers}" data-damage-type="fire" ondragstart="PF2EPersistentDamage._startDrag(event)">Persistent Damage [Fire ${pers}]</a>`
+        flavor = flavor + `<br>${TextEditor.enrichHTML(`[[/r {${pers}}[persistent,fire]]] @Compendium[pf2e.conditionitems.Persistent Damage]{Persistent Fire Damage}`)}`
       }
       if(spc.slug === 'gouging-claw' && critt === 'criticalSuccess') {
         pers = Math.ceil(actor.level / 2) + "d4";
-        flavor = flavor + `<br><a class="inline-roll roll persistent-link" title="{${pers}}[persistent,bleed]" data-mode="roll" data-flavor="" data-formula="{${pers}}[persistent,bleed]" draggable="true" data-value="${pers}" data-damage-type="bleed" ondragstart="PF2EPersistentDamage._startDrag(event)">Persistent Damage [Bleed ${pers}]</a>`
+        flavor = flavor + `<br>${TextEditor.enrichHTML(`[[/r {${pers}}[persistent,bleed]]] @Compendium[pf2e.conditionitems.Persistent Damage]{Persistent Bleed Damage}`)}`
       }
 
       if (game.modules.has('xdy-pf2e-workbench')) {
@@ -206,7 +264,7 @@ async function Spellstrike()
         if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
       }
       if (critt === 'success' || critt === 'criticalSuccess') {
-        if (spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.spell.chatData.damage.value).length === 0 || !spc.spell.chatData.isAttack){
+        if (spc.slug !== 'chromatic-ray' && ( spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.spell.chatData.damage.value).length === 0 || !spc.spell.chatData.isAttack) ){
           if (spc.spell.spell.data.data.heightenedLevel === undefined) { spc.spell.spell.data.data.heightenedLevel = {value: spc.lvl}; }
           else {spc.spell.spell.data.data.heightenedLevel.value = spc.lvl;}
           await spc.spell.spell.toMessage();
@@ -214,7 +272,7 @@ async function Spellstrike()
         else {
           if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { spc.formula = ddice; } 
           if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledamage')) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }   
-          if ( Object.entries(spc.spell.chatData.damage.value).length > 0 ){
+          if ( Object.entries(spc.spell.chatData.damage.value).length > 0 || (spc.slug === 'chromatic-ray' && spc.formula !== '')){
             const droll = new Roll(spc.formula);
             await droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
           }
