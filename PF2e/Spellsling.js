@@ -92,21 +92,31 @@ async function Spellsling()
         const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["bludgeoning","piercing"]}, title: `Choose a damage type`});
         spc.formula = spc.formula + `[${type}]`;
       }
-      if (spc.slug === 'searing-light'){
-        if ( token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ) {
-          if (!game.user.targets.first().actor.traits.has('undead') && !game.user.targets.first().actor.traits.has('fiend')) { 
-            spc.formula = spc.formula + `[fire]`; 
-          }
-          else {
-            const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["fire","good"]}, title: `Choose a damage type`});
-          spc.formula = `${(spc.lvl-3)*2 + 5}d6[fire] + ${(spc.lvl-3)*2 + 5}d6[good] + ${spc.lvl}[${type}]`;
-        	}
-      	}
-			}
+            if (spc.slug === 'searing-light'){
+        if (!game.user.targets.first().actor.traits.has('undead') && !game.user.targets.first().actor.traits.has('fiend')) { 
+           spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6 + ${spc.lvl}[fire]` : `${(spc.lvl-3)*2 + 5}d6`;
+         }
+         else {
+           const type = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["fire","good"]}, title: `Choose a damage type`}) : '';
+           spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6[fire] + ${(spc.lvl-3)*2 + 5}d6[good] + ${spc.lvl}[${type}]` : `${(spc.lvl-3)*2 + 5}d6[fire] + ${(spc.lvl-3)*2 + 5}d6[good]`;
+         }
+       }
 
-      if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') && spc.slug !== 'magnetic-acceleration' && spc.slug !== 'searing-light' && Object.entries(spc.data.item.data.data.damage.value).length !== 0 && !spc.data.item.isCantrip) {
+       if (spc.slug === 'moonlight-ray'){
+         if (!game.user.targets.first().actor.traits.has('undead') && !game.user.targets.first().actor.traits.has('fiend')) { 
+           spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6 + ${spc.lvl}[cold]` : `${(spc.lvl-3)*2 + 5}d6`;
+         }
+         else {
+           const type = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["cold","good"]}, title: `Choose a damage type`}) : '';
+           spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6[cold] + ${(spc.lvl-3)*2 + 5}d6[good] + ${spc.lvl}[${type}]` : `${(spc.lvl-3)*2 + 5}d6[cold] + ${(spc.lvl-3)*2 + 5}d6[good]`;
+         }
+       }
+
+      if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') && spc.slug !== 'magnetic-acceleration' && spc.slug !== 'moonlight-ray' && spc.slug !== 'searing-light' && Object.entries(spc.data.item.data.data.damage.value).length !== 0 && !spc.data.item.isCantrip ) {
         spc.formula = spc.formula + `[${spc.data.item.data.data.damage.value[0].type.value}]`;
       }
+
+
       const fsplit = spc.formula.split(" ");
       let ddam,ddice = '';
       fsplit.forEach(f => {
