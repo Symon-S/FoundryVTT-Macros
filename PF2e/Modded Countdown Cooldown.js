@@ -7,7 +7,7 @@
 const effect = {
     type: 'effect',
     name: 'Countdown',
-    img: this.data.img,
+    img: 'systems/pf2e/icons/spells/time-beacon.webp',
     data: {
       tokenIcon: {
           show: true
