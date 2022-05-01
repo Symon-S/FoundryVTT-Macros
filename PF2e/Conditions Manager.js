@@ -6,6 +6,7 @@ All conditions are toggled on and off by having the tokens selected that you wou
 name of the condition. If the condition can have a value, simply click the + to increase the value or the - to decrease.
 The Clear a condition button is used to clear a specific condition off of a group of selected tokens.
 This macro is loosely adapted from the Apply Conditions macro created by cepvep.
+CSS styling by websterguy.
 */
 
 const condition_list = [
@@ -116,37 +117,58 @@ const script4 = async function CCon() {
 let content = `
 <style>
   .cond-cont {
-   margin: 0 auto;
+   margin: 1px auto;
    column-count: 3;
    column-width: 100px;
+   background: url(../assets/sheet/background.webp);
   }
 
   .cond-buttons-pd {
-    margin: 0 auto;
-    width: fit-content;
+    margin: 1px auto;
+    width: 70%;
     height: fit-content;
-    line-height: normal;
+    background: var(--secondary);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 50%);
+    border: #000;
+    color: #fff;
   }
 
-  .cond-buttons {
-    margin: 0 auto;
-    width: fit-content;
+  .cond-buttons, .cond-buttons:focus {
+    margin: 1px auto;
+    width: 70%;
     height: fit-content;
+    background: var(--secondary);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 50%);
+    text-shadow: none;
+    border: #000;
+    color: #fff;
+  }
+
+  .cond-buttons-small {
+    margin: 1px;
+    width: 13%;
   }
 
   .cond-buttons:hover {
-    background-color:#44c767;
+    background-color:var(--secondary);
+    text-shadow: 0 0 2px #fff;
+  }
+
+  .cond-buttons-small:hover {
+    background-color:var(--secondary);
+    text-shadow: 0 0 2px #fff;
   }
 
   .cond-buttons-pd:hover {
-    background-color:#44c767;
+    background-color:var(--secondary);
+    text-shadow: 0 0 2px #fff;
   }
 
 </style><script>${script1}${script2}${script3}${script4}</script><div class="cond-cont">`
 
 condition_list.forEach((c,i) => {
     if (wV.includes(c)) {
-     content += `<div class="cond-butt-set"><button name="button${i}" class="cond-buttons ${i}" type="button" onclick="CToggle('${c}')">${c[0].toUpperCase() + c.substring(1)}</button><button name="button${i}+" class="cond-buttons ${i}+" type="button" onclick="ICon('${c}')">+</button><button name="button${i}-" class="cond-buttons ${i}-" type="button" onclick="DCon('${c}')">-</button></div> `;
+     content += `<div class="cond-butt-set"><button name="button${i}" class="cond-buttons ${i}" type="button" onclick="CToggle('${c}')">${c[0].toUpperCase() + c.substring(1)}</button><button name="button${i}+" class="cond-buttons cond-buttons-small ${i}+" type="button" onclick="ICon('${c}')">+</button><button name="button${i}-" class="cond-buttons cond-buttons-small ${i}-" type="button" onclick="DCon('${c}')">-</button></div> `;
     }
     else {
      if ( c === "persistent-damage" ) { content += `<button name="button${i}" class="cond-buttons-pd" type="button" onclick="CToggle('${c}')">Persistent Damage</button> ` }
@@ -164,5 +186,5 @@ await new Promise(async (resolve) => {
     title:"Conditions Manager",
     content,
     buttons:{ Close: { label: "Close" } },
-    }).render(true);
+    },{width: 600}).render(true);
 });
