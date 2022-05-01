@@ -7,13 +7,13 @@ if (token?.actor?.type !== "loot") {
 } else if (token.actor.data.data.lootSheetType !== "Merchant") {
   ui.notifications.error(`The selected actor must be a Merchant!`);
 } else {
-  showPopup();
+  showPopup(token.actor);
 }
 
-function showPopup() {
+function showPopup(actor) {
   new Dialog({
     title: "Adjust Prices",
-    content: formatPopup(),
+    content: formatPopup(actor),
     buttons: {
       no: {
         icon: '<i class="fas fa-times"></i>',
@@ -31,6 +31,7 @@ function showPopup() {
               10
             ) ?? 100;
 
+          let updates = [];
           for (let input of inputs) {
             let item = actor.items.find((i) => i.id === input.name);
             if (!!item) {
@@ -38,9 +39,10 @@ function showPopup() {
                 input.value,
                 percentChange / 100
               );
-              item.update({ "data.price.value": newValue });
+              updates.push({ _id: item.id, "data.price.value": newValue });
             }
           }
+          actor.updateEmbeddedDocuments("Item", updates);
         },
       },
     },
@@ -48,7 +50,7 @@ function showPopup() {
   }).render(true);
 }
 
-function formatPopup() {
+function formatPopup(actor) {
   const weapon = gatherItems(actor.itemTypes.weapon);
   const armour = gatherItems(actor.itemTypes.armor);
   const equipment = gatherItems(actor.itemTypes.equipment);
