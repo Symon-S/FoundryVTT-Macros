@@ -6,7 +6,6 @@ All conditions are toggled on and off by having the tokens selected that you wou
 name of the condition. If the condition can have a value, simply click the + to increase the value or the - to decrease.
 The Clear a condition button is used to clear a specific condition off of a group of selected tokens.
 This macro is loosely adapted from the Apply Conditions macro created by cepvep.
-CSS styling by websterguy.
 */
 
 const condition_list = [
@@ -60,8 +59,11 @@ const wV = [
 	"wounded",
 ];
 
+const nF = [
+];
 const script1 = async function CToggle(c) {
   for(const token of canvas.tokens.controlled) {
+   if (token.actor.itemTypes.condition.some(p => p.slug === c && p.data.data.references.parent !== undefined)) { continue; }
    await token.actor.toggleCondition(c);
   }
 };
@@ -80,20 +82,20 @@ const script3 = async function DCon(c) {
 
 const script4 = async function CCon() {
   async function Clear(html) {
-     const c = html.find("#condition")[0].value;
-     for (const token of canvas.tokens.controlled) {
-       if (token.actor.itemTypes.condition.some( con => con.slug === c)) {
-         await token.actor.toggleCondition(c);
-       }
-     }
+    const c = html.find("#condition")[0].value;
+    for(const token of canvas.tokens.controlled) {
+      if (!token.actor.itemTypes.condition.some(p => p.slug === c) || token.actor.itemTypes.condition.some(p => p.slug === c && p.data.data.references.parent !== undefined)) { continue; }
+      await token.actor.toggleCondition(c);
+    }
   }
   const cons = []; 
   canvas.tokens.controlled.forEach( t=> {
     t.actor.itemTypes.condition.forEach ( c => {
+      if (c.data.data.references.parent !== undefined) { return; }
       cons.push(c.slug)
     });
   });
-  const ccon = [...new Set(cons)];
+  const ccon = [...new Set(cons)].sort();
   if (ccon.length === 0) { return }
   let choices = '';
   ccon.forEach( cc => { choices += `<option value="${cc}">${cc[0].toUpperCase() + cc.substring(1)}</option>`; });
