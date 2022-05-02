@@ -22,7 +22,7 @@ const script = async function Spells(id){
 		let buttons = {};
 		const spellData = token.actor.itemTypes.spellcastingEntry.find( i => i.id === id).getSpellData();
 				spellData.levels.forEach(sp => {
-					if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { return; }
+					if(!spellData.isRitual && !spellData.isPrepared && !spellData.isInnate && !spellData.isFlexible && !spellData.isFocusPool && !sp.isCantrip && sp.uses.value < 1) { return; }
 					sp.active.forEach((spa,index) => {
 						if(spa === null) { return; }
 						if(spa.expended) { return; }
@@ -140,12 +140,11 @@ await new Promise(async (resolve) => {
     title:"Spellbook",
     content,
     buttons:{ Close: { label: "Close" } },
-    }).render(true);
+    },{width: 210}).render(true);
 });
 
 
 let myElem = [...document.getElementsByClassName("app window-app dialog")].pop();
 if (myElem.style === undefined) { myElem = [...document.getElementsByClassName("app window-app dialog")].pop(); }
-myElem.style.width = "210px";
 myElem.style.resize = "both";
 myElem.style.overflow = "auto";
