@@ -6,6 +6,7 @@ All conditions are toggled on and off by having the tokens selected that you wou
 name of the condition. If the condition can have a value, simply click the + to increase the value or the - to decrease.
 The Clear a condition button is used to clear a specific condition off of a group of selected tokens.
 This macro is loosely adapted from the Apply Conditions macro created by cepvep.
+CSS design by websterguy
 */
 
 const condition_list = [
