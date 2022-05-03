@@ -146,7 +146,7 @@ let content = `
     color: #fff;
   }
 
-  .cond-buttons-small {
+  .cond-buttons-small, .cond-buttons-small:focus {
     margin: 1px;
     width: 13%;
   }
