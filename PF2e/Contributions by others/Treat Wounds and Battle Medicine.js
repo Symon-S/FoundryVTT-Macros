@@ -121,6 +121,9 @@ const getHealSuccess = ({
  * @param {boolean} options.useMortalHealing Uses mortal healing
  * @param {boolean} options.assurance Has assurance
  * @param {number} options.bmtw bmtw
+ * @param {Object} options.target current target
+ * @param {Object} options.immunityEffect the immunity effect  
+ * @param {string} options.immunityMacroLink the immunity Macro Link
  */
 const rollTreatWounds = async ({
   DC,
@@ -131,6 +134,9 @@ const rollTreatWounds = async ({
   useMagicHands,
   assurance,
   bmtw,
+  target,
+  immunityEffect,
+  immunityMacroLink,
 }) => {
   const dc = {
     value: DC,
@@ -143,6 +149,7 @@ const rollTreatWounds = async ({
   }
 
   const bonusString = bonus > 0 ? ` + ${bonus}` : '';
+  const immunityMessage = `${target.name} is now immune to ${bmtw} by ${token.name} for ${immunityEffect.data.duration.value} ${immunityEffect.data.duration.unit}.<br>${immunityMacroLink}`;
 
   if (assurance) {
     const aroll = await new Roll(
@@ -153,7 +160,7 @@ const rollTreatWounds = async ({
       type: CONST.CHAT_MESSAGE_TYPES.ROLL,
       flavor: `<strong>Assurance Roll: ${
         med.name[0].toUpperCase() + med.name.substring(1)
-      }</strong> vs DC ${DC}<br><small>Do not apply any other bonuses, penalties, or modifiers</small>`,
+      }</strong> vs DC ${DC}<br><small>Do not apply any other bonuses, penalties, or modifiers</small><br>${immunityMessage}`,
       roll: aroll,
       speaker: ChatMessage.getSpeaker(),
     });
@@ -227,6 +234,12 @@ const rollTreatWounds = async ({
             speaker: ChatMessage.getSpeaker(),
           });
         }
+        ChatMessage.create({
+          user: game.user.id,
+          type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+          flavor: `${immunityMessage}`,
+          speaker: ChatMessage.getSpeaker(),
+        });
       },
     });
   }
@@ -241,14 +254,22 @@ async function applyChanges($html) {
       );
       continue;
     }
+    const hasWardMedic = checkFeat('ward-medic');
+    const useBattleMedicine =
+      parseInt($html.find('[name="useBattleMedicine"]')[0]?.value) === 1;
+    const bmtw = useBattleMedicine ? 'Battle Medicine' : 'Treat Wounds';
+    const maxTargets = useBattleMedicine? 1 : hasWardMedic? 2**(med.rank-1): 1;
+    if (game.user.targets.size > maxTargets){
+      ui.notifications.warn(`Too many targets (${game.user.targets.size}) for ${bmtw}. You can select a maximum of ${maxTargets} targets.`);
+      continue;
+    }
     const { name } = token;
     const level = token.actor.data.data.details.level.value;
     const mod = parseInt($html.find('[name="modifier"]').val()) || 0;
     const assurance = $html.find('[name="assurance_bool"]')[0]?.checked;
     const requestedProf =
       parseInt($html.find('[name="dc-type"]')[0].value) || 1;
-    const useBattleMedicine =
-      parseInt($html.find('[name="useBattleMedicine"]')[0]?.value) === 1;
+    const hasMedicDedication = checkFeat('medic-dedication');
     // Risky Surgery does not apply when Battle Medicine is used.
     const isRiskySurgery = !useBattleMedicine &&
       $html.find('[name="risky_surgery_bool"]')[0]?.checked;
@@ -258,6 +279,20 @@ async function applyChanges($html) {
     // Magic Hands do not apply when Battle Medicine is used.
     const useMagicHands = !useBattleMedicine &&
       checkFeat('magic-hands');
+    const useContinualRecovery = !useBattleMedicine &&
+      checkFeat('continual-recovery');
+    const bmUUID = 'Compendium.pf2e.feature-effects.2XEYQNZTCGpdkyR6';
+    const twUUID = 'Compendium.pf2e.feature-effects.Lb4q2bBAgxamtix5';
+    const immunityEffectUUID = useBattleMedicine ? bmUUID : twUUID;
+    let immunityMacroLink = ``;
+    if (game.modules.has('xdy-pf2e-workbench') && game.modules.get('xdy-pf2e-workbench').active) { 
+      // Extract the Macro ID from the asynomous benefactor macro compendium.
+      const macroName = useBattleMedicine ? `BM Immunity CD`: `TW Immunity CD`;
+      const macroId = (await game.packs.get('xdy-pf2e-workbench.asymonous-benefactor-macros')).index.find(n => n.name === macroName)?._id;
+      immunityMacroLink = TextEditor.enrichHTML(`@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Apply ${bmtw} Immunity Cooldown}`);
+    } else {
+      ui.notifications.warn(`Workbench Module not active! Linking Immunity effect Macro not possible.`);
+    }
     const hasGodlessHealing = $html.find('[name="godless_healing_bool"]')[0]
       ?.checked;
     const forensicMedicine = checkFeat('forensic-medicine-methodology');
@@ -297,70 +332,133 @@ async function applyChanges($html) {
     if (checkItemTypeFeat('clever-improviser') && usedProf === 0) {
       usedProf = 1;
     }
-    const medicBonus = checkFeat('medic-dedication') ? (usedProf - 1) * 5 : 0;
+    const medicBonus = hasMedicDedication ? (usedProf - 1) * 5 : 0;
     const useBattleMedicineBonus = useBattleMedicine * level * forensicMedicine;
     const godlessHealingBonus = hasGodlessHealing ? 5 : 0;
 
-    const bmtw = useBattleMedicine ? 'Battle Medicine' : 'Treat Wounds';
+    const showIcons = false;
+    const immunityEffect = (await fromUuid(immunityEffectUUID)).toObject();
+    immunityEffect.data.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
+    immunityEffect.flags.core ??= {};
+    immunityEffect.flags.core.sourceId = immunityEffectUUID;
 
-    switch (usedProf) {
-      case 0:
-        ui.notifications.warn(
-          `${name} is not trained in Medicine and doesn't know how to ${bmtw}.`
-        );
-        break;
-      case 1:
-        rollTreatWounds({
-          DC: 15 + mod,
-          bonus: 0 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
-          med,
-          isRiskySurgery,
-          useMortalHealing,
-          useMagicHands,
-          assurance,
-          bmtw,
-        });
-        break;
-      case 2:
-        rollTreatWounds({
-          DC: 20 + mod,
-          bonus: 10 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
-          med,
-          isRiskySurgery,
-          useMortalHealing,
-          useMagicHands,
-          assurance,
-          bmtw,
-        });
-        break;
-      case 3:
-        rollTreatWounds({
-          DC: 30 + mod,
-          bonus: 30 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
-          med,
-          isRiskySurgery,
-          useMortalHealing,
-          useMagicHands,
-          assurance,
-          bmtw,
-        });
-        break;
-      case 4:
-        rollTreatWounds({
-          DC: 40 + mod,
-          bonus: 50 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
-          med,
-          isRiskySurgery,
-          useMortalHealing,
-          useMagicHands,
-          assurance,
-          bmtw,
-        });
-        break;
-      default:
-        ui.notifications.warn(
-          `${name} has an invalid usedProf value of ${usedProf}.`
-        );
+    for(let target of game.user.targets){
+      let targetActor = target.actor;
+
+      immunityEffect.name = `${bmtw} by ${name}`;
+
+      // check if the person being healed is currently immune. If so, check if healer is a medic
+      var isImmune = targetActor.itemTypes.effect.find(obj => {
+        return obj.data.name === immunityEffect.name
+      })
+      if (isImmune) {
+          if (hasMedicDedication) {
+              var medicCooldown = token.actor.itemTypes.effect.find(obj => {
+                  return obj.data.name === "Medic dedication used"
+              })
+              if (medicCooldown) {
+                  ui.notifications.warn(targetActor.name + ` is currently immune to ${bmtw} by ` + token.name);
+                  continue;
+              } else {
+                  // TODO: This part should not change the immunityEffect but instead copy or create a new one
+                  if (token.actor.data.data.skills.med.rank > 2) {
+                    immunityEffect.data.duration.unit = "hours"; //Cooldown of Medic Dedication depends on medicine skill rank
+                  }
+
+                  immunityEffect.name = "Medic dedication used";
+                  await token.actor.createEmbeddedDocuments("Item", [immunityEffect]);
+                  ui.notifications.info(token.name + ` has now used their Medic Dedication to ${bmtw} ` + targetActor.name);
+              }
+          } else {
+              ui.notifications.warn(targetActor.name + ` is currently immune to ${bmtw} by ` + token.name);
+              continue;
+          }
+      }
+
+      if (forensicMedicine || hasGodlessHealing) {
+        immunityEffect.data.duration.unit = "hours";
+      }
+      if (useContinualRecovery) {
+        immunityEffect.data.duration.unit = "minutes";
+        immunityEffect.data.duration.value = 10;
+      }
+      
+      // does only work if both tokens have the same owner.
+      // await targetActor.createEmbeddedDocuments("Item", [immunityEffect]);
+      // ui.notifications.info(targetActor.name + ` is now immune to ${bmtw} by ` + token.name);
+
+      // Roll for Treat Wounds/Battle Med
+      switch (usedProf) {
+        case 0:
+          ui.notifications.warn(
+            `${name} is not trained in Medicine and doesn't know how to ${bmtw}.`
+          );
+          break;
+        case 1:
+          rollTreatWounds({
+            DC: 15 + mod,
+            bonus: 0 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
+            med,
+            isRiskySurgery,
+            useMortalHealing,
+            useMagicHands,
+            assurance,
+            bmtw,
+            target,
+            immunityEffect,
+            immunityMacroLink,
+          });
+          break;
+        case 2:
+          rollTreatWounds({
+            DC: 20 + mod,
+            bonus: 10 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
+            med,
+            isRiskySurgery,
+            useMortalHealing,
+            useMagicHands,
+            assurance,
+            bmtw,
+            target,
+            immunityEffect,  
+            immunityMacroLink,
+          });
+          break;
+        case 3:
+          rollTreatWounds({
+            DC: 30 + mod,
+            bonus: 30 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
+            med,
+            isRiskySurgery,
+            useMortalHealing,
+            useMagicHands,
+            assurance,
+            bmtw,
+            target,
+            immunityEffect,
+            immunityMacroLink,
+          });
+          break;
+        case 4:
+          rollTreatWounds({
+            DC: 40 + mod,
+            bonus: 50 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
+            med,
+            isRiskySurgery,
+            useMortalHealing,
+            useMagicHands,
+            assurance,
+            bmtw,
+            target,
+            immunityEffect,
+            immunityMacroLink,
+          });
+          break;
+        default:
+          ui.notifications.warn(
+            `${name} has an invalid usedProf value of ${usedProf}.`
+          );
+      }
     }
   }
 }
@@ -510,6 +608,8 @@ const renderDialogContent = ({
 
 if (token === undefined) {
   ui.notifications.warn('No token is selected.');
+} else if (game.user.targets.size < 1){
+    ui.notifications.warn(`You must select at least one target.`);
 } else {
   const hasChirurgeon = checkFeat('chirurgeon');
   const hasNaturalMedicine = checkFeat('natural-medicine');
