@@ -26,7 +26,7 @@ function CheckFeat(slug, healer) {
 }
 
 function treatWoundsEffect() {
-    let playersNames = canvas.tokens.placeables.filter(pc => pc.actor.hasPlayerOwner && pc.actor.type === "character" && (pc.actor.data.data.skills['med'].rank > 0 || pc.actor.itemTypes.feat.some(x => x.slug === 'natural-medicine'))).map(pc => pc.actor.data.name);
+    let playersNames = canvas.tokens.placeables.filter(pc => pc.actor?.hasPlayerOwner && pc.actor.type === "character" && (pc.actor.data.data.skills['med'].rank > 0 || pc.actor.itemTypes.feat.some(x => x.slug === 'natural-medicine'))).map(pc => pc.actor.data.name);
     let playerNameList = '';
     playersNames.map((el) => {
         playerNameList += `<option value="${el}">${el}</option>`;
