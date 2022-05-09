@@ -503,12 +503,12 @@ const renderDialogContent = ({
   <form>
       <div class="form-group">
           <select id="useBattleMedicine" name="useBattleMedicine">
+              <option value="0">Treat Wounds</option>
               ${
                 hasBattleMedicine
                   ? '<option value="1">Battle Medicine</option>'
                   : ''
               }
-              <option value="0">Treat Wounds</option>
           </select>
       </div>
   </form>
