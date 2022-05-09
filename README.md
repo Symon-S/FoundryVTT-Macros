@@ -1,4 +1,4 @@
-**A repository of macros written by myself and others for the PF2e system on Foundry VTT.**
+**A repository of macros by the Fey Folk (Macro Fairies) for the PF2e system on Foundry VTT.**
 
 _All macros on this repository are updated to work with the latest foundry, pf2e, and actor schema versions. It is recommended to test the macros with a new actor before submitting an issue._
 
