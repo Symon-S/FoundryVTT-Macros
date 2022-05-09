@@ -31,7 +31,7 @@ function CheckFeat(slug, healer) {
 
 function battlemedicineEffect() {
 
-    let playersNames = canvas.tokens.placeables.filter(pc => pc.actor.hasPlayerOwner && pc.actor.type === "character" && pc.actor.itemTypes.feat.some(x => x.slug === 'battle-medicine')).map(pc => pc.actor.data.name);
+    let playersNames = canvas.tokens.placeables.filter(pc => pc.actor?.hasPlayerOwner && pc.actor.type === "character" && pc.actor.itemTypes.feat.some(x => x.slug === 'battle-medicine')).map(pc => pc.actor.data.name);
     let playerNameList = '';
     playersNames.map((el) => {
         playerNameList += `<option value="${el}">${el}</option>`;
