@@ -6,7 +6,6 @@ All conditions are toggled on and off by having the tokens selected that you wou
 name of the condition. If the condition can have a value, simply click the + to increase the value or the - to decrease.
 The Clear a condition button is used to clear a specific condition off of a group of selected tokens.
 This macro is loosely adapted from the Apply Conditions macro created by cepvep.
-This macro also integrates with the PF2e persistent damage module.
 CSS design by websterguy
 */
 
@@ -137,37 +136,6 @@ const script4 = async function CCon() {
     }).render(true);
   }
 }
-const script5 = async function PerDamMod() {
-  let pd = false
-  canvas.tokens.controlled.forEach( q => {
-    if (q.actor === null) {  return ui.notifications.warn(`${q.name} does not have an actor or is broken`); }
-    if (q.actor.itemTypes.effect.length === 0) { return; }
-    if (q.actor.itemTypes.effect.some(e => e.slug.includes("persistent-damage"))) { pd = true; }
-  });
-
-  if (pd === true) { 
-    await new Dialog({
-      title:"Add or Clear?",
-      buttons:{
-        No: {
-	  label: "Add",
-	  callback: () => { PF2EPersistentDamage.showDialog(); }
-	},
-     	Yes: { 
-	  label: "Clear",
-	  callback: () => {
-       	    canvas.tokens.controlled.forEach( t => {
-              if (t.actor === null) { ui.notifications.warn(`${t.name} does not have an actor or is broken`); return; }
-              t.actor.itemTypes.effect.filter(ef => ef.slug.includes("persistent-damage")).forEach( p => {  p.delete(); });
-       	    }); 
-      	  },
-     	},
-      },
-      default: "No",
-      },{width:250}).render(true);
-  }
-  if (pd === false) { PF2EPersistentDamage.showDialog(); }
-}
 
 let content = `
 <style>
@@ -219,7 +187,7 @@ let content = `
     text-shadow: 0 0 2px #fff;
   }
 
-</style><script>${script1}${script2}${script3}${script4}${script5}</script><div class="cond-cont">`
+</style><script>${script1}${script2}${script3}${script4}</script><div class="cond-cont">`
 
 condition_list.forEach((c,i) => {
     if (wV.includes(c)) {
@@ -228,7 +196,7 @@ condition_list.forEach((c,i) => {
     else {
      if ( c === "persistent-damage" ) { 
       	if (game.modules.has("pf2e-persistent-damage") && game.modules.get("pf2e-persistent-damage").active) {
-	  content += `<button name="button${i}" class="cond-buttons-pd" type="button" onclick="PerDamMod()">Persistent Damage</button> `
+	  content += `<button name="button${i}" class="cond-buttons-pd" type="button" onclick="PF2EPersistentDamage.showDialog()">Persistent Damage</button> `
 	}
 	else {
        	  content += `<button name="button${i}" class="cond-buttons-pd" type="button" onclick="CToggle('${c}')">Persistent Damage</button> ` 
