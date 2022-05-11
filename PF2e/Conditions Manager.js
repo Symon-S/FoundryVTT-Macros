@@ -96,15 +96,15 @@ const script4 = async function CCon() {
   }
   const cons = []; 
   canvas.tokens.controlled.forEach( t=> {
-    t.actor.itemTypes.condition.forEach ( c => {
-      if (c.data.data.references.parent !== undefined) { return; }
-      cons.push(c.slug);
-    });
     if (game.modules.has("pf2e-persistent-damage") && game.modules.get("pf2e-persistent-damage").active) {
       t.actor.itemTypes.effect.forEach( e => {
         if (e.slug.includes("persistent-damage")) { cons.push(e.name) }
       });
     }
+    t.actor.itemTypes.condition.forEach ( c => {
+      if (c.data.data.references.parent !== undefined) { return; }
+      cons.push(c.slug);
+    });
   });
   const ccon = [...new Set(cons)].sort();
   if (ccon.length === 0) { return ui.notifications.info("No conditions to clear at this time.") }
@@ -113,6 +113,7 @@ const script4 = async function CCon() {
       if(token.actor.hasCondition(ccon[0])) {
         await token.actor.toggleCondition(ccon[0]); 
       }
+      if(token.actor.itemTypes.effect.find(n => n.name === ccon[0]) && game.modules.has("pf2e-persistent-damage") && game.modules.get("pf2e-persistent-damage").active) { (await token.actor.itemTypes.effect.find(n => n.name === ccon[0])).delete(); }
     }
   }
   else{
