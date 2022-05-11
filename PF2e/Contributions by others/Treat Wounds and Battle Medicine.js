@@ -2,18 +2,18 @@
 Originally contributed by Mother of God.
 Updated and maintained by darkim.
 This Macro works just like the system's Treat Wounds macro, except for the following additions:
+- Adds Battle Medicine integration
+- Checks for targets and immunities of targets
+- Provides option for applying the immunity effect to the healed target
 - Adds the ability to roll with assurance
 - Shows the assurance roll result during option selection
-- Adds godless healing integration
-- Adds Battle Medicine integration
+- Adds automated godless healing integration
 - Adds Forensic Medicine integration
 - Shows the Medic Dedication healing bonus during option selection
 - Shows tooltips for many of the options during option selection
 - Removes any skill that is not applicable if you have Chirurgeon and/or Natural Medicine (if you don't have medicine trained)
 - Fires off a warning notification if Medicine is not trained and you do not possess a feat/feature that allows you to roll a different skill.
 - Adds the ability to use the macro with clever improviser.
-Recent Changes:
-- Fixed Risky Surgery not applicable when using Battle Medicine
 */
 
 /**
@@ -293,8 +293,6 @@ async function applyChanges($html) {
     } else {
       ui.notifications.warn(`Workbench Module not active! Linking Immunity effect Macro not possible.`);
     }
-    const hasGodlessHealing = $html.find('[name="godless_healing_bool"]')[0]
-      ?.checked;
     const forensicMedicine = checkFeat('forensic-medicine-methodology');
 
     const skill = $html.find('[name="skill"]')[0]?.value;
@@ -334,9 +332,8 @@ async function applyChanges($html) {
     }
     const medicBonus = hasMedicDedication ? (usedProf - 1) * 5 : 0;
     const useBattleMedicineBonus = useBattleMedicine * level * forensicMedicine;
-    const godlessHealingBonus = hasGodlessHealing ? 5 : 0;
 
-    const showIcons = false;
+    const showIcons = true;
     const immunityEffect = (await fromUuid(immunityEffectUUID)).toObject();
     immunityEffect.data.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
     immunityEffect.flags.core ??= {};
@@ -346,13 +343,15 @@ async function applyChanges($html) {
       let targetActor = target.actor;
 
       immunityEffect.name = `${bmtw} by ${name}`;
+      const hasGodlessHealing = targetActor.items.filter((item) => item.type === 'feat').some((item) => item.data.data.slug === "godless-healing");
+      const godlessHealingBonus = hasGodlessHealing ? 5 : 0;
 
       // check if the person being healed is currently immune. If so, check if healer is a medic
       var isImmune = targetActor.itemTypes.effect.find(obj => {
         return obj.data.name === immunityEffect.name
       })
       if (isImmune) {
-          if (hasMedicDedication) {
+          if (useBattleMedicine && hasMedicDedication) {
               var medicCooldown = token.actor.itemTypes.effect.find(obj => {
                   return obj.data.name === "Medic dedication used"
               })
@@ -360,13 +359,16 @@ async function applyChanges($html) {
                   ui.notifications.warn(targetActor.name + ` is currently immune to ${bmtw} by ` + token.name);
                   continue;
               } else {
-                  // TODO: This part should not change the immunityEffect but instead copy or create a new one
+                  const applicatorImmunityEffect = (await fromUuid(immunityEffectUUID)).toObject();
+                  applicatorImmunityEffect.data.tokenIcon.show = showIcons; 
+                  applicatorImmunityEffect.flags.core ??= {};
+                  applicatorImmunityEffect.flags.core.sourceId = immunityEffectUUID;
                   if (token.actor.data.data.skills.med.rank > 2) {
-                    immunityEffect.data.duration.unit = "hours"; //Cooldown of Medic Dedication depends on medicine skill rank
+                    applicatorImmunityEffect.data.duration.unit = "hours"; //Cooldown of Medic Dedication depends on medicine skill rank
                   }
 
-                  immunityEffect.name = "Medic dedication used";
-                  await token.actor.createEmbeddedDocuments("Item", [immunityEffect]);
+                  applicatorImmunityEffect.name = "Medic dedication used";
+                  await token.actor.createEmbeddedDocuments("Item", [applicatorImmunityEffect]);
                   ui.notifications.info(token.name + ` has now used their Medic Dedication to ${bmtw} ` + targetActor.name);
               }
           } else {
@@ -560,12 +562,6 @@ const renderDialogContent = ({
           <label title="Any circumstance or other dc modifiers at your GMs decission.">DC Modifier:</label>
           <input id="modifier" name="modifier" type="number"/>
       </div>
-  </form>
-  <form>
-    <div class="form-group">
-      <label title="+5 Healing if the *target* has this feat.">Godless Healing</label>
-      <input type="checkbox" id="godless_healing_bool" name="godless_healing_bool"></input>
-    </div>
   </form>
   ${
     checkFeat('risky-surgery')

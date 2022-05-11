@@ -9,7 +9,6 @@ If you want to show the icons, update the variable showIcons on line #2 to true.
 Immunity duration is set depending on several factors. Default is 24 hours. 
 If healed by an Investigator with the Forensic Medicine methodology, it is 1 hour. 
 A character with godless healing feat will get a 1 hour immunity.
-A character with the Medic dedication can heal someone who is immune. 
 The macro will set an effect on the medic to indicate if they have used this ability (or whether it is not currently available). 
 The duration is automatically set depending on the Medicine skill level of the medic.
 
@@ -68,13 +67,10 @@ async function main(html) {
     const applicator = game.actors.getName(html.find("#playerName")[0].value);
     bmEffect.name = "Battle Medicine by " + applicator.data.name;
     bmEffect.img = applicator.data.token.img;
-    const isMedic = CheckFeat('medic-dedication', applicator);
     const isgodless = CheckFeat('godless-healing', token.actor); //godless healing affects the patient, not the healer
     const isForensic = CheckFeat('forensic-medicine-methodology', applicator);
-    let isMasterMedic = false;
-    if (isMedic && applicator.data.data.skills.med.rank > 2) { isMasterMedic = true; }
 
-    if (isForensic || isgodless || isMasterMedic) {
+    if (isForensic || isgodless) {
         bmEffect.data.duration.unit = "hours";
     }
 
