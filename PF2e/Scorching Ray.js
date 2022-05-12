@@ -1,10 +1,9 @@
 /*
 Scorching Ray 1 to 3 action macro.
 Target the appropriate amount of targets for the amount of actions spent.
-The macro will roll all attacks first and depending on degree of success, roll the damages.
 */
 
-if (!token.actor.itemTypes.spell.some(s => s.slug === 'scorching-ray') && token.actor.itemTypes.consumable.some(s => s.slug.search('scorching-ray') === -1)) { return ui.notifications.error('You do not have Scorching Ray') }
+if (!token.actor.itemTypes.spell.some(s => s.slug === 'scorching-ray') && !token.actor.itemTypes.consumable.some(s => s.data.data.spell?.data?.data?.slug ==='scorching-ray')) { return ui.notifications.error('You do not have Scorching Ray') }
 if (game.user.targets.ids === undefined || game.user.targets.ids.length === 0) { return ui.notifications.error('At least 1 target is required'); }
 
 const srE = token.actor.itemTypes.spellcastingEntry.filter(m => m.spells.some(x => x.slug === 'scorching-ray') === true);
@@ -54,7 +53,7 @@ const srch = sr.find(n => n.name === srdiag[0]);
 const targetIds = game.user.targets.ids;
 const targets = canvas.tokens.placeables.filter(t => targetIds.includes(t.id));
 
-if(parseInt(srdiag[1]) !== targets.length) { return ui.notifications.warn('You need to target an amount of tokens equal to the amount of actions chosen'); }
+if(parseInt(srdiag[1]) < targets.length) { return ui.notifications.warn('You need to target an amount of tokens less than or equal to the amount of actions chosen'); }
 
 let ttags = '';
 srch.spell.data.data.traits.value.forEach( t => {
@@ -64,7 +63,6 @@ srch.spell.data.data.traits.value.forEach( t => {
 let dam = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? `{${srch.level + 2}d6}[fire] + {${srch.level}}[status,force]` : `{${srch.level + 2}d6}[fire]`;
 if ( srdiag[1] > 1 ) { dam = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? `{${(2*srch.level) + 4}d6}[fire] + {${srch.level}}[status,force]` : `{${(2*srch.level) + 4}d6}[fire]`; }
 
-/*Temporarily disable Workbench, if present and setting available, for the macro to work right*/
 let aRDSA = false;
 if (game.modules.has('xdy-pf2e-workbench') && game.modules.get('xdy-pf2e-workbench').active && game.settings.get("xdy-pf2e-workbench","autoRollDamageForSpellAttack")) {
  aRDSA = true;
@@ -94,7 +92,6 @@ targets.forEach(async a => {
 
 game.user.updateTokenTargets(targetIds);
 
-/*Re-enable setting in Workbench if previously turned enabled*/
 if (aRDSA) { await game.settings.set("xdy-pf2e-workbench","autoRollDamageForSpellAttack",true); }
 
 const s_entry = srE.find(e => e.id === srch.entryId);
