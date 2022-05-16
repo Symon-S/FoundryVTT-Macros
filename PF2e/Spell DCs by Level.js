@@ -17,7 +17,7 @@ const rarity = await new Promise((resolve) => {
 
 const level = await new Promise((resolve) => {
  new Dialog({
- title: 'Rarity?',
+ title: 'Level?',
  buttons: {
   1: { label: '1', callback: async(rar) => { resolve(0); } },
   2: { label: '2', callback: async(rar) => { resolve(1); } },
