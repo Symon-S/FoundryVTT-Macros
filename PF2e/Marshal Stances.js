@@ -82,7 +82,6 @@ else { SRoll(); }
 
 async function main(html) {
   DC = parseInt(html.find("#dcinput")[0].value);
-  console.log(DC, parseInt(html.find("#dcinput")[0].value))
   await SRoll();
 }
 
