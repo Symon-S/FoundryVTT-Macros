@@ -602,10 +602,10 @@ const renderDialogContent = ({
   </form>
 `;
 
-if (token === undefined) {
-  ui.notifications.warn('No token is selected.');
+if (canvas.tokens.controlled.length !== 1){
+  ui.notifications.warn('You need to select exactly one token as the healer.');
 } else if (game.user.targets.size < 1){
-    ui.notifications.warn(`You must select at least one target.`);
+    ui.notifications.warn(`You must target at least one token.`);
 } else {
   const hasChirurgeon = checkFeat('chirurgeon');
   const hasNaturalMedicine = checkFeat('natural-medicine');
