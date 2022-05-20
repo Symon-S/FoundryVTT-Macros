@@ -61,8 +61,7 @@ async function main(html) {
     twEffect.flags.core.sourceId = tw_UUID;
 
     const applicator = game.actors.getName(html.find("#playerName")[0].value);
-    twEffect.name = "Treat Wounds by " + applicator.data.name;
-    twEffect.img = applicator.data.token.img;
+    twEffect.name = "Treat Wounds";
     const useContinualRecovery = CheckFeat('continual-recovery', applicator);
 
     if (useContinualRecovery) {
@@ -71,5 +70,5 @@ async function main(html) {
     }
 
     await token.actor.createEmbeddedDocuments("Item", [twEffect]);
-    ui.notifications.info(token.actor.name + " is now immune to Treat Wounds by " + applicator.name);
+    ui.notifications.info(token.actor.name + " is now immune to Treat Wounds for " + twEffect.data.duration.value + " " + twEffect.data.duration.unit + ".");
 }

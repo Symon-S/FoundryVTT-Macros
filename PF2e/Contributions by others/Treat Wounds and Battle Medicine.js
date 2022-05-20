@@ -149,7 +149,7 @@ const rollTreatWounds = async ({
   }
 
   const bonusString = bonus > 0 ? ` + ${bonus}` : '';
-  const immunityMessage = `${target.name} is now immune to ${bmtw} by ${token.name} for ${immunityEffect.data.duration.value} ${immunityEffect.data.duration.unit}.<br>${immunityMacroLink}`;
+  const immunityMessage = `${target.name} is now immune to ${immunityEffect.name} for ${immunityEffect.data.duration.value} ${immunityEffect.data.duration.unit}.<br>${immunityMacroLink}`;
 
   if (assurance) {
     const aroll = await new Roll(
@@ -342,7 +342,7 @@ async function applyChanges($html) {
     for(let target of game.user.targets){
       let targetActor = target.actor;
 
-      immunityEffect.name = `${bmtw} by ${name}`;
+      immunityEffect.name = useBattleMedicine ? `${bmtw} by ${name}`: `${bmtw}`;
       const hasGodlessHealing = targetActor.items.filter((item) => item.type === 'feat').some((item) => item.data.data.slug === "godless-healing");
       const godlessHealingBonus = hasGodlessHealing ? 5 : 0;
 
@@ -369,7 +369,7 @@ async function applyChanges($html) {
 
                   applicatorImmunityEffect.name = "Medic dedication used";
                   await token.actor.createEmbeddedDocuments("Item", [applicatorImmunityEffect]);
-                  ui.notifications.info(token.name + ` has now used their Medic Dedication to ${bmtw} ` + targetActor.name);
+                  ui.notifications.info(token.name + ` has now used their Medic Dedication to apply ${bmtw} to ` + targetActor.name);
               }
           } else {
               ui.notifications.warn(targetActor.name + ` is currently immune to ${bmtw} by ` + token.name);
