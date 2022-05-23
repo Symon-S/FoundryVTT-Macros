@@ -28,8 +28,9 @@ function CheckFeat(slug, healer) {
 function treatWoundsEffect() {
     let playersNames = canvas.tokens.placeables.filter(pc => pc.actor?.hasPlayerOwner && pc.actor.type === "character" && (pc.actor.data.data.skills['med'].rank > 0 || pc.actor.itemTypes.feat.some(x => x.slug === 'natural-medicine'))).map(pc => pc.actor.data.name);
     let playerNameList = '';
+    let immunityConferer = game.messages.contents.filter(m => m.data.flavor?.includes("immune to Treat Wounds")).pop().actor?.data.name;
     playersNames.map((el) => {
-        playerNameList += `<option value="${el}">${el}</option>`;
+        playerNameList += `<option value="${el}"${immunityConferer===el?` selected`:``}>${el}</option>`;
     });
 
     let template = `
