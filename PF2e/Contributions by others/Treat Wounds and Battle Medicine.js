@@ -14,6 +14,8 @@ This Macro works just like the system's Treat Wounds macro, except for the follo
 - Removes any skill that is not applicable if you have Chirurgeon and/or Natural Medicine (if you don't have medicine trained)
 - Fires off a warning notification if Medicine is not trained and you do not possess a feat/feature that allows you to roll a different skill.
 - Adds the ability to use the macro with clever improviser.
+- Checks if the Healer is having healer's tools in the inventory.
+- Provide information to the user that Expanded Healer's Tools have to be held with 2h to gain it's bonus.
 */
 
 /**
@@ -32,12 +34,24 @@ const checkFeat = (slug) =>
  *
  * @param {string} slug Slug of the feature to search
  * @param {string} name Optional name of the feature
- * @returns {boolean} true if the actor has a meatching item feat
+ * @returns {boolean} true if the actor has a matching item feat
  */
 const checkItemTypeFeat = (slug, name) =>
   token.actor.itemTypes.feat.some(
     (feat) => feat.slug === slug && (!name || feat.name === name)
   );
+
+/**
+ * Check if any itemType equipment of the actor matches a slug (and optionally checks in how many hands it is held)
+ *
+ * @param {string} slug Slug of the equipment to search
+ * @param {int} hands Number of hands the item shall be held
+ * @returns {boolean} true if the actor has a matching item equipment
+ */
+const checkItemPresent = (slug, hands) =>
+token.actor.itemTypes.equipment.some(
+  (equipment) => equipment.slug === slug && (!hands || equipment.handsHeld === hands)
+);
 
 /**
  * Get the available roll options
@@ -263,6 +277,17 @@ async function applyChanges($html) {
       ui.notifications.warn(`Too many targets (${game.user.targets.size}) for ${bmtw}. You can select a maximum of ${maxTargets} targets.`);
       continue;
     }
+    const useHealingPlaster = $html.find('[name="useHealingPlaster"]')[0]?.checked;
+    const useBuiltInTools = $html.find('[name="useBuiltInTools"]')[0]?.checked;
+    if (useBuiltInTools) {
+      // skip the following else/if.
+    } else if (!useBattleMedicine && useHealingPlaster === false ){
+      ui.notifications.warn(`You can't ${bmtw} without Healer's Tools or a Healing Plaster.`);
+      continue;
+    } else if (useBattleMedicine && useHealingPlaster !== undefined) {
+      ui.notifications.warn(`You can't use ${bmtw} without Healer's Tools.`);
+      continue;
+    }
     const { name } = token;
     const level = token.actor.data.data.details.level.value;
     const mod = parseInt($html.find('[name="modifier"]').val()) || 0;
@@ -482,12 +507,35 @@ const renderDialogContent = ({
   hasBattleMedicine,
   tmed,
   totalAssurance,
+  hasHealersTools,
+  hasHealersToolsHeld,
 }) => `
   <div>
     Attempt to heal the target by 2d8 hp.<br>You have to hold healer's tools, or you are wearing them and have a hand free!<br>
     <small>Hover the options for more information.</small>
   </div>
   <hr/>
+  ${
+    !hasHealersTools 
+      ? `<b>You don't have healer's tools on your character!</b>
+        ${
+          checkItemTypeFeat('built-in-tools')
+            ? `<form>
+              <div class="form-group">
+                <label title="Are you wielding, wearing, or adjacent to your innovation?">Is healer's tools one of your Built-In Tools?</label>
+                <input type="checkbox" id="useBuiltInTools" name="useBuiltInTools" checked></input>
+              </div>
+            </form>`
+            : ``
+        }
+        <form>
+          <div class="form-group">
+           <label title="Healing Plaster is a cantrip which can can replace healer's tools for Treat Wounds.">Are you using Healing Plaster? <small>(only for Treat wounds)</small></label>
+            <input type="checkbox" id="useHealingPlaster" name="useHealingPlaster"></input>
+          </div>
+        </form>`
+      : ``
+  }
   ${
     hasChirurgeon || hasNaturalMedicine
       ? `<form>
@@ -599,6 +647,11 @@ const renderDialogContent = ({
         </form>`
       : ``
   }
+  ${
+    !hasHealersToolsHeld
+      ? `<b>Note: To gain the bonus of Healer's Tools (if any), you have to set the Healer's Tools to be held with both hands, due to how the item is implemented in the pf2e core system.</b>`
+      : ``
+  }
   </form>
 `;
 
@@ -631,17 +684,25 @@ if (canvas.tokens.controlled.length !== 1){
     } else if (hasNaturalMedicine && (checkItemTypeFeat('assurance', 'Assurance (Nature)') ||
      checkItemTypeFeat('assurance-nature'))) {
       bmtw_skill = token.actor.data.data.skills['nat'];
-    } 
+    }
+    const hasHealersTools = checkItemPresent('healer-s-tools') || checkItemPresent('healers-tools') 
+                            || checkItemPresent('healers-tools-expanded') || checkItemPresent('violet-ray')
+                            || checkItemPresent('marvelous-medicines') || checkItemPresent('marvelous-medicines-greater');
+    const hasHealersToolsHeld = !hasHealersTools || checkItemPresent('healer-s-tools', 2) || checkItemPresent('healers-tools', 2)
+                            || checkItemPresent('healers-tools-expanded', 2) || checkItemPresent('violet-ray', 2)
+                            || checkItemPresent('marvelous-medicines', 2) || checkItemPresent('marvelous-medicines-greater', 2);
     const level = token.actor.data.data.details.level.value;
     const totalAssurance = 10 + (bmtw_skill.rank * 2 + level);
     const dialog = new Dialog({
-      title: 'Treat Wounds',
+      title: 'Treat Wounds / Battle Medicine',
       content: renderDialogContent({
         hasChirurgeon,
         hasNaturalMedicine,
         hasBattleMedicine,
         tmed,
         totalAssurance,
+        hasHealersTools,
+        hasHealersToolsHeld,
       }),
       buttons: {
         yes: {
