@@ -69,20 +69,20 @@ async function Spellstrike()
   let weapons = [];
   if (token.actor.itemTypes.feat.some(f => f.slug === 'starlit-span')) { weapons = actor.data.data.actions.filter(i => i.type === "strike"); }
   else { 
-   weapons = actor.itemTypes.weapon.filter(i => !i.isRanged && i.isEquipped);
-   let melee = weapons;
-   let names = [];
-   melee.forEach(a => { names.push(a.name); });
-   let ranged = actor.itemTypes.weapon.filter(i => i.isRanged === true && i.isEquipped);
-   ranged.forEach(r => { names.push(r.name); });
-   actor.data.data.actions.forEach(gus => {
-    if ( names.includes(gus.name) ) return;
-    let traits = [];
-    if ( !names.includes(gus.name) ) {
-    Object.entries(gus.traits).forEach(t => { traits.push(t[1].name); });
-    if ( traits.includes('unarmed') && !traits.includes('ranged') ) weapons.push(gus); 
-    }
-   })
+    weapons = actor.itemTypes.weapon.filter(i => !i.isRanged && i.isEquipped);
+    let melee = weapons;
+    let names = [];
+    melee.forEach(a => { names.push(a.name); });
+    let ranged = actor.itemTypes.weapon.filter(i => i.isRanged === true && i.isEquipped);
+    ranged.forEach(r => { names.push(r.name); });
+    actor.data.data.actions.forEach(gus => {
+      if ( names.includes(gus.name) ) { return; }
+      let traits = [];
+      if ( !names.includes(gus.name) ) {
+      Object.entries(gus.traits).forEach(t => { traits.push(t[1].name); });
+      if ( traits.includes('unarmed') && !traits.includes('ranged') ) { weapons.push(gus); }
+      }
+    })
   }
   const map_weap = weapons.map(p => p.name);
 
@@ -91,14 +91,47 @@ async function Spellstrike()
         { label : `Choose a Spell:`, type : `select`, options : spells.map(p=> p.name) },
         { label : `Weapon:`, type : `select`, options : map_weap },
       ]
-        	
-		  /* Run dialog and alot data */
-		  const spell_choice = await quickDialog({data : es_data, title : `Spellstrike`});
+
+   let sbsp;
+   if(token.actor.itemTypes.feat.some(f => f.slug === "standby-spell")) { 
+     es_data.push({ label: `Use Standby Spell?`, type: `checkbox` });
+     const sbs = token.actor.itemTypes.spell.find(sb => sb.data.flags.pf2e.standbySpell);
+     if ( sbs !== undefined ) {
+       sbsp = {name: `${sbs.name} (Standby)`, formula:``, sEId: ``, lvl: sbs.level, spId: sbs.id, slug: sbs.slug, desc: sbs.description, DC: sbs.spellcasting.statistic.dc.value, data: ``, spell: { chatData: sbs.getChatData(), spell: sbs }, index: ``, isSave: sbs.getChatData().isSave, cId: sbs.sourceId.substr(27)}
+     }
+   }
+        	 
+      /* Run dialog and alot data */
+      const spell_choice = await quickDialog({data : es_data, title : `Spellstrike`});
 		
-		  /* Get the strike actions and roll strike */
-		  const strike = token.actor.data.data.actions.find(a => a.type === 'strike' && a.name === spell_choice[1]);
-      const spc = spells.find(sp => sp.name === spell_choice[0]);
-      const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);
+      /* Get the strike actions and roll strike */
+      const strike = token.actor.data.data.actions.find(a => a.type === 'strike' && a.name === spell_choice[1]);
+      let spc = spells.find(sp => sp.name === spell_choice[0]);
+      const spcBack = spc;
+      if ( spell_choice[2] && sbsp === undefined ) {
+        if ( game.modules.get('xdy-pf2e-workbench')?.active && (await game.packs.get("xdy-pf2e-workbench.asymonous-benefactor-macros").getDocuments()).some(x => x.name === "Assign Standby Spell")) {
+          const temp_macro = new Macro((await game.packs.get("xdy-pf2e-workbench.asymonous-benefactor-macros").getDocuments()).find(x => x.name === "Assign Standby Spell")?.toObject());
+          temp_macro.data.permission.default = CONST.DOCUMENT_PERMISSION_LEVELS.OWNER;
+          await temp_macro.execute();
+        }
+        else if ( game.macros.some(n => n.name === "Assign Standby Spell") ) { await game.macros.find(n => n.name === "Assign Standby Spell").execute(); }
+        else { return ui.notifications.warn("You do not have the latest workbench version or it is not active, or the Assign Standby Spell macro"); }
+        const sbs = token.actor.itemTypes.spell.find(sb => sb.data.flags.pf2e.standbySpell);
+        sbsp = {name: `${sbs.name} (Standby)`, formula:``, sEId: ``, lvl: sbs.level, spId: sbs.id, slug: sbs.slug, desc: sbs.description, DC: sbs.spellcasting.statistic.dc.value, data: ``, spell: { chatData: sbs.getChatData(), spell: sbs }, index: ``, isSave: sbs.getChatData().isSave, cId: sbs.sourceId.substr(27)}
+      }
+      let s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);
+      if ( spell_choice[2] ) {
+        if ( !s_entry.data.flags.pf2e.magusSE ) { return ui.notifications.warn(`${s_entry.name} is not your Magus Spellcasting Entry, please try again.`); }
+        if ( sbsp.lvl > spc.lvl || spc.data.item.isCantrip ) { return ui.notifications.warn(`The chosen spell level is below the base level of your standby spell ${sbsp.name} or is a Cantrip, please try again.`); }
+        if ( sbsp.lvl <= spc.lvl ) { 
+          sbsp.lvl = spc.lvl;
+          sbsp.data = sbsp.spell.spell.getRollData({spellLvl: sbsp.lvl});
+          sbsp.formula = sbsp.spell.spell.getDamageFormula(sbsp.lvl, sbsp.data);
+          sbsp.sEId = spc.sEId;
+          spc = sbsp 
+        }
+      }      
+
       let pers;
       const key = s_entry.ability;
       const s_mod = ` + ${token.actor.data.data.abilities[key].mod}`
@@ -262,11 +295,9 @@ async function Spellstrike()
         flavor = flavor + `<br>${TextEditor.enrichHTML(`[[/r {${pers}}[persistent,bleed]]] @Compendium[pf2e.conditionitems.Persistent Damage]{Persistent Bleed Damage}`)}`
       }
 
-      if (game.modules.has('xdy-pf2e-workbench')) {
-       if (game.modules.get('xdy-pf2e-workbench').active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
+      if (game.modules.get('xdy-pf2e-workbench')?.active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
         if (critt === 'success') { await strike.damage({ event }); }
         if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
-       }
       }
       if(!game.modules.has('xdy-pf2e-workbench')) { 
         if (critt === 'success') { await strike.damage({ event }); }
@@ -293,7 +324,8 @@ async function Spellstrike()
       }
         /* Expend slots */
         if ( spc.data.item.isCantrip ) { return; }
-			  await s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: false});
+        if ( spell_choice[2] ) { spc = spcBack; }
+	await s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: false});
 	}
 
 }
@@ -343,7 +375,7 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
           }}
         },
         default : 'Ok'
-      })._render(true);
+      },{width:"auto"})._render(true);
         document.getElementById("0qd").focus();
     });
 }
