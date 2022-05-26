@@ -109,15 +109,15 @@ async function Spellstrike()
       let spc = spells.find(sp => sp.name === spell_choice[0]);
       const spcBack = spc;
       if ( spell_choice[2] && sbsp === undefined ) {
-        if ( game.modules.get('xdy-pf2e-workbench')?.active && (await game.packs.get("xdy-pf2e-workbench.asymonous-benefactor-macros").getDocuments()).some(x => x.name === "Assign Standby Spell")) {
-          const temp_macro = new Macro((await game.packs.get("xdy-pf2e-workbench.asymonous-benefactor-macros").getDocuments()).find(x => x.name === "Assign Standby Spell")?.toObject());
+        if ( game.modules.get('xdy-pf2e-workbench')?.active && (await game.packs.get("xdy-pf2e-workbench.asymonous-benefactor-macros-internal").getDocuments()).some(x => x.name === 'XDY DO_NOT_IMPORT Assign Standby Spell')) {
+          const temp_macro = new Macro((await game.packs.get("xdy-pf2e-workbench.asymonous-benefactor-macros-internal").getDocuments()).find(x => x.name === 'XDY DO_NOT_IMPORT Assign Standby Spell')?.toObject());
           temp_macro.data.permission.default = CONST.DOCUMENT_PERMISSION_LEVELS.OWNER;
           await temp_macro.execute();
         }
-        else if ( game.macros.some(n => n.name === "Assign Standby Spell") ) { await game.macros.find(n => n.name === "Assign Standby Spell").execute(); }
+        else if ( game.macros.some(n => n.name === "Assign Standby Spell") ) { await game.macros.find(n => n.name === "Assign Standby Spell").execute();  }
         else { return ui.notifications.warn("You do not have the latest workbench version or it is not active, or the Assign Standby Spell macro"); }
         const sbs = token.actor.itemTypes.spell.find(sb => sb.data.flags.pf2e.standbySpell);
-        sbsp = {name: `${sbs.name} (Standby)`, formula:``, sEId: ``, lvl: sbs.level, spId: sbs.id, slug: sbs.slug, desc: sbs.description, DC: sbs.spellcasting.statistic.dc.value, data: ``, spell: { chatData: sbs.getChatData(), spell: sbs }, index: ``, isSave: sbs.getChatData().isSave, cId: sbs.sourceId.substr(27)}
+        sbsp = {name: `${sbs.name} (Standby)`, formula:``, sEId: ``, lvl: sbs.level, spId: sbs.id, slug: sbs.slug, desc: sbs.description, DC: sbs.spellcasting.statistic.dc.value, data: ``, spell: { chatData: sbs.getChatData(), spell: sbs }, index: ``, isSave: sbs.getChatData().isSave, cId: sbs.sourceId.substr(27)};
       }
       let s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);
       if ( spell_choice[2] ) {
