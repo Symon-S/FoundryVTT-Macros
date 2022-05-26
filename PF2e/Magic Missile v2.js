@@ -4,6 +4,9 @@ When Wand of Manifold Missile is used, it places an effect on the character that
 Do not make spellcasting entries for your wands or scrolls. If you would like to use that method, please use the original macro.
 For staves please use a spellcasting entry due to the nature of how staves work.
 The macro will not prompt for trick magic item due to DCs being variable. May change this in the future.
+
+This macro was modified slightly by Syven to include jb2a's animations.
+Further modified by MrVauxs to be usable with and without animations.
 */
 
 const mani = ["wand-of-manifold-missiles-1st-level-spell","wand-of-manifold-missiles-3rd-level-spell","wand-of-manifold-missiles-5th-level-spell","wand-of-manifold-missiles-7th-level-spell"]
@@ -106,12 +109,22 @@ tdiag.forEach(m => {
 if (tot > multi) { return ui.notifications.warn(`You have entered ${tot - multi} too many missiles. Please try again`)}
 if (tot < multi) { return ui.notifications.warn(`You have entered ${ multi - tot} too few missiles. Please try again`)}
 
+let targetNum = 0
 fmm.forEach(a => {
         if(a.num === 0 || a.num === undefined) { return; }
 	let dam = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? formula.repeat(a.num).replace(/]{/g,'] + {') + ` + {${mmch.level}}[status,force]` : formula.repeat(a.num).replace(/]{/g,'] + {');
 	var droll = new Roll(dam);
         droll.toMessage({ flavor: `<strong>${a.num} Magic Missile(s) targeting ${a.name}</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="gKKqvLohtrSJj3BM"><strong>Magic Missile</strong></a>`, speaker: ChatMessage.getSpeaker() });
-});
+	if (game.modules.get("sequencer")?.active && (game.modules.get("JB2A_DnD5e")?.active || game.modules.get("jb2a_patreon")?.active)) {new Sequence()
+        .effect()
+            .file(`jb2a.magic_missile`)
+            .atLocation(canvas.tokens.controlled[0])
+            .stretchTo(targets[targetNum])
+            .repeats(a.num,100,300)
+            .delay(300,600)
+        .play()}
+    targetNum++
+    });
 
 const s_entry = mmE.find(e => e.id === mmch.entryId);
 
