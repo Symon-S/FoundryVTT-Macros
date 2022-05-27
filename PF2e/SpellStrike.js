@@ -44,6 +44,10 @@ async function Spellstrike()
             if(spa.expended) { return; }
             if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.data.data.resources.focus.value === 0){ return; }
             let level = `lv${sp.level}`
+            if(spa.spell.slug === 'scorching-ray') { 
+              spa.spell.data.data.damage.value[0].value = "4d6";
+              spa.spell.data.data.heightening.damage[0] = "2d6";
+            }
             const name = spa.spell.name;
             const spRD = spa.spell.getRollData({spellLvl: sp.level});
             const formula = spa.spell.getDamageFormula(sp.level, spRD);
@@ -124,6 +128,10 @@ async function Spellstrike()
         if ( !s_entry.data.flags.pf2e.magusSE ) { return ui.notifications.warn(`${s_entry.name} is not your Magus Spellcasting Entry, please try again.`); }
         if ( sbsp.lvl > spc.lvl || spc.data.item.isCantrip ) { return ui.notifications.warn(`The chosen spell level is below the base level of your standby spell ${sbsp.name} or is a Cantrip, please try again.`); }
         if ( sbsp.lvl <= spc.lvl ) { 
+          if(sbsp.spell.spell.slug === 'scorching-ray') { 
+              sbsp.spell.spell.data.data.damage.value[0].value = "4d6";
+              sbsp.spell.spell.data.data.heightening.damage[0] = "2d6";
+          }
           sbsp.lvl = spc.lvl;
           sbsp.data = sbsp.spell.spell.getRollData({spellLvl: sbsp.lvl});
           sbsp.formula = sbsp.spell.spell.getDamageFormula(sbsp.lvl, sbsp.data);
