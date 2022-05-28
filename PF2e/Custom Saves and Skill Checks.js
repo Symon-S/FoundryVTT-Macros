@@ -43,11 +43,8 @@ async function postSave($html) {
     const save = $html.find('[name="save"]')[0].value || 'fortitude';
     const traits = $html.find('[name="traits"]')[0].value || '';
     const flavor = $html.find('[name="flavor"]')[0].value || '';
-    let flavorText = ''
-    if (flavor) {
-        flavorText = `<p>${flavor}</p>`
-    }
-    let content = `${flavorText}<p><span data-pf2-check="${save}" data-pf2-traits="${traits}" data-pf2-label="${save} DC" data-pf2-dc="${DC}" data-pf2-show-dc="gm">${save}</span></p>`
+    let content = `@Check[type:${save}|traits:${traits}|dc:${DC}]`;
+    content += (flavor) ? `{${flavor}}` : "";
     ChatMessage.create(
     {
         user: game.user.id,
@@ -198,12 +195,9 @@ async function postSkill($html) {
     if (dc !== '' && (dc > DC || DC === undefined)) { DC = dc; }
     const traits = $html.find('[name="traits"]')[0].value || '';
     const flavor = $html.find('[name="flavor"]')[0].value || '';
-    DC = DC + adjDif
-    let flavorText = ''
-    if (flavor) {
-        flavorText = `<p>${flavor}</p>`
-    }
-    let content = `${flavorText}<p><span data-pf2-check="${skillType}" data-pf2-traits="${traits}" data-pf2-label="${skillType} DC" data-pf2-dc="${DC}" data-pf2-show-dc="gm">${skillType}</span></p>`
+    DC += adjDif;
+    let content = `@Check[type:${skillType}|traits:${traits}|dc:${DC}]`;
+    content += (flavor) ? `{${flavor}}` : "";
     ChatMessage.create(
     {
         user: game.user.id,
