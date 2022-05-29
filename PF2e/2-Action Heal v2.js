@@ -60,7 +60,7 @@ for (const token of canvas.tokens.controlled) {
 	hE.forEach(e => {
           const spellData = e.getSpellData();
 	  spellData.levels.forEach(sp => {
-        if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { return; }
+            if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { return; }
 	    sp.active.forEach((spa,index) => {
 	      if(spa === null) { return; }
               if(spa.spell.slug !== "heal") { return; }
@@ -161,10 +161,16 @@ token.actor.itemTypes.consumable.forEach(s => {
     	const tstaff = await CheckStaff('staff-of-healing-true');
     
     	/*Oracle Effects must be placed on character to function properly*/
-    	const minc = await CheckEffect('effect-minor-life-curse');
-    	const modc = await CheckEffect('effect-moderate-life-curse');
-    	const majc = await CheckEffect('effect-major-life-curse');
-    
+        
+    	let minc = await CheckEffect('effect-minor-life-curse');
+    	let modc = await CheckEffect('effect-moderate-life-curse');
+    	let majc = await CheckEffect('effect-major-life-curse');
+        if (token.actor.itemTypes.effect.some(c => c.slug === "effect-life-curse")) {
+          minc = token.actor.itemTypes.effect.some(c => c.slug === "effect-life-curse" && c.name.includes("Minor"));
+          modc = token.actor.itemTypes.effect.some(c => c.slug === "effect-life-curse" && c.name.includes("Moderate"));
+          majc = token.actor.itemTypes.effect.some(c => c.slug === "effect-life-curse" && c.name.includes("Major"));
+        }
+        console.log(minc,modc,majc);
     	/*Overflowing Life Relic ability. Must have an action named Overflowing Life in character sheet to be selectable.
     	This will be fixed to work with Relic abilities when integrated into system*/
     	const o_life = await CheckAction('Overflowing Life');
@@ -246,14 +252,14 @@ token.actor.itemTypes.consumable.forEach(s => {
 
     	if (modc === true) {  
     		let broll = new Roll(`{${hlvl}}[positive]`);
-      		broll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong> Hit Points equal to the spell level to your choice of either one target of the spell or the creature nearest to you. You can't heal yourself in this way.</strong> This healing has the healing, necromancy, and positive traits, as well as the tradition trait of the spell.`});}
-    	else if (majc === true && hlvl > 4) {
+      		await broll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong> Hit Points equal to the spell level to your choice of either one target of the spell or the creature nearest to you. You can't heal yourself in this way.</strong> This healing has the healing, necromancy, and positive traits, as well as the tradition trait of the spell.`});}
+    	if (majc === true && hlvl > 4) {
       		let nlvl = hlvl - 4;
       		var healmt = nlvl + hdice + "+" + nlvl;
       		if (staffb > 0) { var healmt = healmt + "+" + staffb; }
       		var healmt = a_halo ? healmt + "+" + nlvl * 2 : healmt;
       		let croll = new Roll(`{${healmt}}[positive]`)
-      		croll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong> You disperse positive energy in a 30-foot burst with the effects of a 3-action heal spell with a level 4 lower than that of the spell you cast. This healing occurs immediately after you finish Casting the Spell. You don't benefit from this healing. Instead, you lose double the number of Hit Points rolled for the heal spell. </strong>`});
+      		await croll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: `<strong> You disperse positive energy in a 30-foot burst with the effects of a 3-action heal spell with a level 4 lower than that of the spell you cast. This healing occurs immediately after you finish Casting the Spell. You don't benefit from this healing. Instead, you lose double the number of Hit Points rolled for the heal spell. </strong>`});
     
     	}
 
