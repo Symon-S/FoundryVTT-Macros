@@ -7,8 +7,9 @@ This macro will roll several knowledge checks if no target is selected.
 If one ore more targets are selected it will only roll the relevant knowledge skills and compare the result to the DC.
 
 Limitations:
-* Does not handle assurance
+* Does not handle assurance.
 * Does not handle things like bardic knowledge.
+* Does not handle lore skills (yet)
 */
 
 function renderChatMessageEvent(cm, jq) {
@@ -18,8 +19,6 @@ function renderChatMessageEvent(cm, jq) {
 }
 
 Hooks.on('renderChatMessage', renderChatMessageEvent);
-
-
 
 const SKILL_OPTIONS = ["arc", "cra", "med", "nat", "occ", "rel", "soc"];
 const IDENTIFY_SKILLS = {aberration: "occ",astral: "occ",animal: "nat",beast: ["arc", "nat"] ,celestial: "rel",construct: ["arc", "cra"],dragon: "arc",elemental: ["arc", "nat"],ethereal: "occ",fey: "nat",fiend: "rel",fungus: "nat",humanoid: "soc",monitor: "rel",ooze: "occ",plant: "nat",spirit: "occ",undead: "rel"};
@@ -56,7 +55,7 @@ if (canvas.tokens.controlled.length !== 1){
         blind: true,
         speaker: ChatMessage.getSpeaker(),
     });
-    ui.notifications.info("You try to remember if you've heard something related to this.")
+    ui.notifications.info(`${token.name} tries to remember if they've heard something related to this.`)
   } else {
     // do the correct check(s)
     for (const token of canvas.tokens.controlled) {
@@ -85,7 +84,7 @@ if (canvas.tokens.controlled.length !== 1){
                 dc = 14 + level + ((level < 0) ? 0 : Math.floor(level/3)) + rarity;
             }
 
-            my_string += `<br><strong>Vs ${targetActor.name} (DC: ${dc})</strong>`;
+            my_string += `<br><strong>vs. ${targetActor.name} (DC: ${dc})</strong>`;
             for (primaryskill of primaryskills) {
                 const coreSkill = token.actor.data.data.skills[primaryskill];
                 const coreRoll = await new Roll(
@@ -114,7 +113,8 @@ if (canvas.tokens.controlled.length !== 1){
 
                 my_string += `<br>${
                     coreSkill.name[0].toUpperCase() + coreSkill.name.substring(1)
-                    } <span style="color: ${rollColor}">[[${coreRoll.total}]]</span> <span style="background-color: ${outcomeColor}">${outcome}</span>`
+                    } <span style="color: ${rollColor}">[[${coreRoll.total}]]</span> = <span
+                    style="background-color: ${outcomeColor}">${outcome}</span>`
             } 
         }
 
@@ -129,6 +129,6 @@ if (canvas.tokens.controlled.length !== 1){
             blind: true,
             speaker: ChatMessage.getSpeaker(),
         });
-        ui.notifications.info("You try to remember if you've heard something related to this.")
+        ui.notifications.info(`${token.name} tries to remember if they've heard something related to this.`)
     }
   }
