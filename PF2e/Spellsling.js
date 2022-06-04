@@ -166,9 +166,17 @@ async function Spellsling()
             
       }
 
+      let critt;
+      function SSDOS(cm, jq) {
+        if (cm.user.id === game.userId && cm.isCheckRoll) { critt = cm.data.flags.pf2e.context.outcome; }
+      }
+
+      Hooks.on('renderChatMessage', SSDOS);
 
       await strike.attack({ event });
-      const critt = game.messages.contents.reverse().find(x => x.isCheckRoll && x.actor === token.actor).data.flags.pf2e.context.outcome;
+      
+      Hooks.off('renderChatMessage', SSDOS);
+
       let traits = spc.data.item.data.data.traits.value.join();
       let ttags = '';
       spc.data.item.data.data.traits.value.forEach( t => {
