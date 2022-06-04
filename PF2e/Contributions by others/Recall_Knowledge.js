@@ -12,13 +12,13 @@ Limitations:
 * Does not handle lore skills (yet)
 */
 
-function renderChatMessageEvent(cm, jq) {
+function RKChatMessageEvent(cm, jq) {
 	if (game.user.isGM) return;
 	const html = jq[0];
 	html.style.display = 'none';
 }
 
-Hooks.on('renderChatMessage', renderChatMessageEvent);
+Hooks.on('renderChatMessage', RKChatMessageEvent);
 
 const SKILL_OPTIONS = ["arc", "cra", "med", "nat", "occ", "rel", "soc"];
 const IDENTIFY_SKILLS = {aberration: "occ",astral: "occ",animal: "nat",beast: ["arc", "nat"] ,celestial: "rel",construct: ["arc", "cra"],dragon: "arc",elemental: ["arc", "nat"],ethereal: "occ",fey: "nat",fiend: "rel",fungus: "nat",humanoid: "soc",monitor: "rel",ooze: "occ",plant: "nat",spirit: "occ",undead: "rel"};
@@ -132,3 +132,4 @@ if (canvas.tokens.controlled.length !== 1){
         ui.notifications.info(`${token.name} tries to remember if they've heard something related to this.`)
     }
   }
+Hooks.off('renderChatMessage', RKChatMessageEvent);
