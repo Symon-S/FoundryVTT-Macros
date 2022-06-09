@@ -181,7 +181,7 @@ const roll = await game.pf2e.Check.roll(
 	null
 	//for callback: ,(Roll) => {console.log(Roll);}
 );
-if (roll.data.degreeOfSuccess != 1) { 
+if (roll.data.degreeOfSuccess !== 1) { 
   const currentpoints = actor.data.data.resources.focus.value-1;
   actor.update({"data.resources.focus.value":currentpoints});
 }
