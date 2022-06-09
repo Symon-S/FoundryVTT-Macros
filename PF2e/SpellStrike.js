@@ -338,9 +338,7 @@ async function Spellstrike()
       }
 
       if ( critt === 'failure' && !spc.spell.chatData.isAttack) { 
-        if (spc.spell.spell.data.data.heightenedLevel === undefined) { spc.spell.spell.data.data.heightenedLevel = {value: spc.lvl}; }
-        else {spc.spell.spell.data.data.heightenedLevel.value = spc.lvl;}
-        await spc.spell.spell.toMessage(); 
+        return s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: true}); 
       }
       
       /* Expend slots */
