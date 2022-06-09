@@ -321,9 +321,7 @@ async function Spellstrike()
       }
       if (critt === 'success' || critt === 'criticalSuccess') {
         if (spc.slug !== 'chromatic-ray' && ( spc.data.item.data.data.damage.value === '' || spc.data.item.data.data.damage.value === undefined || Object.entries(spc.spell.chatData.damage.value).length === 0 || !spc.spell.chatData.isAttack) ){
-          if (spc.spell.spell.data.data.heightenedLevel === undefined) { spc.spell.spell.data.data.heightenedLevel = {value: spc.lvl}; }
-          else {spc.spell.spell.data.data.heightenedLevel.value = spc.lvl;}
-          await spc.spell.spell.toMessage();
+          return s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: true});
         }
         else {
           if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { spc.formula = ddice; } 
