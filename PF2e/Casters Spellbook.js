@@ -22,7 +22,8 @@ const script = async function Spells(id){
 		let buttons = {};
 		const spellData = token.actor.itemTypes.spellcastingEntry.find( i => i.id === id).getSpellData();
 				spellData.levels.forEach(sp => {
-					if(!spellData.isRitual && !spellData.isPrepared && !spellData.isInnate && !spellData.isFlexible && !spellData.isFocusPool && !sp.isCantrip && sp.uses.value < 1) { return; }
+					if(!spellData.isRitual && !spellData.isPrepared && !spellData.isInnate && !spellData.isFocusPool && !spellData.isFlexible && !sp.isCantrip && sp.uses.value < 1) { return; }
+                                        if (sp.uses?.value !== undefined && sp.uses?.value === 0 ) { return; }
 					sp.active.forEach((spa,index) => {
 						if(spa === null) { return; }
 						if(spa.expended) { return; }
@@ -64,19 +65,11 @@ const script = async function Spells(id){
 		async function Spell() {
 			buttons = {};
 			spells.forEach((value,index) => {
-				if (value.lvl !== value.spell.spell.data.data.level.value && !value.spell.spell.data.isCantrip && !value.spell.spell.data.isFocusSpell) {
-					if (value.spell.spell.data.data.heightenedLevel === undefined) { value.spell.spell.data.data.heightenedLevel = {value: value.lvl}; }
-					else {value.spell.spell.data.data.heightenedLevel.value = value.lvl;}
-				}
-				async function Cast() { value.spell.spell.toMessage(); }
-				async function Consume(){
-					const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === value.sEId);
-					if (value.type !== 'ritual') {
-						if ( value.spell.isCantrip ) { return; }
-						await s_entry.cast(value.spell.spell,{slot: value.index,level: value.lvl,message: false});
-					}
-				};
-				buttons[index] = {label: value.name, value: value.spell.spell ,callback: async () => {  await Consume(); await Cast(); }}
+		          async function Consume(){
+			    const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === value.sEId);
+			    await s_entry.cast(value.spell.spell,{slot: value.index,level: value.lvl,message: true})
+			    };
+				buttons[index] = {label: value.name, value: value.spell.spell ,callback: async () => {  await Consume(); }}
 			});
 			await Diag({title: "Pick a Spell to Cast", buttons});
 			spells.forEach( async s => {
