@@ -1,15 +1,13 @@
 // Little Loot Genrator written by me for the PF2e system. The values for Treasures are in Silver 1GP = 10SP
+//Modded by LebombJames
+
 
 //Limit Macro use to GM
 if (!game.user.isGM) { return ui.notifications.error("You are unable to use this macro!"); }
 
 //Populate items
 const item = game.packs.get('pf2e.equipment-srd');
-const items = await item.getDocuments();
-
-//Populate Spells
-const spellz = game.packs.get('pf2e.spells-srd');
-const spellS = await spellz.getDocuments();
+const items = await item.getIndex({fields: ["data.level", "data.slug", "data.price"]});
 
 //Dialog Inputs
 const dialogs = [	
@@ -29,6 +27,16 @@ if ( Noan(picks[3]) || picks[3] < 1) { return ui.notifications.error("A quantity
 let itemArray = [...Array(Math.round(picks[3])).keys()];
 let randomItems = [];
 
+let spellz;
+let spellS;
+
+
+if (picks[0] !== "Treasures") {
+	//Populate Spells
+	spellz = game.packs.get('pf2e.spells-srd');
+	spellS = await spellz.getIndex({fields: ["data.level", "isFocusSpell", "isRitual", "isCantrip", "data.slug"]});
+}
+
 //Treasures
 if (picks[0] === "Treasures") {
 	const treasure = items.filter(t => t.type === "treasure");
@@ -36,34 +44,33 @@ if (picks[0] === "Treasures") {
 		ui.notifications.info("No center range was entered, random treasures selected");
 		itemArray.forEach( r => {
 			let random = Math.floor(Math.random() * treasure.length);
-			randomItems.push({name: treasure[random].name, id: treasure[random].id});
+			randomItems.push({name: treasure[random].name, id: treasure[random]._id});
 		});
 		let output;
 		randomItems.forEach( r => {
 			if (output === undefined) { output = `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
+			
 			else { output = output + `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
 		});
-                return ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`,content: output, speaker: {alias:'GM'}, whisper:[game.user.id]});
+                return ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`, content: output, speaker: {alias:'GM'}, whisper:[game.user.id]});
 	}
-	if ( picks[2] < 1) { return ui.notifications.error("A value greater than 1 needs to be entered for range")}
+	if (picks[2] < 1) { return ui.notifications.error("A value greater than 1 needs to be entered for range")}
 	else {
 		let denomination = "sp";
 		let value = Math.round(picks[2]);
 		let treasures = [];
-		if (Math.round(picks[2]) < 3 ) { value = 1 }
-		if (Math.round(picks[2]) >= 7) { 
+                const range = await Ranges(Math.round(picks[2]));
+		if (Math.round(picks[2]) >= 10) { 
 			denomination = "gp";
-			value = Math.round(picks[2] / 10); 
-			treasures = treasure.filter(f => f.data.data.denomination.value === denomination && Ranges(value).includes(f.data.data.value.value) );
-			let temp = treasure.filter(f => f.data.data.denomination.value === "sp" && Ranges(Math.round(picks[2])).includes(f.data.data.value.value));
-			if ( temp.length  > 0 ) { temp.forEach( t => treasures.push(t));}
-			}
-
-		if (treasures.length === 0) { return ui.notifications.warn(`There are no treasures within 20% of ${value}${denomination}`); }
+			value = Math.round(picks[2] / 10);
+                } 
+	        treasures = treasure.filter(f => range.includes(f.data.price.value.sp) || range.includes(f.data.price.value.gp*10) );
+                
+		if (treasures.length === 0) { return ui.notifications.warn(`There are no treasures within 50% of ${value}${denomination}`); }
 		
 		itemArray.forEach( r => {
 			let random = Math.floor(Math.random() * treasures.length);
-			randomItems.push({name: treasures[random].name, id: treasures[random].id})
+			randomItems.push({name: treasures[random].name, id: treasures[random]._id})
 		});
 		let output;
 		randomItems.forEach( r => {
@@ -77,19 +84,20 @@ if (picks[0] === "Treasures") {
 // Permanents
 if (picks[0] === "Permanents") {
 	if(Noan(picks[1])) { return ui.notifications.error("Level of at least 0 must be entered");}
-	const treasure = items.filter(t => t.type === "armor" || t.type === "weapon" || t.type === "equipment" || t.slug.search("magic-wand") > -1);
-	const treasures = treasure.filter( l => l.level === picks[1] );
+
+	const treasure = items.filter(t => t.type === "armor" || t.type === "weapon" || t.type === "equipment" || t.data.slug.search("magic-wand") > -1);
+	const treasures = treasure.filter( l => l.data.level.value === picks[1] );
 	itemArray.forEach( r => {
 		let random = Math.floor(Math.random() * treasures.length);
-		randomItems.push({name: treasures[random].name, id: treasures[random].id, slug:treasures[random].slug})
+		randomItems.push({name: treasures[random].name, id: treasures[random]._id, slug:treasures[random].data.slug})
 	});
 	let output;
 	randomItems.forEach( r => {
 		let slug = r.slug;
 		if (output === undefined) { 
 			if(slug.search("magic-wand") > -1){
-				const level = parseInt(r.slug.substr(11,1));
-				const spells = spellS.filter(l => l.level === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
+				const level = parseInt(slug.substr(11,1));
+				const spells = spellS.filter(l => l.data.level === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
 				output = `<p>@Compendium[pf2e.spells-srd.${randomSpell.id}]{${r.name} of ${randomSpell.name}}</p>`
 			}
@@ -98,12 +106,12 @@ if (picks[0] === "Permanents") {
 		else { 
 			if(slug.search("magic-wand") > -1){
 				const level = parseInt(r.slug.substr(11,1));
-				const spells = spellS.filter(l => l.level === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
+				const spells = spellS.filter(l => l.data.level === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
 				output = output + `<p>@Compendium[pf2e.spells-srd.${randomSpell.id}]{${r.name} of ${randomSpell.name}}</p>`
 			}
 
-			else {output = output + `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
+			else { output = output + `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
 		}
 	});
         ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`,content: output, speaker: {alias:'GM'}, whisper:[game.user.id]});
@@ -112,11 +120,11 @@ if (picks[0] === "Permanents") {
 //Consumbales
 if (picks[0] === "Consumables") {
 	if(Noan(picks[1])) { return ui.notifications.error("Level of at least 0 must be entered");}
-	const treasure = items.filter(t => t.type === "consumable" && t.slug.search("magic-wand") === -1);
-	const treasures = treasure.filter( l => l.level === picks[1] );
+	const treasure = items.filter(t => t.type === "consumable" && t.data.slug.search("magic-wand") === -1);
+	const treasures = treasure.filter( l => l.data.level.value === picks[1] );
 	itemArray.forEach( r => {
 		let random = Math.floor(Math.random() * treasures.length);
-		randomItems.push({name: treasures[random].name, id: treasures[random].id, slug:treasures[random].slug})
+		randomItems.push({name: treasures[random].name, id: treasures[random]._id, slug:treasures[random].data.slug})
 	});
 	let output;
 	randomItems.forEach( r => {
@@ -124,7 +132,7 @@ if (picks[0] === "Consumables") {
 		if (output === undefined) { 
 			if(slug.search("scroll-of-") > -1){
 				const level = parseInt(r.slug.substr(10,1));
-				const spells = spellS.filter(l => l.level === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
+				const spells = spellS.filter(l => l.data.level === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
 				output = `<p>@Compendium[pf2e.spells-srd.${randomSpell.id}]{${r.name} of ${randomSpell.name}}</p>`
 			}
@@ -133,19 +141,19 @@ if (picks[0] === "Consumables") {
 		else { 
 			if(slug.search("scroll-of-") > -1){
 				const level = parseInt(r.slug.substr(10,1));
-				const spells = spellS.filter(l => l.level === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
+				const spells = spellS.filter(l => l.data.level === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
 				output = output + `<p>@Compendium[pf2e.spells-srd.${randomSpell.id}]{${r.name} of ${randomSpell.name}}</p>`
 			}
 
-			else {output = output + `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
+			else { output = output + `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
 		}
 	});
         ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`, content: output, speaker: {alias:'GM'}, whisper:[game.user.id]});
 
 }
 
-function Ranges(x) {
+async function Ranges(x) {
 	const lowEnd = Math.round(x * 0.5);
 	const highEnd = Math.round(x * 1.5);
 	const range = [];
@@ -165,13 +173,13 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 	return await new Promise(async (resolve) => {
 	  let content = `
 	    <table style="width:100%">
-	    ${data.map(({type, label, options}, i)=> {
+	    ${data.map(({type, label, options}, i) => {
 	    if(type.toLowerCase() === `select`)
 	    {
 	      return `<tr><th style="width:80%;font-size:13px"><label>${label}</label></th><td style="width:20%"><select id="${i}qd">${options.map((e,i)=> `<option value="${e}">${e}</option>`).join(``)}</td></tr>`;
-	    }else if(type.toLowerCase() === `checkbox`){
+	     }else if (type.toLowerCase() === `checkbox`){
 	      return `<tr><th style="width:80%;font-size:13px"><label>${label}</label></th><td style="width:20%"><input type="${type}" id="${i}qd" ${options || ``}/></td></tr>`;
-	    }else{
+	    } else {
 	      return `<tr><th style="width:80%;font-size:13px"><label>${label}</label></th><td style="width:20%"><input type="${type}" style="border:solid 1px black" id="${i}qd" value="${options instanceof Array ? options[0] : options}"/></td></tr>`;
 	    }
 	    }).join(``)}
@@ -183,20 +191,20 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 	     Ok : { label : `Ok`, callback : (html) => {
 	       resolve(Array(data.length).fill().map((e,i)=>{
 		 let {type} = data[i];
-		 if(type.toLowerCase() === `select`)
+		 if (type.toLowerCase() === `select`)
 		 {
 		   return html.find(`select#${i}qd`).val();
-		 }else{
+		 } else {
 		   switch(type.toLowerCase())
 		   {
-		     case `text` :
-		     case `password` :
-		     case `radio` :
-		     return html.find(`input#${i}qd`)[0].value;
+		    case `text` :
+		    case `password` :
+		    case `radio` :
+		    	return html.find(`input#${i}qd`)[0].value;
 		    case `checkbox` :
-		    return html.find(`input#${i}qd`)[0].checked;
+		    	return html.find(`input#${i}qd`)[0].checked;
 		    case `number` :
-		    return html.find(`input#${i}qd`)[0].valueAsNumber;
+		    	return html.find(`input#${i}qd`)[0].valueAsNumber;
 		  }
 		}
 	      }));
@@ -206,4 +214,4 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 	  })._render(true);
 	  document.getElementById("0qd").focus();
 	});
-      }
+}
