@@ -15,7 +15,7 @@ const diff = await new Promise((resolve) => {
   norm: { label: 'Normal', callback: async(rar) => { resolve(0); } },
   hard: { label: 'Hard', callback: async(rar) => { resolve(2); } },
   vhard: { label: 'Very Hard', callback: async(rar) => { resolve(5); } },
-  inhard: { label: 'Incredibly Hard', callback: async(rar) => { resolve(0); } },
+  inhard: { label: 'Incredibly Hard', callback: async(rar) => { resolve(10); } },
   },
  default: 'norm',
  },{width:600}).render(true);
