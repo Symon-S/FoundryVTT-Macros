@@ -12,7 +12,8 @@ const options = token.actor.getRollOptions(['all', 'skill-check', skillName.toLo
 options.push(`action:${actionSlug}`); // add more traits here in new lines
 //options.push(`secret`); // <--- This is what I am talking about
 
-const notes = [...token.actor.data.data.skills[skillKey].notes]; 
+if (token.actor.data.data.skills[skillKey].notes === undefined) { token.actor.data.data.skills[skillKey].notes = ''; }
+const notes = [...token.actor.data.data.skills[skillKey].notes];
 notes.push({"outcome":["success"], "selector":"performance", "text": "The target becomes @Compendium[pf2e.conditionitems.Frightened]{Frightened 1}"})
 notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text": "The target becomes @Compendium[pf2e.conditionitems.Frightened]{Frightened 2}"})
 
