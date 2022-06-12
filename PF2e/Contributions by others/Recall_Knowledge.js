@@ -15,10 +15,12 @@ Limitations:
 function RKChatMessageEvent(cm, jq) {
 	if (game.user.isGM) return;
 	const html = jq[0];
-	html.style.display = 'none';
+        //confine hidden messages to only those from this macro
+	if (cm.data.flags.pf2e.recall) { html.style.display = 'none' };
 }
 
-Hooks.on('renderChatMessage', RKChatMessageEvent);
+//Do not enable if the module Actually Private Rolls is enabled due to prevent double hooks.
+if (!game.modules.get("actually-private-rolls")?.active) { Hooks.on('renderChatMessage', RKChatMessageEvent); }
 
 const SKILL_OPTIONS = ["arc", "cra", "med", "nat", "occ", "rel", "soc"];
 const IDENTIFY_SKILLS = {aberration: "occ",astral: "occ",animal: "nat",beast: ["arc", "nat"] ,celestial: "rel",construct: ["arc", "cra"],dragon: "arc",elemental: ["arc", "nat"],ethereal: "occ",fey: "nat",fiend: "rel",fungus: "nat",humanoid: "soc",monitor: "rel",ooze: "occ",plant: "nat",spirit: "occ",undead: "rel"};
@@ -54,6 +56,7 @@ if (canvas.tokens.controlled.length !== 1){
         visible: false,
         blind: true,
         speaker: ChatMessage.getSpeaker(),
+        flags: {pf2e: { recall: true } },
     });
     ui.notifications.info(`${token.name} tries to remember if they've heard something related to this.`)
   } else {
@@ -128,8 +131,8 @@ if (canvas.tokens.controlled.length !== 1){
             roll: await new Roll(`1d1`).roll({ async: true }),
             blind: true,
             speaker: ChatMessage.getSpeaker(),
+            flags: {pf2e: { recall: true } },
         });
         ui.notifications.info(`${token.name} tries to remember if they've heard something related to this.`)
     }
   }
-Hooks.off('renderChatMessage', RKChatMessageEvent);
