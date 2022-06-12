@@ -5,10 +5,6 @@
 //Limit Macro use to GM
 if (!game.user.isGM) { return ui.notifications.error("You are unable to use this macro!"); }
 
-//Populate items
-const item = game.packs.get('pf2e.equipment-srd');
-const items = await item.getIndex({fields: ["data.level", "data.slug", "data.price"]});
-
 //Dialog Inputs
 const dialogs = [	
 	{ label : `What type of item?`, type: `select`, options: ["Treasures","Permanents","Consumables"]},
@@ -27,14 +23,17 @@ if ( Noan(picks[3]) || picks[3] < 1) { return ui.notifications.error("A quantity
 let itemArray = [...Array(Math.round(picks[3])).keys()];
 let randomItems = [];
 
+//Populate items
+const item = game.packs.get('pf2e.equipment-srd');
+const items = await item.getIndex({fields: ["data.level.value", "data.slug", "data.price.value", "data.traits.value"]});
+
+//Populate Spells
 let spellz;
 let spellS;
 
-
 if (picks[0] !== "Treasures") {
-	//Populate Spells
 	spellz = game.packs.get('pf2e.spells-srd');
-	spellS = await spellz.getIndex({fields: ["data.level", "isFocusSpell", "isRitual", "isCantrip", "data.slug"]});
+	spellS = await spellz.getIndex({fields: ["data.level.value", "isFocusSpell", "isRitual", "isCantrip", "data.slug"]});
 }
 
 
