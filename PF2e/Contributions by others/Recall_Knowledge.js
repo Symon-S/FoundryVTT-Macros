@@ -19,7 +19,7 @@ function RKChatMessageEvent(cm, jq) {
 	if (cm.data.flags.pf2e.recall) { html.style.display = 'none' };
 }
 
-//Do not enable if the module Actually Private Rolls is enabled due to prevent double hooks.
+//Do not enable if the module Actually Private Rolls is enabled to prevent double hooks.
 if (!game.modules.get("actually-private-rolls")?.active) { Hooks.on('renderChatMessage', RKChatMessageEvent); }
 
 const SKILL_OPTIONS = ["arc", "cra", "med", "nat", "occ", "rel", "soc"];
