@@ -37,6 +37,7 @@ if (picks[0] !== "Treasures") {
 	spellS = await spellz.getIndex({fields: ["data.level", "isFocusSpell", "isRitual", "isCantrip", "data.slug"]});
 }
 
+
 //Treasures
 if (picks[0] === "Treasures") {
 	const treasure = items.filter(t => t.type === "treasure");
@@ -85,7 +86,7 @@ if (picks[0] === "Treasures") {
 if (picks[0] === "Permanents") {
 	if(Noan(picks[1])) { return ui.notifications.error("Level of at least 0 must be entered");}
 
-	const treasure = items.filter(t => t.type === "armor" || t.type === "weapon" || t.type === "equipment" || t.data.slug.search("magic-wand") > -1);
+	const treasure = items.filter(t => t.type === "armor" || t.type === "weapon" || t.type === "equipment" || t.type === "backpack" || t.data.traits.value.includes("wand"));
 	const treasures = treasure.filter( l => l.data.level.value === picks[1] );
 	itemArray.forEach( r => {
 		let random = Math.floor(Math.random() * treasures.length);
@@ -97,18 +98,18 @@ if (picks[0] === "Permanents") {
 		if (output === undefined) { 
 			if(slug.search("magic-wand") > -1){
 				const level = parseInt(slug.substr(11,1));
-				const spells = spellS.filter(l => l.data.level === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
+				const spells = spellS.filter(l => l.data.level.value === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-				output = `<p>@Compendium[pf2e.spells-srd.${randomSpell.id}]{${r.name} of ${randomSpell.name}}</p>`
+				output = `<p>@Compendium[pf2e.spells-srd.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
 			}
 			else { output = `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
 		}
 		else { 
 			if(slug.search("magic-wand") > -1){
 				const level = parseInt(r.slug.substr(11,1));
-				const spells = spellS.filter(l => l.data.level === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
+				const spells = spellS.filter(l => l.data.level.value === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-				output = output + `<p>@Compendium[pf2e.spells-srd.${randomSpell.id}]{${r.name} of ${randomSpell.name}}</p>`
+				output = output + `<p>@Compendium[pf2e.spells-srd.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
 			}
 
 			else { output = output + `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
@@ -120,7 +121,7 @@ if (picks[0] === "Permanents") {
 //Consumbales
 if (picks[0] === "Consumables") {
 	if(Noan(picks[1])) { return ui.notifications.error("Level of at least 0 must be entered");}
-	const treasure = items.filter(t => t.type === "consumable" && t.data.slug.search("magic-wand") === -1);
+	const treasure = items.filter(t => t.type === "consumable" && !t.data.traits.value.includes("wand"));
 	const treasures = treasure.filter( l => l.data.level.value === picks[1] );
 	itemArray.forEach( r => {
 		let random = Math.floor(Math.random() * treasures.length);
@@ -132,18 +133,18 @@ if (picks[0] === "Consumables") {
 		if (output === undefined) { 
 			if(slug.search("scroll-of-") > -1){
 				const level = parseInt(r.slug.substr(10,1));
-				const spells = spellS.filter(l => l.data.level === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
+				const spells = spellS.filter(l => l.data.level.value === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-				output = `<p>@Compendium[pf2e.spells-srd.${randomSpell.id}]{${r.name} of ${randomSpell.name}}</p>`
+				output = `<p>@Compendium[pf2e.spells-srd.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
 			}
 			else { output = `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
 		}
 		else { 
 			if(slug.search("scroll-of-") > -1){
 				const level = parseInt(r.slug.substr(10,1));
-				const spells = spellS.filter(l => l.data.level === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
+				const spells = spellS.filter(l => l.data.level.value === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-				output = output + `<p>@Compendium[pf2e.spells-srd.${randomSpell.id}]{${r.name} of ${randomSpell.name}}</p>`
+				output = output + `<p>@Compendium[pf2e.spells-srd.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
 			}
 
 			else { output = output + `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
