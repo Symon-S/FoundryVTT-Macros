@@ -41,9 +41,10 @@ let spellS;
 
 if (picks[0] !== "Treasures") {
   spellz = game.packs.get('pf2e.spells-srd');
-  spellS = (await spellz.getIndex({fields: ["data.level.value","data.slug","data.traits","data._id"]})).filter(f => !f.data.traits.value.includes("cantrip") && f.data.category.value !== "ritual" && f.data.category.value !== "focus");
+  spellS = (await spellz.getIndex({fields: ["data.level.value","data.slug","data.traits","data._id","data.category"]})).filter(f => !f.data.traits.value.includes("cantrip") && f.data.category.value !== "ritual" && f.data.category.value !== "focus");
   if ( picks[4] !== "No filter" ) { spellS = spellS.filter(s => s.data.traits.rarity === picks[4].toLowerCase()); }
 }
+
 
 //Treasures
 if (picks[0] === "Treasures") {
@@ -111,7 +112,7 @@ if (picks[0] === "Permanents") {
                                 if (spells.length === 0) { 
                                   const random = Math.floor(Math.random() * treasures.length);
                                   const tr = treasures.filter(n => !n.data.slug.includes("scroll-of-"));
-		                  return output = `<p>@Compendium[pf2e.equipment-srd.${tr[random]._id}]{${tr[random].name}}</p>`
+		                  return output = `<p>@Compendium[pf2e.equipment-srd.${tr[random]._id}]{${tr[random].name}}</p>`;
                                 }
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
 				output = `<p>@Compendium[pf2e.spells-srd.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
@@ -125,7 +126,7 @@ if (picks[0] === "Permanents") {
                                 if (spells.length === 0) { 
                                   const random = Math.floor(Math.random() * treasures.length);
                                   const tr = treasures.filter(n => !n.data.slug.includes("scroll-of-"));
-		                  return output = `<p>@Compendium[pf2e.equipment-srd.${tr[random]._id}]{${tr[random].name}}</p>`
+		                  return output += `<p>@Compendium[pf2e.equipment-srd.${tr[random]._id}]{${tr[random].name}}</p>`
                                 }
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
 				output += `<p>@Compendium[pf2e.spells-srd.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
@@ -172,7 +173,7 @@ if (picks[0] === "Consumables") {
                                 if (spells.length === 0) { 
                                   const random = Math.floor(Math.random() * treasures.length);
                                   const tr = treasures.filter(n => !n.data.slug.includes("scroll-of-"));
-		                  return output = `<p>@Compendium[pf2e.equipment-srd.${tr[random]._id}]{${tr[random].name}}</p>`
+		                  return output += `<p>@Compendium[pf2e.equipment-srd.${tr[random]._id}]{${tr[random].name}}</p>`
                                 }
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
 				output += `<p>@Compendium[pf2e.spells-srd.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
