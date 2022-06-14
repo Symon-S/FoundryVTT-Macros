@@ -1,16 +1,24 @@
-// Little Loot Genrator written by me for the PF2e system. The values for Treasures are in Silver 1GP = 10SP
-//Modded by LebombJames
+/* Little Loot Genrator written for the PF2e system. The values for Treasures are in Silver 1GP = 10SP
 
+When using rarity:
+**No filter = completely random loot**
+**Uncommon/Rare = Uncommon and rare items only, scrolls and wands will have uncommon/rare spells if randomly generated
+and available (rare spells not available at each level), if not available another item will be generated in its place.**
+**Unique = There are no unique spells in the game, so this will only push unique items if available.**
+
+Modded by LebombJames to use getIndex for faster loading.
+*/
 
 //Limit Macro use to GM
 if (!game.user.isGM) { return ui.notifications.error("You are unable to use this macro!"); }
 
 //Dialog Inputs
 const dialogs = [	
-	{ label : `What type of item?`, type: `select`, options: ["Treasures","Permanents","Consumables"]},
+	{ label : `What type of item?`, type: `select`, options: ["Permanents","Consumables","Treasures"]},
 	{ label : `Level? (Only Permanents and Consumables)`, type: `number`, options: [0]},
 	{ label : `Center range value in Silver (Only Treasures)<br>(50% in either direction will be evaluated)`, type: `number`},
-	{ label : `Quantity?`, type: `number`, options: [1]}
+	{ label : `Quantity?`, type: `number`, options: [1]},
+        { label: `Rarity? (Only Permanents and Consumables)`, type: `select`, options: ["No filter", "Common", "Uncommon", "Rare", "Unique"] }
 ];
 
 //Run Dialog and gather Data
@@ -25,17 +33,17 @@ let randomItems = [];
 
 //Populate items
 const item = game.packs.get('pf2e.equipment-srd');
-const items = await item.getIndex({fields: ["data.level.value", "data.slug", "data.price.value", "data.traits.value"]});
+const items = await item.getIndex({fields: ["data.level.value", "data.slug", "data.price.value", "data.traits.value", "data.traits.rarity"]});
 
 //Populate Spells
 let spellz;
 let spellS;
 
 if (picks[0] !== "Treasures") {
-	spellz = game.packs.get('pf2e.spells-srd');
-	spellS = await spellz.getIndex({fields: ["data.level.value", "isFocusSpell", "isRitual", "isCantrip", "data.slug"]});
+  spellz = game.packs.get('pf2e.spells-srd');
+  spellS = (await spellz.getIndex({fields: ["data.level.value","data.slug","data.traits","data._id"]})).filter(f => !f.data.traits.value.includes("cantrip") && f.data.category.value !== "ritual" && f.data.category.value !== "focus");
+  if ( picks[4] !== "No filter" ) { spellS = spellS.filter(s => s.data.traits.rarity === picks[4].toLowerCase()); }
 }
-
 
 //Treasures
 if (picks[0] === "Treasures") {
@@ -50,7 +58,7 @@ if (picks[0] === "Treasures") {
 		randomItems.forEach( r => {
 			if (output === undefined) { output = `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
 			
-			else { output = output + `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
+			else { output += `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
 		});
                 return ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`, content: output, speaker: {alias:'GM'}, whisper:[game.user.id]});
 	}
@@ -75,7 +83,7 @@ if (picks[0] === "Treasures") {
 		let output;
 		randomItems.forEach( r => {
 			if (output === undefined) { output = `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
-			else { output = output + `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
+			else { output += `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
 		});
                 ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`,content: output, speaker: {alias:'GM'}, whisper:[game.user.id]});
 	}
@@ -86,7 +94,9 @@ if (picks[0] === "Permanents") {
 	if(Noan(picks[1])) { return ui.notifications.error("Level of at least 0 must be entered");}
 
 	const treasure = items.filter(t => t.type === "armor" || t.type === "weapon" || t.type === "equipment" || t.type === "backpack" || t.data.traits.value.includes("wand"));
-	const treasures = treasure.filter( l => l.data.level.value === picks[1] );
+	let treasures = treasure.filter( l => l.data.level.value === picks[1] );
+        if ( picks[4] !== "No filter" ) { treasures = treasures.filter( r => r.data.traits.rarity === picks[4].toLowerCase() || (r.data.slug.includes("magic-wand") && picks[4] !== "Unique")); }
+        if (treasures.length === 0) { return ui.notifications.info(`There are no ${picks[4].toLowerCase()} ${picks[0].toLowerCase()} at level ${picks[1]}`); }
 	itemArray.forEach( r => {
 		let random = Math.floor(Math.random() * treasures.length);
 		randomItems.push({name: treasures[random].name, id: treasures[random]._id, slug:treasures[random].data.slug})
@@ -96,8 +106,13 @@ if (picks[0] === "Permanents") {
 		let slug = r.slug;
 		if (output === undefined) { 
 			if(slug.search("magic-wand") > -1){
-				const level = parseInt(slug.substr(11,1));
-				const spells = spellS.filter(l => l.data.level.value === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
+				const level = parseInt(slug.substr(11,1));   
+				const spells = spellS.filter(l => l.data.level.value === level);
+                                if (spells.length === 0) { 
+                                  const random = Math.floor(Math.random() * treasures.length);
+                                  const tr = treasures.filter(n => !n.data.slug.includes("scroll-of-"));
+		                  return output = `<p>@Compendium[pf2e.equipment-srd.${tr[random]._id}]{${tr[random].name}}</p>`
+                                }
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
 				output = `<p>@Compendium[pf2e.spells-srd.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
 			}
@@ -106,12 +121,17 @@ if (picks[0] === "Permanents") {
 		else { 
 			if(slug.search("magic-wand") > -1){
 				const level = parseInt(r.slug.substr(11,1));
-				const spells = spellS.filter(l => l.data.level.value === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
+				const spells = spellS.filter(l => l.data.level.value === level);
+                                if (spells.length === 0) { 
+                                  const random = Math.floor(Math.random() * treasures.length);
+                                  const tr = treasures.filter(n => !n.data.slug.includes("scroll-of-"));
+		                  return output = `<p>@Compendium[pf2e.equipment-srd.${tr[random]._id}]{${tr[random].name}}</p>`
+                                }
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-				output = output + `<p>@Compendium[pf2e.spells-srd.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
+				output += `<p>@Compendium[pf2e.spells-srd.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
 			}
 
-			else { output = output + `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
+			else { output += `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
 		}
 	});
         ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`,content: output, speaker: {alias:'GM'}, whisper:[game.user.id]});
@@ -121,9 +141,11 @@ if (picks[0] === "Permanents") {
 if (picks[0] === "Consumables") {
 	if(Noan(picks[1])) { return ui.notifications.error("Level of at least 0 must be entered");}
 	const treasure = items.filter(t => t.type === "consumable" && !t.data.traits.value.includes("wand"));
-	const treasures = treasure.filter( l => l.data.level.value === picks[1] );
+	let treasures = treasure.filter( l => l.data.level.value === picks[1] );
+        if ( picks[4] !== "No filter" ) { treasures = treasures.filter( r => r.data.traits.rarity === picks[4].toLowerCase() || (r.data.slug.includes("scroll-of-") && picks[4] !== "Unique")); }
+        if (treasures.length === 0) { return ui.notifications.info(`There are no ${picks[4].toLowerCase()} ${picks[0].toLowerCase()} at level ${picks[1]}`); }        
 	itemArray.forEach( r => {
-		let random = Math.floor(Math.random() * treasures.length);
+		const random = Math.floor(Math.random() * treasures.length);
 		randomItems.push({name: treasures[random].name, id: treasures[random]._id, slug:treasures[random].data.slug})
 	});
 	let output;
@@ -132,7 +154,12 @@ if (picks[0] === "Consumables") {
 		if (output === undefined) { 
 			if(slug.search("scroll-of-") > -1){
 				const level = parseInt(r.slug.substr(10,1));
-				const spells = spellS.filter(l => l.data.level.value === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
+				const spells = spellS.filter(l => l.data.level.value === level);
+                                if (spells.length === 0) { 
+                                  const random = Math.floor(Math.random() * treasures.length);
+                                  const tr = treasures.filter(n => !n.data.slug.includes("scroll-of-"));
+		                  return output = `<p>@Compendium[pf2e.equipment-srd.${tr[random]._id}]{${tr[random].name}}</p>`
+                                }
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
 				output = `<p>@Compendium[pf2e.spells-srd.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
 			}
@@ -141,12 +168,17 @@ if (picks[0] === "Consumables") {
 		else { 
 			if(slug.search("scroll-of-") > -1){
 				const level = parseInt(r.slug.substr(10,1));
-				const spells = spellS.filter(l => l.data.level.value === level && !l.isFocusSpell && !l.isRitual && !l.isCantrip);
+				const spells = spellS.filter(l => l.data.level.value === level);
+                                if (spells.length === 0) { 
+                                  const random = Math.floor(Math.random() * treasures.length);
+                                  const tr = treasures.filter(n => !n.data.slug.includes("scroll-of-"));
+		                  return output = `<p>@Compendium[pf2e.equipment-srd.${tr[random]._id}]{${tr[random].name}}</p>`
+                                }
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-				output = output + `<p>@Compendium[pf2e.spells-srd.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
+				output += `<p>@Compendium[pf2e.spells-srd.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
 			}
 
-			else { output = output + `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
+			else { output += `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
 		}
 	});
         ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`, content: output, speaker: {alias:'GM'}, whisper:[game.user.id]});
