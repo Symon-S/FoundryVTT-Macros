@@ -117,7 +117,7 @@ if (canvas.tokens.controlled.length !== 1){
                 my_string += `<br>${
                     coreSkill.name[0].toUpperCase() + coreSkill.name.substring(1)
                     } <span style="color: ${rollColor}">[[${coreRoll.total}]]</span> = <span
-                    style="background-color: ${outcomeColor}">${outcome}</span>`
+                    style="color: ${outcomeColor}">${outcome}</span>`
             } 
         }
 
