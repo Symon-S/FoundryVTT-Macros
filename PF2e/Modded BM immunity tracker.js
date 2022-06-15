@@ -12,7 +12,7 @@ The duration is automatically set depending on the Medicine skill level of the m
 To remove an effect, right click it in the effect tracker (top right of the screen) as per normal
 */
 
-const bm_UUID = 'Compendium.pf2e.feature-effects.2XEYQNZTCGpdkyR6'; //Battle medicine Immunity effect
+const bm_UUID = 'Compendium.pf2e.feat-effects.2XEYQNZTCGpdkyR6'; //Battle medicine Immunity effect
 const showIcons = true;
 
 if (!token) {
