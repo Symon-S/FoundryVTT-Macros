@@ -71,14 +71,15 @@ async function Spellstrike()
   /* Get them weapons baby */
   let weapons = [];
   if (token.actor.itemTypes.feat.some(f => f.slug === 'starlit-span')) { 
-    weapons = actor.data.data.actions.filter(i => i.type === "strike");
-    weapons.forEach( w => {
+    weapons = actor.data.data.actions.filter(i => i.type === "strike" && i.item.isEquipped);
+    weapons.forEach( (w,index) => {
+      if ( w.name.includes("Thrown")) { return; }
       if (w.item.data.data.traits.value.some(v => v.includes("thrown"))) {
         let tw = deepClone(w.altUsages[0]);
         if (!tw.name.includes("Thrown")) {
           tw.name = `Thrown ${tw.name}`
         }
-        weapons.push(tw);
+        weapons.splice(index+1,0,tw);
       }
     });
   }
