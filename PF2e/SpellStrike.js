@@ -73,7 +73,7 @@ async function Spellstrike()
   if (token.actor.itemTypes.feat.some(f => f.slug === 'starlit-span')) { 
     weapons = actor.data.data.actions.filter(i => i.type === "strike" && i.item.isEquipped);
     weapons.forEach( (w,index) => {
-      if ( w.name.includes("Thrown")) { return; }
+      if ( w.name.includes("Thrown") || w.item.isRanged) { return; }
       if (w.item.data.data.traits.value.some(v => v.includes("thrown"))) {
         let tw = deepClone(w.altUsages[0]);
         if (!tw.name.includes("Thrown")) {
