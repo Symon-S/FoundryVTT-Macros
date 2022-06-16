@@ -70,7 +70,18 @@ async function Spellstrike()
 
   /* Get them weapons baby */
   let weapons = [];
-  if (token.actor.itemTypes.feat.some(f => f.slug === 'starlit-span')) { weapons = actor.data.data.actions.filter(i => i.type === "strike"); }
+  if (token.actor.itemTypes.feat.some(f => f.slug === 'starlit-span')) { 
+    weapons = actor.data.data.actions.filter(i => i.type === "strike");
+    weapons.forEach( w => {
+      if (w.item.data.data.traits.value.some(v => v.includes("thrown"))) {
+        let tw = deepClone(w.altUsages[0]);
+        if (!tw.name.includes("Thrown")) {
+          tw.name = `Thrown ${tw.name}`
+        }
+        weapons.push(tw);
+      }
+    });
+  }
   else { 
     weapons = actor.itemTypes.weapon.filter(i => !i.isRanged && i.isEquipped);
     let melee = weapons;
@@ -88,7 +99,7 @@ async function Spellstrike()
     })
   }
   const map_weap = weapons.map(p => p.name);
-
+  
       /* Build dialog data */
       const es_data = [
         { label : `Choose a Spell:`, type : `select`, options : spells.map(p=> p.name) },
@@ -108,7 +119,7 @@ async function Spellstrike()
       const spell_choice = await quickDialog({data : es_data, title : `Spellstrike`});
 		
       /* Get the strike actions and roll strike */
-      const strike = token.actor.data.data.actions.find(a => a.type === 'strike' && a.name === spell_choice[1]);
+      const strike = weapons.find(a => a.name === spell_choice[1]);
       let spc = spells.find(sp => sp.name === spell_choice[0]);
       const spcBack = spc;
       if ( spell_choice[2] && sbsp === undefined ) {
