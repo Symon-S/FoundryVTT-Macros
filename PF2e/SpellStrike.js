@@ -84,20 +84,7 @@ async function Spellstrike()
     });
   }
   else { 
-    weapons = actor.itemTypes.weapon.filter(i => !i.isRanged && i.isEquipped);
-    let melee = weapons;
-    let names = [];
-    melee.forEach(a => { names.push(a.name); });
-    let ranged = actor.itemTypes.weapon.filter(i => i.isRanged === true && i.isEquipped);
-    ranged.forEach(r => { names.push(r.name); });
-    actor.data.data.actions.forEach(gus => {
-      if ( names.includes(gus.name) ) { return; }
-      let traits = [];
-      if ( !names.includes(gus.name) ) {
-      Object.entries(gus.traits).forEach(t => { traits.push(t[1].name); });
-      if ( traits.includes('unarmed') && !traits.includes('ranged') ) { weapons.push(gus); }
-      }
-    })
+    weapons = token.actor.data.data.actions.filter(i => i.type === "strike" && !i.item.isRanged && i.item.isEquipped && !i.item.data.data.traits.value.includes("ranged"));
   }
   const map_weap = weapons.map(p => p.name);
   
