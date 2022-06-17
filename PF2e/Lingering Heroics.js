@@ -1,7 +1,7 @@
 /*
 To use this macro, you need to have the lingering composition feat on your character sheet.
 To use inspire heroics, you must have the inspire heroics feat on your character sheet.
-If you are using PF2e Workbench and the effects compendium is visible to players, the macro will automatically use the effects in the workbench compendium.
+If you are using PF2e Workbench, the macro will automatically use the effects in the workbench compendium.
 If you are not using workbench, ask your DM to import spell effects for the following spells if you have them:
 Inspire Courage, Inspire Defense, Triple Time, and Song of Strength
 The DM should then duplicate each imported entry.
@@ -13,7 +13,6 @@ if (!token.actor.itemTypes.feat.some(lc => lc.slug === "lingering-composition"))
 if (actor.data.data.resources.focus.value === 0 || actor.data.data.resources.focus.value === undefined) { return ui.notifications.warn("You have no focus points"); }
 	
 const skillName = "Performance";
-const skillKey = "prf";
 var actionSlug = "lingering-composition"
 var actionName = "Lingering Composition"
       
@@ -47,7 +46,7 @@ let effects = await effectcom.getDocuments();
       
 let effect = effects.find(e => e.data.name.includes(choice[0]));
       
-const notes = [...token.actor.data.data.skills[skillKey].notes];
+const notes = [...token.actor.skills.performance.data.notes];
       
 if (choice[2] === true) {
   if ( choice[0] === 'Inspire Courage' || choice[0] === 'Inspire Defense' || choice[0] === 'Song of Strength') {  
@@ -175,7 +174,7 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 const roll = await game.pf2e.Check.roll(
 	new game.pf2e.CheckModifier(
 	  `<span class="pf2-icon">A</span> <b>${actionName}</b><br><i>${choice[0]}</i> - <p class="compact-text">${skillName } Skill Check</p>`,
-	  token.actor.data.data.skills[skillKey], modifiers 
+	  token.actor.skills.performance, modifiers 
 	),
 	{ actor: token.actor, type: 'skill-check', options, notes, dc: { value: DC }, skipDialog: true }, // add dc: { value: 25 } in the object to roll against a dc
 	null
