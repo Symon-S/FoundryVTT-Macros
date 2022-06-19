@@ -10,6 +10,10 @@ Add whatever text you would like to post along with the check to chat in the fla
 Add traits to ensure applicable mods will trigger if needed.
 */
 
+let lvl = "";
+if (canvas.tokens.controlled.length === 1) { lvl = token.actor.level; }
+if (canvas.tokens.controlled.length > 1) { lvl = Math.max(...canvas.tokens.controlled.map(l => l.actor.level)); }
+
 const ldc = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50];
 const check = new Dialog({
     title: "Save or Skill Check?",
@@ -33,6 +37,7 @@ check.render(true);
 
 async function customSaves() {
 async function postSave($html) {
+    const adjDif = parseInt($html.find('[name="adj"]')[0].value);
     const lbdc = parseInt($html.find('[name="lbdc"]')[0].value);
     if (lbdc > 25 || lbdc < 0) { return ui.notifications.warn("Level Based DC's are between level 0 and 25"); }
     let DC;
@@ -40,6 +45,7 @@ async function postSave($html) {
     const dc = parseInt($html.find('[name="dc"]')[0].value) || '';
     if (DC === undefined && (dc === '' || dc < 0)) { DC = 10; }
     if (dc !== '' && (dc > DC || DC === undefined)) { DC = dc; }
+    DC += adjDif;
     const save = $html.find('[name="save"]')[0].value || 'fortitude';
     const traits = $html.find('[name="traits"]')[0].value || '';
     const flavor = $html.find('[name="flavor"]')[0].value || '';
@@ -69,13 +75,27 @@ const dialog = new Dialog({
         <form>
         <div class="form-group">
         <label>Level based DC:</label>
-        <input id="lbdc" name="lbdc" type="number">
+        <input id="lbdc" name="lbdc" type="number" value="${lvl}">
         </div>
         </form>
         <form>
         <div class="form-group">
         <label>Custom DC:</label>
         <input id="dc" name="dc" type="number"/>
+        </div>
+        </form>
+        <form>
+        <div class="form-group">
+        <label>Adjust Difficulty:</label>
+        <select id="adj" name="adj">
+        <option value=0>None</option>
+        <option value=-10>Incredibly Easy</option>
+        <option value=-5>Very Easy</option>
+        <option value=-2>Easy</option>
+        <option value=2>Hard</option>
+        <option value=5>Very Hard</option>
+        <option value=10>Incredibly Hard</option>
+        </select>
         </div>
         </form>
         <form>
@@ -212,7 +232,7 @@ const dialog = new Dialog({
         <form>
         <div class="form-group">
         <label>Level based DC:</label>
-        <input id="lbdc" name="lbdc" type="number">
+        <input id="lbdc" name="lbdc" type="number" value="${lvl}">
         </div>
         </form>
         <form>
