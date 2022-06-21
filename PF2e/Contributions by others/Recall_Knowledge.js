@@ -43,7 +43,7 @@ if (canvas.tokens.controlled.length !== 1){
 
             my_string += `<br>${
                 coreSkill.name[0].toUpperCase() + coreSkill.name.substring(1)
-                } <span style="color: ${rollColor}">[[${coreRoll.total}]]</span>`
+                }+${coreSkill.totalModifier} <span style="color: ${rollColor}">[[${coreRoll.total}]]</span>`
         } 
     }
 
@@ -82,12 +82,30 @@ if (canvas.tokens.controlled.length !== 1){
             }
 
             if(level>20) {
-                dc = level * 2 + rarity;
+                dc = level * 2;
             } else {
-                dc = 14 + level + ((level < 0) ? 0 : Math.floor(level/3)) + rarity;
+                dc = 14 + level + ((level < 0) ? 0 : Math.floor(level/3));
+            }
+            let dcs = ["", "-", "-", "-"];
+            dcs[0] = dc + rarity;
+            switch (rarity){
+                case 0:
+                    dcs[1] = dc+2;
+                    dcs[2] = dc+5;
+                    dcs[3] = dc+10;
+                    break;
+                case 2:
+                    dcs[1] = dc+5;
+                    dcs[2] = dc+10;
+                    break;
+                case 5:
+                    dcs[1] = dc+10;
+                    break;
+                default:  
+                    break; 
             }
 
-            my_string += `<br><strong>vs. ${targetActor.name} (DC: ${dc})</strong>`;
+            my_string += `<br><strong>vs. ${targetActor.name}</strong><br>1st: DC ${dcs[0]}; 2nd: DC ${dcs[1]}; 3rd: DC ${dcs[2]}; 4th: DC ${dcs[3]}`;
             for (primaryskill of primaryskills) {
                 const coreSkill = token.actor.data.data.skills[primaryskill];
                 const coreRoll = await new Roll(
@@ -116,7 +134,7 @@ if (canvas.tokens.controlled.length !== 1){
 
                 my_string += `<br>${
                     coreSkill.name[0].toUpperCase() + coreSkill.name.substring(1)
-                    } <span style="color: ${rollColor}">[[${coreRoll.total}]]</span> = <span
+                    }+${coreSkill.totalModifier} <span style="color: ${rollColor}">[[${coreRoll.total}]]</span> = <span
                     style="color: ${outcomeColor}">${outcome}</span>`
             } 
         }
