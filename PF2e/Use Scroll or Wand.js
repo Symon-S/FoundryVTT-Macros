@@ -25,7 +25,7 @@ async function Scroll() {
   const scroll = [];
  
   token.actor.itemTypes.consumable.forEach(s => {
-   if(s.data.data.consumableType.value === "scroll") { scroll.push(s); }
+   if(s.data.data.consumableType.value === "scroll" && s.isIdentified) { scroll.push(s); }
   });
  
   if (scroll.length === 0) { return ui.notifications.warn("You do don't have scrolls to cast from.");}
@@ -40,7 +40,7 @@ async function Wand(){
   const wand = [];
  
   token.actor.itemTypes.consumable.forEach(s => {
-   if (s.data.data.consumableType.value === "wand" && s.data.data.charges.value > 0) { wand.push(s); }
+   if (s.data.data.consumableType.value === "wand" && s.isIdentified && s.data.data.charges.value > 0) { wand.push(s); }
   });
   
   token.actor.itemTypes.equipment.forEach( e => {
