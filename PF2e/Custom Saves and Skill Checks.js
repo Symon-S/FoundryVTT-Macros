@@ -39,6 +39,8 @@ async function customSaves() {
 async function postSave($html) {
     const adjDif = parseInt($html.find('[name="adj"]')[0].value);
     const lbdc = parseInt($html.find('[name="lbdc"]')[0].value);
+    const bst = $html.find('[name="bst"]')[0].checked;
+console.log(bst);
     if (lbdc > 25 || lbdc < 0) { return ui.notifications.warn("Level Based DC's are between level 0 and 25"); }
     let DC;
     if (lbdc !== NaN) { DC = ldc[lbdc]; }
@@ -49,7 +51,7 @@ async function postSave($html) {
     const save = $html.find('[name="save"]')[0].value || 'fortitude';
     const traits = $html.find('[name="traits"]')[0].value || '';
     const flavor = $html.find('[name="flavor"]')[0].value || '';
-    let content = `@Check[type:${save}|traits:${traits}|dc:${DC}]`;
+    let content = `@Check[type:${save}|traits:${traits}|dc:${DC}|basic:${bst}]`;
     content += (flavor) ? `{${flavor}}` : "";
     ChatMessage.create(
     {
@@ -70,6 +72,12 @@ const dialog = new Dialog({
         <option value="reflex">Reflex</option>
         <option value="will">Will</option>
         </select>
+        </div>
+        </form>
+        <form>
+        <div class="form-group">
+        <label>Basic Saving Throw?</label>
+        <input id="bst" name="bst" type="checkbox" checked="checked">
         </div>
         </form>
         <form>
