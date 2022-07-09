@@ -134,7 +134,8 @@ async function Spellstrike()
           sbsp.data = sbsp.spell.spell.getRollData({spellLvl: sbsp.lvl});
           sbsp.formula = sbsp.spell.spell.getDamageFormula(sbsp.lvl, sbsp.data);
           sbsp.sEId = spc.sEId;
-          spc = sbsp 
+          sbsp.index = spc.index;
+          spc = sbsp;
         }
       }      
 
