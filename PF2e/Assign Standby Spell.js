@@ -4,6 +4,7 @@ You simply run this macro with the token selected and it will prompt you for you
 intelligence, and arcane, based spellcasting entry is available and flag that entry as your magus spellcasting entry.
 It will then prompt you for a spell in that entry to be your Standby Spell.
 If you would like to change the Standby Spell, simply run the macro again.
+You can clear your Standby Spell and Entry by choosing 'Clear Standby Spell' entry in the dropdown.
 */
 
 if (canvas.tokens.controlled.length !== 1) { return ui.notifications.warn("You must select 1 token that's a Magus or has the Magus Dedication!"); }
@@ -45,18 +46,25 @@ spells.sort();
 
 if (spells.some(s => s.data.flags.pf2e.standbySpell === true)) {
   const options = spells.filter(c => !c.isCantrip && c.data.flags.standbySpell !== true).map(n => n.name);
+  options.push(`Clear Standby Spell`);
   const flagged = spells.find(s => s.data.flags.pf2e.standbySpell === true);
   const choice3 = await choose( options, prompt = `Replace your Standby Spell (${flagged.name}):`);
+  if (choice3 === `Clear Standby Spell`) {
+    const flagged1 = token.actor.itemTypes.spell.find(s => s.data.flags.pf2e.standbySpell === true);
+    await flagged1.unsetFlag("pf2e","standbySpell");
+    await entry.unsetFlag("pf2e","magusSE");
+    return ui.notifications.info(`Standby Spell and Standby Spell Entry cleared`);
+  }
   const spell = spells.find(f => f.name === choice3);
   await flagged.unsetFlag("pf2e","standbySpell");
   await spell.setFlag("pf2e","standbySpell",true);
 }
 
 else {
- const options = spells.filter(c => !c.isCantrip).map(n => n.name);
- const choice2 = await choose( options, prompt = `Choose your Standby Spell:`);
- const spell = spells.find(f => f.name === choice2);
- await spell.setFlag("pf2e","standbySpell",true);
+  const options = spells.filter(c => !c.isCantrip).map(n => n.name);
+  const choice2 = await choose( options, prompt = `Choose your Standby Spell:`);
+  const spell = spells.find(f => f.name === choice2);
+  await spell.setFlag("pf2e","standbySpell",true);
 }
 
 /*
