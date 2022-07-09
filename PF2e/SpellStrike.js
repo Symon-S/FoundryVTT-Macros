@@ -42,7 +42,7 @@ async function Spellstrike()
         },{width:"auto"}).render(true);
       });
       if(standby) {
-        if(token.actor.itemTypes.spellcastingEntry.some(sb => sb.data.flags.pf2e.magusSE)) {
+        if(token.actor.itemTypes.spellcastingEntry.some(sb => sb.data.flags.pf2e.magusSE) && token.actor.itemTypes.spell.some(s => s.data.flags.pf2e.standbySpell === true)) {
         entries = token.actor.itemTypes.spellcastingEntry.filter(sb => sb.data.flags.pf2e.magusSE);
         }
         else {
