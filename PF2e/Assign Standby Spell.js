@@ -42,10 +42,10 @@ entry.spells.contents.forEach( sp => {
   spells.push(sp);
 });
 
-spells.sort();
 
 if (spells.some(s => s.data.flags.pf2e.standbySpell === true)) {
   const options = spells.filter(c => !c.isCantrip && c.data.flags.standbySpell !== true).map(n => n.name);
+  options.sort();
   options.push(`Clear Standby Spell`);
   const flagged = spells.find(s => s.data.flags.pf2e.standbySpell === true);
   const choice3 = await choose( options, prompt = `Replace your Standby Spell (${flagged.name}):`);
@@ -62,6 +62,7 @@ if (spells.some(s => s.data.flags.pf2e.standbySpell === true)) {
 
 else {
   const options = spells.filter(c => !c.isCantrip).map(n => n.name);
+  options.sort();
   const choice2 = await choose( options, prompt = `Choose your Standby Spell:`);
   const spell = spells.find(f => f.name === choice2);
   await spell.setFlag("pf2e","standbySpell",true);
