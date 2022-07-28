@@ -37,10 +37,6 @@ async function Eldritch_shot()
             if(spa.expended) { return; }
             if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.data.data.resources.focus.value === 0){ return; }
             let level = `lv${sp.level}`
-            if(spa.spell.slug === 'scorching-ray') { 
-              spa.spell.data.data.damage.value[0].value = "4d6";
-              spa.spell.data.data.heightening.damage[0] = "2d6";
-            }
             const name = spa.spell.name;
             const spRD = spa.spell.getRollData({spellLvl: sp.level});
             const formula = spa.spell.getDamageFormula(sp.level, spRD);
