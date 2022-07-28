@@ -81,10 +81,6 @@ async function Spellstrike()
           if(spa.expended) { return; }
           if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.data.data.resources.focus.value === 0){ return; }
           let level = `lv${sp.level}`
-          if(spa.spell.slug === 'scorching-ray') { 
-            spa.spell.data.data.damage.value[0].value = "4d6";
-            spa.spell.data.data.heightening.damage[0] = "2d6";
-          }
           const name = spa.spell.name;
           const spRD = spa.spell.getRollData({spellLvl: sp.level});
           const formula = spa.spell.getDamageFormula(sp.level, spRD);
@@ -146,10 +142,6 @@ async function Spellstrike()
       const sbs = token.actor.itemTypes.spell.find(sb => sb.data.flags.pf2e.standbySpell);
       sbsp = {name: `${sbs.name} (Standby)`, formula:``, sEId: ``, lvl: sbs.level, spId: sbs.id, slug: sbs.slug, desc: sbs.description, DC: sbs.spellcasting.statistic.dc.value, data: ``, spell: { chatData: sbs.getChatData(), spell: sbs }, index: ``, isSave: sbs.getChatData().isSave, cId: sbs.sourceId.substr(27)}
       if ( sbsp.lvl > spc.lvl ) { return ui.notifications.warn(`The chosen spell level is below the base level of your standby spell ${sbsp.name}, please try again.`); }
-      if(sbsp.spell.spell.slug === 'scorching-ray') { 
-              sbsp.spell.spell.data.data.damage.value[0].value = "4d6";
-              sbsp.spell.spell.data.data.heightening.damage[0] = "2d6";
-      }
       sbsp.lvl = spc.lvl;
       sbsp.data = sbsp.spell.spell.getRollData({spellLvl: sbsp.lvl});
       sbsp.formula = sbsp.spell.spell.getDamageFormula(sbsp.lvl, sbsp.data);
