@@ -113,7 +113,12 @@ async function Spellsling()
        }
 
       if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') && spc.slug !== 'magnetic-acceleration' && spc.slug !== 'moonlight-ray' && spc.slug !== 'searing-light' && Object.entries(spc.data.item.data.data.damage.value).length !== 0 && !spc.data.item.isCantrip ) {
-        spc.formula = spc.formula + `[${spc.data.item.data.data.damage.value[0].type.value}]`;
+        let dt;
+        Object.entries(spc.data.item.data.data.damage.value).forEach((t,i) => {
+            if (i !== 0) { return }
+            dt = t[1].type.value;
+        });
+        spc.formula = spc.formula + `[${dt}]`;
       }
 
 
