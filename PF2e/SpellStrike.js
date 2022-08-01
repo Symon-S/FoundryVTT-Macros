@@ -86,7 +86,7 @@ async function Spellstrike()
           const formula = spa.spell.getDamageFormula(sp.level, spRD);
 		      if(sp.isCantrip) { level = `[Cantrip]`}
 				  const sname = `${name} ${level} (${e.name})`;
-          spells.push({name: sname, formula:formula, sEId: spellData.id, lvl: sp.level, spId: spa.spell.id, slug: spa.spell.slug, desc: spa.spell.description, DC: e.data.data.statisticData.dc.value, data: spRD, spell: spa, index: index, isSave: spa.chatData.isSave, cId: spa.spell.sourceId.substr(27)});
+          spells.push({name: sname, formula:formula, lvl: sp.level, slug: spa.spell.slug, sEId: spellData.id, desc: spa.spell.description, DC: e.data.data.statisticData.dc.value, data: spRD, spell: spa, index: index, isSave: spa.chatData.isSave});
 				});
 			});
 		});
@@ -102,7 +102,7 @@ async function Spellstrike()
 
 
     if(spells.length === 0) { return ui.notifications.info("You have no spells available"); }
-
+    console.log(spells);
     /* Get them weapons baby */
     let weapons = [];
     if (token.actor.itemTypes.feat.some(f => f.slug === 'starlit-span')) { 
@@ -136,11 +136,10 @@ async function Spellstrike()
     const strike = weapons.find(a => a.name === spell_choice[1]);
     let spc = spells.find(sp => sp.name === spell_choice[0]);
     const spcBack = spc;
- 
     let sbsp;
     if(standby) {
       const sbs = token.actor.itemTypes.spell.find(sb => sb.data.flags.pf2e.standbySpell);
-      sbsp = {name: `${sbs.name} (Standby)`, formula:``, sEId: ``, lvl: sbs.level, spId: sbs.id, slug: sbs.slug, desc: sbs.description, DC: sbs.spellcasting.statistic.dc.value, data: ``, spell: { chatData: sbs.getChatData(), spell: sbs }, index: ``, isSave: sbs.getChatData().isSave, cId: sbs.sourceId.substr(27)}
+      sbsp = {name: `${sbs.name} (Standby)`, formula:``, sEId: ``, lvl: sbs.level, spId: sbs.id, slug: sbs.slug, desc: sbs.description, DC: sbs.spellcasting.statistic.dc.value, data: ``, spell: { chatData: sbs.getChatData(), spell: sbs }, index: ``, isSave: sbs.getChatData().isSave}
       if ( sbsp.lvl > spc.lvl ) { return ui.notifications.warn(`The chosen spell level is below the base level of your standby spell ${sbsp.name}, please try again.`); }
       sbsp.lvl = spc.lvl;
       sbsp.data = sbsp.spell.spell.getRollData({spellLvl: sbsp.lvl});
@@ -261,6 +260,7 @@ async function Spellstrike()
     let flavName = `${spc.data.item.name} cast at Lv${spc.lvl}`;
     if (spc.data.item.isCantrip) { flavName = `${spc.data.item.name} (Cantrip)`; }
     let flavor = `<strong>Spellstrike</strong><br>${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.${spc.data.item.name}]{${flavName}}`)} (${dos})<div class="tags">${ttags}</div><hr>`;
+    if (spc.slug === null) { flavor = `<strong>Spellstrike</strong><br>${flavName} [Custom Spell] (${dos})<div class="tags">${ttags}</div><hr>`; }
     if (spc.slug === 'acid-splash') { flavor = `<strong>Spellstrike</strong>${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.Acid Splash]{${flavName}}`)} (${dos})<div class="tags">${ttags}</div>` }
     if (spc.isSave && spc.slug !== 'chromatic-ray') {
       let basic = true;
