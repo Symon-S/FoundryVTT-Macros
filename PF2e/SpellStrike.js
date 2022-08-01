@@ -102,7 +102,6 @@ async function Spellstrike()
 
 
     if(spells.length === 0) { return ui.notifications.info("You have no spells available"); }
-    console.log(spells);
     /* Get them weapons baby */
     let weapons = [];
     if (token.actor.itemTypes.feat.some(f => f.slug === 'starlit-span')) { 
@@ -176,7 +175,6 @@ async function Spellstrike()
         spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6[fire] + ${(spc.lvl-3)*2 + 5}d6[good] + ${spc.lvl}[${type}]` : `${(spc.lvl-3)*2 + 5}d6[fire] + ${(spc.lvl-3)*2 + 5}d6[good]`;
       }
     }
-
     if (spc.slug === 'moonlight-ray'){
       if (!game.user.targets.first().actor.traits.has('undead') && !game.user.targets.first().actor.traits.has('fiend')) { 
         spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6 + ${spc.lvl}[cold]` : `${(spc.lvl-3)*2 + 5}d6`;
@@ -186,6 +184,7 @@ async function Spellstrike()
         spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6[cold] + ${(spc.lvl-3)*2 + 5}d6[good] + ${spc.lvl}[${type}]` : `${(spc.lvl-3)*2 + 5}d6[cold] + ${(spc.lvl-3)*2 + 5}d6[good]`;
       }
     }
+
     if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') && spc.slug !== 'magnetic-acceleration' && spc.slug !== 'moonlight-ray' && spc.slug !== 'searing-light' && Object.entries(spc.data.item.data.data.damage.value).length !== 0 && !spc.data.item.isCantrip ) {
         let dt;
         Object.entries(spc.data.item.data.data.damage.value).forEach((t,i) => {
@@ -194,6 +193,7 @@ async function Spellstrike()
         });
         spc.formula = spc.formula + `[${dt}]`;
     }
+
 
     const fsplit = spc.formula.split(" ");
     let ddam,ddice = '';
@@ -277,11 +277,17 @@ async function Spellstrike()
       flavor = `<strong>Spellstrike</strong><br>${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.${spc.data.item.name}]{${flavName}}`)} (${dos})<div class="tags">${ttags}`;
       spc.formula = '';
       ddice = '';
+      let ds = '';
+      let dsc = '';
+      if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery')) { 
+        ds = ` + ${spc.lvl}`; 
+        dsc = ` + ${spc.lvl * 2}`
+      }
       const chroma = [
-        {d:`{30}[fire]`,f:`<span class="tag tooltipstered" data-trait="fire" data-description="PF2E.TraitDescriptionFire">Fire</span></div><hr><p class='compact-text'>1.<strong>Red</strong> (fire) The ray deals 30 fire damage to the target. Double on a Critical.</p>`,dd:`{60}[fire]`},
-        {d:`{40}[acid]`,f:`<span class="tag tooltipstered" data-trait="acid" data-description="PF2E.TraitDescriptionAcid">Acid</span></div><hr><p class='compact-text'>2.<strong>Orange</strong> (acid) The ray deals 40 acid damage to the target. Double on a Critical.</p>`,dd:`{80}[acid]`},
-        {d:`{50}[electricity]`,f:`<span class="tag tooltipstered" data-trait="electricity" data-description="PF2E.TraitDescriptionElectricity">Electricity</span></div><hr><p class='compact-text'>3.<strong>Yellow</strong> <br>(electricity) The ray deals 50 electricity damage to the target. Double on a Critical.</p>`,dd:`{100}[electricity]`},
-        {d:`{25}[poison]`,f:`<span class="tag tooltipstered" data-trait="poison" data-description="PF2E.TraitDescriptionPoison">Poison</span></div><hr><p class='compact-text'>4.<strong>Green</strong> (poison) The ray deals 25 poison damage to the target, double on a Critical, and the target must succeed at a <span data-pf2-check='fortitude' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits},poison' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>Fortitude save</span> or be ${TextEditor.enrichHTML('@Compendium[pf2e.conditionitems.Enfeebled]{Enfeebled 1}')} for 1 minute (${TextEditor.enrichHTML('@Compendium[pf2e.conditionitems.Enfeebled]{Enfeebled 2}')} on a critical failure).</p>`,dd:`{50}[poison]`},
+        {d:`{30${ds}}[fire]`,f:`<span class="tag tooltipstered" data-trait="fire" data-description="PF2E.TraitDescriptionFire">Fire</span></div><hr><p class='compact-text'>1.<strong>Red</strong> (fire) The ray deals 30 fire damage to the target. Double on a Critical.</p>`,dd:`{60${dsc}}[fire]`},
+        {d:`{40${ds}}[acid]`,f:`<span class="tag tooltipstered" data-trait="acid" data-description="PF2E.TraitDescriptionAcid">Acid</span></div><hr><p class='compact-text'>2.<strong>Orange</strong> (acid) The ray deals 40 acid damage to the target. Double on a Critical.</p>`,dd:`{80${dsc}}[acid]`},
+        {d:`{50${ds}}[electricity]`,f:`<span class="tag tooltipstered" data-trait="electricity" data-description="PF2E.TraitDescriptionElectricity">Electricity</span></div><hr><p class='compact-text'>3.<strong>Yellow</strong> <br>(electricity) The ray deals 50 electricity damage to the target. Double on a Critical.</p>`,dd:`{100${dsc}}[electricity]`},
+        {d:`{25${ds}}[poison]`,f:`<span class="tag tooltipstered" data-trait="poison" data-description="PF2E.TraitDescriptionPoison">Poison</span></div><hr><p class='compact-text'>4.<strong>Green</strong> (poison) The ray deals 25 poison damage to the target, double on a Critical, and the target must succeed at a <span data-pf2-check='fortitude' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits},poison' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>Fortitude save</span> or be ${TextEditor.enrichHTML('@Compendium[pf2e.conditionitems.Enfeebled]{Enfeebled 1}')} for 1 minute (${TextEditor.enrichHTML('@Compendium[pf2e.conditionitems.Enfeebled]{Enfeebled 2}')} on a critical failure).</p>`,dd:`{50${dsc}}[poison]`},
         {f:`</div><hr><p class='compact-text'>5.<strong>Blue</strong> The ray has the effect of the ${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.Flesh to Stone]{Flesh to Stone}`)} spell. On a critical hit, the target is ${TextEditor.enrichHTML('@Compendium[pf2e.conditionitems.Clumsy]{Clumsy 1}')} as long as it’s slowed by the flesh to stone effect.<br><span data-pf2-check='fortitude' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>Fortitude save</span></p>`},
         {f:`<span class="tag tooltipstered" data-trait="emotion" data-description="PF2E.TraitDescriptionEmotion">Emotion</span><span class="tag tooltipstered" data-trait="incapacitation" data-description="PF2E.TraitDescriptionIncapacitation">Incapacitation</span><span class="tag tooltipstered" data-trait="mental" data-description="PF2E.TraitDescriptionMental">Mental</span></div><hr><p class='compact-text'>6.<strong>Indigo</strong> (emotion, incapacitation, mental) The ray has the effect of the ${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.Confusion]{Confusion}`)} spell. On a critical hit, it has the effect of ${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.Warp Mind]{Warp Mind}`)} instead.<br><span data-pf2-check='will' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits},emotion,incapacitation,mental' data-pf2-label='Indigo DC'><strong>DC ${spc.DC} </strong>Will save</span></p>`},
         {f:`</div><hr><p class='compact-text'>7.<strong>Violet</strong> <br>The target is ${TextEditor.enrichHTML('@Compendium[pf2e.conditionitems.Slowed]{Slowed}')} for 1 minute. It must also succeed at a <span data-pf2-check='will' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='Violet DC'><strong>DC ${spc.DC} </strong>Will save</span> or be teleported 120 feet directly away from you (if there isn’t room for it to appear there, it appears in the nearest open space); this is a teleportation effect.</p>`},
@@ -290,17 +296,17 @@ async function Spellstrike()
       let chromaD = '1d4';
       if (spc.lvl > 5) { 
         chromaD = '1d8';
-        chroma[0].d = `{40}[fire]`;
-        chroma[0].dd = `{80}[fire]`;
+        chroma[0].d = `{40${ds}}[fire]`;
+        chroma[0].dd = `{80${dsc}}[fire]`;
         chroma[0].f = chroma[0].f.replace('30','40');
-        chroma[1].d = `{50}[acid]`;
-        chroma[1].dd = `{100}[acid]`;
+        chroma[1].d = `{50${ds}}[acid]`;
+        chroma[1].dd = `{100${dsc}}[acid]`;
         chroma[1].f = chroma[1].f.replace('40','50');
-        chroma[2].d = `{60}[electricity]`;
-        chroma[2].dd = `{120}[electricity]`;
+        chroma[2].d = `{60${ds}}[electricity]`;
+        chroma[2].dd = `{120${dsc}}[electricity]`;
         chroma[2].f = chroma[2].f.replace('50','60');
-        chroma[3].d = `{35}[poison]`;
-        chroma[3].dd = `{70}[poison]`;
+        chroma[3].d = `{35${ds}}[poison]`;
+        chroma[3].dd = `{70${dsc}}[poison]`;
         chroma[3].f = chroma[3].f.replace('25','35');
       }
       const chromaR = new Roll(chromaD).roll({ async : false }).total;
