@@ -41,7 +41,7 @@ mmE.forEach(e => {
 
 token.actor.itemTypes.consumable.forEach(s => {
 	if (!s.data.data.traits.value.includes("wand") && !s.data.data.traits.value.includes("scroll")) { return; }
-	if (s.data.data.spell.data.data.slug === 'magic-missile') { 
+	if (s.data.data.spell?.data?.data?.slug === 'magic-missile') { 
 		if (s.data.data.traits.value.includes("wand") && s.data.data.charges.value > 0) {
 			mm.push({name: `${s.name}`, level: parseInt(s.slug.substr(11,1)), prepared: false, entryId: s.id , wand: true, scroll: false, spont: false,  }) 
 		}
