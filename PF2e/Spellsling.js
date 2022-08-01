@@ -41,7 +41,7 @@ async function Spellsling()
             const formula = spa.spell.getDamageFormula(sp.level, spRD);
 		        if(sp.isCantrip) { level = `[Cantrip]`}
 				    const sname = `${name} ${level} (${e.name})`;
-            spells.push({name: sname, formula:formula, sEId: spellData.id, lvl: sp.level, spId: spa.spell.id, slug: spa.spell.slug, desc: spa.spell.description, DC: e.data.data.statisticData.dc.value, data: spRD, spell: spa, index: index, isSave: spa.chatData.isSave, cId: spa.spell.sourceId.substr(27)});
+            spells.push({name: sname, formula:formula, sEId: spellData.id, lvl: sp.level, spId: spa.spell.id, slug: spa.spell.slug, desc: spa.spell.description, DC: e.data.data.statisticData.dc.value, data: spRD, spell: spa, index: index, isSave: spa.chatData.isSave});
 					});
 				});
 		  });
@@ -177,6 +177,7 @@ if (spc.data.item.data.data.damage.value !== '' || spc.data.item.data.data.damag
       let flavName = `${spc.data.item.name} cast at Lv${spc.lvl}`;
       if (spc.data.item.isCantrip) { flavName = `${spc.data.item.name} (Cantrip)`; }
 let flavor = `<strong>Spellsling</strong><br>${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.${spc.data.item.name}]{${flavName}}`)} (${dos})<div class="tags">${ttags}</div><hr>`;
+if (spc.slug === null) { flavor = `<strong>Spellsling</strong><br>${flavName} [Custom Spell] (${dos})<div class="tags">${ttags}</div><hr>`; }
       if (spc.slug === 'acid-splash') { flavor = `<strong>Spellsling</strong><br>${TextEditor.enrichHTML(`@Compendium[pf2e.spells-srd.Acid Splash]{${flavName}}`)} (${dos})<div class="tags">${ttags}</div>` }
       if (spc.isSave && spc.slug !== 'chromatic-ray') {
         let basic = true;
