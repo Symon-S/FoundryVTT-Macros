@@ -32,16 +32,28 @@ let itemArray = [...Array(Math.round(picks[3])).keys()];
 let randomItems = [];
 
 //Populate items
-const item = game.packs.get('pf2e.equipment-srd');
-const items = await item.getIndex({fields: ["data.level.value", "data.slug", "data.price.value", "data.traits.value", "data.traits.rarity"]});
-
+const iC = ["battlezoo-ancestries-dragons-pf2e.pf2e-battlezoo-dragon-equipment","pf2e.equipment-srd","battlezoo-bestiary-pf2e.pf2e-battlezoo-equipment","pf2e-expansion-pack.Expansion-Equipment","pf2e-wayfinder.wayfinder-equipment"];
+const item = game.packs.filter(c => iC.includes(c.collection));
+const items = [];
+for (const i of item) {
+    const index = await i.getIndex({fields: ["data.level.value", "data.slug", "data.price.value", "data.traits.value", "data.traits.rarity"]});
+    index.forEach( x => {
+        items.push(x);
+    });
+};
 //Populate Spells
 let spellz;
-let spellS;
+let spellS = [];
 
 if (picks[0] !== "Treasures") {
-  spellz = game.packs.get('pf2e.spells-srd');
-  spellS = (await spellz.getIndex({fields: ["data.level.value","data.slug","data.traits","data._id","data.category"]})).filter(f => !f.data.traits.value.includes("cantrip") && f.data.category.value !== "ritual" && f.data.category.value !== "focus");
+  const iS = ["pf2e.spells-srd","pf2e-expansion-pack.Expansion-Spells","pf2e-wayfinder.wayfinder-spells"];
+  spellz = game.packs.filter(c => iS.includes(c.collection));
+  for (const s of spellz) {
+    const index = (await s.getIndex({fields: ["data.level.value","data.slug","data.traits","data._id","data.category"]})).filter(f => !f.data.traits.value.includes("cantrip") && f.data.category.value !== "ritual" && f.data.category.value !== "focus");
+    index.forEach( x => {
+        spellS.push(x);
+    });
+  }
   if ( picks[4] !== "No filter" ) { spellS = spellS.filter(s => s.data.traits.rarity === picks[4].toLowerCase()); }
 }
 
@@ -104,9 +116,10 @@ if (picks[0] === "Permanents") {
 	});
 	let output;
 	randomItems.forEach( r => {
+	    console.log(r);
 		let slug = r.slug;
 		if (output === undefined) { 
-			if(slug.search("magic-wand") > -1){
+			if(slug !== null && slug.includes("magic-wand")){
 				const level = parseInt(slug.substr(11,1));   
 				const spells = spellS.filter(l => l.data.level.value === level);
                                 if (spells.length === 0) { 
@@ -120,7 +133,7 @@ if (picks[0] === "Permanents") {
 			else { output = `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
 		}
 		else { 
-			if(slug.search("magic-wand") > -1){
+			if(slug !== null && slug.includes("magic-wand")){
 				const level = parseInt(r.slug.substr(11,1));
 				const spells = spellS.filter(l => l.data.level.value === level);
                                 if (spells.length === 0) { 
@@ -151,9 +164,10 @@ if (picks[0] === "Consumables") {
 	});
 	let output;
 	randomItems.forEach( r => {
+	    console.log(r);
 		let slug = r.slug;
 		if (output === undefined) { 
-			if(slug.search("scroll-of-") > -1){
+			if(slug !== null && slug.includes("scroll-of-")){
 				const level = parseInt(r.slug.substr(10,1));
 				const spells = spellS.filter(l => l.data.level.value === level);
                                 if (spells.length === 0) { 
@@ -167,7 +181,7 @@ if (picks[0] === "Consumables") {
 			else { output = `<p>@Compendium[pf2e.equipment-srd.${r.id}]{${r.name}}</p>` }
 		}
 		else { 
-			if(slug.search("scroll-of-") > -1){
+			if(slug !== null && slug.includes("scroll-of-")){
 				const level = parseInt(r.slug.substr(10,1));
 				const spells = spellS.filter(l => l.data.level.value === level);
                                 if (spells.length === 0) { 
