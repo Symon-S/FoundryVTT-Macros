@@ -1,12 +1,12 @@
 /*
-Simple Bless macro that applies the aura item in the workbench module on first click
+Simple Bless macro that changes applies the aura item in the workbench module on first click
 On second click it will ask if it is sustained.
 If yes (or press enter), the aura grows by 5 feet
-If Dismiss, the bless aura will be dismissed
+If no, the 
 */
-
 if (!game.modules.get('xdy-pf2e-workbench')?.active) { return ui.notifications.error('This macro requires workbench module to be installed!'); }
-if (!actor || token.actor.type !== 'character') { return ui.notifications.warn("You must have a PC token selected"); }
+if (canvas.tokens.controlled.length < 1) { return ui.notifications.warn("You must have one token selected"); }
+if (canvas.tokens.controlled.length > 1) { return ui.notifications.warn("You must have only one token selected"); }
 if (!token.actor.itemTypes.spell.some(x => x.slug === 'bless')) { return ui.notifications.warn('You do not possess the bless spell'); }
 const effect = (await fromUuid('Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.BqkDxiAi0q6Uaar4')).toObject();
 effect.data.slug = 'bless-aura';
