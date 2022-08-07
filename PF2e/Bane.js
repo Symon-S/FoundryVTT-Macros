@@ -6,7 +6,8 @@ If Dismiss, the bless aura will be dismissed
 */
 
 if (!game.modules.get('xdy-pf2e-workbench')?.active) { return ui.notifications.error('This macro requires workbench module to be installed!'); }
-if (!actor || token.actor.type !== 'character') { return ui.notifications.warn("You must have a PC token selected"); }
+if (canvas.tokens.controlled.length < 1) { return ui.notifications.warn("You must have one token selected"); }
+if (canvas.tokens.controlled.length > 1) { return ui.notifications.warn("You must have only one token selected"); }
 if (!token.actor.itemTypes.spell.some(x => x.slug === 'bane')) { return ui.notifications.warn('You do not possess the bane spell'); }
 const effect = (await fromUuid('Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.YcyN7BDbL0Nt3CFN')).toObject();
 effect.data.slug = 'bane-aura';
