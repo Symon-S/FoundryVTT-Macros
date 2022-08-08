@@ -42,7 +42,7 @@ for (const i of item) {
         items.push(x);
     });
 };
-console.log(items);
+
 //Populate Spells
 let spellz;
 let spellS = [];
@@ -58,7 +58,6 @@ if (picks[0] !== "Treasures") {
     });
   }
   if ( picks[4] !== "No filter" ) { spellS = spellS.filter(s => s.data.traits.rarity === picks[4].toLowerCase()); }
-  console.log(spellS);
 }
 
 
@@ -120,7 +119,6 @@ if (picks[0] === "Permanents") {
 	});
 	let output;
 	randomItems.forEach( r => {
-	    console.log(r);
 		let slug = r.slug;
 		if (output === undefined) { 
 			if(slug !== null && slug.includes("magic-wand")){
@@ -168,7 +166,6 @@ if (picks[0] === "Consumables") {
 	});
 	let output;
 	randomItems.forEach( r => {
-	    console.log(r);
 		let slug = r.slug;
 		if (output === undefined) { 
 			if(slug !== null && slug.includes("scroll-of-")){
