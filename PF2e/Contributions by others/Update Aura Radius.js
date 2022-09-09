@@ -67,6 +67,15 @@ function applyChanges($html, auraEffects) {
 
     auraRule.radius = radius;
     auraEffect.update({ "data.rules": auraEffect.data.data.rules });
+    
+    // PF2e x JB2A Macros Implementation by MrVauxs
+    if (game.modules.get("sequencer")?.active) {
+        const sequencerEffects = Sequencer.EffectManager.getEffects({ origin: auraRule.slug, source: token })
+        if (sequencerEffects.length) {
+            const sizeChange = 1.5 + 3 * (radius / 5)
+            sequencerEffects[0].update({size: { width: sizeChange, height: sizeChange, gridUnits: true }})
+        }
+    }
 }
 
 
