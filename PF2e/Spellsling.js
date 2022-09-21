@@ -32,16 +32,20 @@ async function Spellsling()
           if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { return; }
 				  sp.active.forEach((spa,index) => {
 					  if(spa === null) { return; }
-					  if(!spa.chatData.isAttack) { return; }
+					  if(!spa.spell.system.spellType.value === 'attack') { return; }
             if(spa.expended) { return; }
             if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.system.resources.focus.value === 0){ return; }
             let level = `lv${sp.level}`
             const name = spa.spell.name;
             const spRD = spa.spell.getRollData({spellLvl: sp.level});
-            const formula = spa.spell.getDamageFormula(sp.level, spRD);
+            const formula = spa.spell.isCantrip ? spa.spell.getDamageFormula(Math.ceil(actor.level /2 ), spRD) : spa.spell.getDamageFormula(sp.level, spRD);
 		        if(sp.isCantrip) { level = `[Cantrip]`}
 				    const sname = `${name} ${level} (${e.name})`;
-            spells.push({name: sname, formula:formula, sEId: spellData.id, lvl: sp.level, spId: spa.spell.id, slug: spa.spell.slug, desc: spa.spell.description, DC: e.system.statisticData.dc.value, data: spRD, spell: spa, index: index, isSave: spa.chatData.isSave});
+            let isAttack = false;
+            if (spa.spell.system.spellType.value === 'attack') { isAttack = true; }
+            let isSave = false;
+            if (spa.spell.system.spellType.value === "save") { isSave = true; }
+            spells.push({name: sname, formula:formula, sEId: spellData.id, lvl: sp.level, spId: spa.spell.id, slug: spa.spell.slug, desc: spa.spell.description, DC: e.statistic.dc.value, data: spRD, spell: spa, index: index, isSave, isAttack});
 					});
 				});
 		  };
@@ -261,7 +265,7 @@ if (spc.slug === null) { flavor = `<strong>Spellsling</strong><br>${flavName} [C
       }
       if (critt === 'success' || critt === 'criticalSuccess') {
         if (spc.slug !== 'chromatic-ray' && ( spc.data.item.system.damage.value === '' || spc.data.item.system.damage.value === undefined || Object.entries(spc.spell.chatData.damage.value).length === 0 || !spc.spell.chatData.isAttack) ){
-          return await s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: true});
+          return await s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: true});
         }
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { spc.formula = ddice; } 
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledamage')) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }   
@@ -277,7 +281,7 @@ if (spc.slug === null) { flavor = `<strong>Spellsling</strong><br>${flavName} [C
       }
       /* Expend slots */
       if ( spc.data.item.isCantrip ) { return; }
-			await s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: false});
+			await s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: false});
 	}
 
 }
