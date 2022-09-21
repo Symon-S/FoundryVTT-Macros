@@ -71,9 +71,10 @@ async function Spellstrike()
         if (standby && sp.level < token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell === true).baseLevel) { return; }
         if(sp.isCantrip && standby) { return; }
         if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { return; }
+        let spa,index;
 				sp.active.forEach((spa,index) => {
 					if(spa === null) { return; }
-					if(!spa.chatData.isAttack && !token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike') && !standby) { return; }
+					if(!spa.spell.system.spellType.value === 'attack' && !token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike') && !standby) { return; }
           if (spa.spell.system.spellType.value === 'utility' || spa.spell.system.spellType.value === 'heal') { 
             if (!exceptions.includes(spa.spell.slug) && !standby) { return; }
           }
@@ -82,10 +83,14 @@ async function Spellstrike()
           let level = `lv${sp.level}`
           const name = spa.spell.name;
           const spRD = spa.spell.getRollData({spellLvl: sp.level});
-          const formula = spa.spell.getDamageFormula(sp.level, spRD);
+          const formula = spa.spell.isCantrip ? spa.spell.getDamageFormula(Math.ceil(actor.level /2 ), spRD) : spa.spell.getDamageFormula(sp.level, spRD);
 		      if(sp.isCantrip) { level = `[Cantrip]`}
 				  const sname = `${name} ${level} (${e.name})`;
-          spells.push({name: sname, formula:formula, lvl: sp.level, slug: spa.spell.slug, sEId: spellData.id, desc: spa.spell.description, DC: e.statistic.dc.value, data: spRD, spell: spa, index: index, isSave: spa.chatData.isSave});
+          let isAttack = false;
+          if (spa.spell.system.spellType.value === 'attack') { isAttack = true; }
+          let isSave = false;
+          if (spa.spell.system.spellType.value === "save") { isSave = true; }
+          spells.push({name: sname, formula:formula, lvl: sp.level, slug: spa.spell.slug, sEId: spellData.id, desc: spa.spell.description, DC: e.statistic.dc.value, data: spRD, spell: spa.spell, index: index, isSave, isAttack});
 				});
 			});
 		};
@@ -137,11 +142,15 @@ async function Spellstrike()
     let sbsp;
     if(standby) {
       const sbs = token.actor.itemTypes.spell.find(sb => sb.flags.pf2e.standbySpell);
-      sbsp = {name: `${sbs.name} (Standby)`, formula:``, sEId: ``, lvl: sbs.level, spId: sbs.id, slug: sbs.slug, desc: sbs.description, DC: sbs.spellcasting.statistic.dc.value, data: ``, spell: { chatData: sbs.getChatData(), spell: sbs }, index: ``, isSave: sbs.getChatData().isSave}
+          let isAttack = false;
+          if (sbs.system.spellType.value === 'attack') { isAttack = true; }
+          let isSave = false;
+          if (sbs.system.spellType.value === "save") { isSave = true; }      
+      sbsp = {name: `${sbs.name} (Standby)`, formula:``, sEId: ``, lvl: sbs.level, spId: sbs.id, slug: sbs.slug, desc: sbs.description, DC: sbs.spellcasting.statistic.dc.value, data: ``, spell: sbs, index: ``, isSave, isAttack}
       if ( sbsp.lvl > spc.lvl ) { return ui.notifications.warn(`The chosen spell level is below the base level of your standby spell ${sbsp.name}, please try again.`); }
       sbsp.lvl = spc.lvl;
-      sbsp.data = sbsp.spell.spell.getRollData({spellLvl: sbsp.lvl});
-      sbsp.formula = sbsp.spell.spell.getDamageFormula(sbsp.lvl, sbsp.data);
+      sbsp.data = sbsp.spell.getRollData({spellLvl: sbsp.lvl});
+      sbsp.formula = sbsp.spell.getDamageFormula(sbsp.lvl, sbsp.data);
       sbsp.sEId = spc.sEId;
       sbsp.index = spc.index;
       spc = sbsp;
@@ -196,7 +205,7 @@ async function Spellstrike()
 
     const fsplit = spc.formula.split(" ");
     let ddam,ddice = '';
-    if (spc.spell.chatData.isAttack){
+    if (spc.isAttack){
       fsplit.forEach(f => {
         if (f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || []) === null) { return ddice = ddice + f; }
         const double = `${parseInt(f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || [])[0]) * 2}`;
@@ -260,7 +269,7 @@ async function Spellstrike()
     let dos;
     if (critt === 'success') { dos = 'Success' }
     if (critt === 'criticalSuccess') { dos = 'Critical Success' }
-    if (spc.data.item.system.damage.value !== '' || spc.data.item.system.damage.value !== undefined || Object.entries(spc.spell.chatData.damage.value).length > 0){ traits = traits + `,damaging-effect`; }
+    if (spc.data.item.system.damage.value !== '' || spc.data.item.system.damage.value !== undefined || Object.entries(spc.spell.system.damage.value).length > 0){ traits = traits + `,damaging-effect`; }
     let flavName = `${spc.data.item.name} cast at Lv${spc.lvl}`;
     if (spc.data.item.isCantrip) { flavName = `${spc.data.item.name} (Cantrip)`; }
     let flavor = `<strong>Spellstrike</strong><br>@Compendium[pf2e.spells-srd.${spc.data.item.name}]{${flavName}} (${dos})<div class="tags">${ttags}</div><hr>`;
@@ -343,13 +352,13 @@ async function Spellstrike()
       if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
     }
     if (critt === 'success' || critt === 'criticalSuccess') {
-      if (spc.slug !== 'chromatic-ray' && ( spc.data.item.system.damage.value === '' || spc.data.item.system.damage.value === undefined || Object.entries(spc.spell.chatData.damage.value).length === 0 || !spc.spell.chatData.isAttack) ){
-        return s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: true});
+      if (spc.slug !== 'chromatic-ray' && ( spc.data.item.system.damage.value === '' || spc.data.item.system.damage.value === undefined || Object.entries(spc.spell.system.damage.value).length === 0 || !spc.isAttack) ){
+        return s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: true});
       }
       else {
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { spc.formula = ddice; } 
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledamage')) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }   
-        if ( Object.entries(spc.spell.chatData.damage.value).length > 0 || (spc.slug === 'chromatic-ray' && spc.formula !== '')){
+        if ( Object.entries(spc.spell.system.damage.value).length > 0 || (spc.slug === 'chromatic-ray' && spc.formula !== '')){
             const droll = new Roll(spc.formula);
             await droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
         }
@@ -360,14 +369,14 @@ async function Spellstrike()
       }
     }
 
-    if ( critt === 'failure' && !spc.spell.chatData.isAttack) { 
-      return s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: true}); 
+    if ( critt === 'failure' && !spc.isAttack) { 
+      return s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: true}); 
     }
       
     /* Expend slots */
     if ( spc.data.item.isCantrip ) { return; }
     if ( spell_choice[2] ) { spc = spcBack; }
-    await s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: false});
+    await s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: false});
   }
 
 }
