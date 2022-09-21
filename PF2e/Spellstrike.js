@@ -85,7 +85,7 @@ async function Spellstrike()
           const formula = spa.spell.getDamageFormula(sp.level, spRD);
 		      if(sp.isCantrip) { level = `[Cantrip]`}
 				  const sname = `${name} ${level} (${e.name})`;
-          spells.push({name: sname, formula:formula, lvl: sp.level, slug: spa.spell.slug, sEId: spellData.id, desc: spa.spell.description, DC: e.system.statisticData.dc.value, data: spRD, spell: spa, index: index, isSave: spa.chatData.isSave});
+          spells.push({name: sname, formula:formula, lvl: sp.level, slug: spa.spell.slug, sEId: spellData.id, desc: spa.spell.description, DC: e.statistic.dc.value, data: spRD, spell: spa, index: index, isSave: spa.chatData.isSave});
 				});
 			});
 		};
