@@ -48,7 +48,7 @@ async function Spellstrike()
         else {
           if ( game.modules.get('xdy-pf2e-workbench')?.active && (await game.packs.get("xdy-pf2e-workbench.asymonous-benefactor-macros-internal").getDocuments()).some(x => x.name === 'XDY DO_NOT_IMPORT Assign Standby Spell')) {
           const temp_macro = new Macro((await game.packs.get("xdy-pf2e-workbench.asymonous-benefactor-macros-internal").getDocuments()).find(x => x.name === 'XDY DO_NOT_IMPORT Assign Standby Spell')?.toObject());
-          temp_macro.data.permission.default = CONST.DOCUMENT_PERMISSION_LEVELS.OWNER;
+          temp_macro.ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
           await temp_macro.execute();
           }
           else if ( game.macros.some(n => n.name === "Assign Standby Spell") ) { await game.macros.find(n => n.name === "Assign Standby Spell").execute();  }
