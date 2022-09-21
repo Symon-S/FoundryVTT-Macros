@@ -45,7 +45,7 @@ async function Spellsling()
             if (spa.spell.system.spellType.value === 'attack') { isAttack = true; }
             let isSave = false;
             if (spa.spell.system.spellType.value === "save") { isSave = true; }
-            spells.push({name: sname, formula:formula, sEId: spellData.id, lvl: sp.level, spId: spa.spell.id, slug: spa.spell.slug, desc: spa.spell.description, DC: e.statistic.dc.value, data: spRD, spell: spa, index: index, isSave, isAttack});
+            spells.push({name: sname, formula:formula, sEId: spellData.id, lvl: sp.level, spId: spa.spell.id, slug: spa.spell.slug, desc: spa.spell.description, DC: e.statistic.dc.value, data: spRD, spell: spa.spell, index: index, isSave, isAttack});
 					});
 				});
 		  };
