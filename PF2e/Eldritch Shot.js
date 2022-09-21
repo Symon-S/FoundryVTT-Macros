@@ -33,16 +33,20 @@ async function Eldritch_shot()
           if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { return; }
 				  sp.active.forEach((spa,index) => {
 					  if(spa === null) { return; }
-					  if(!spa.chatData.isAttack) { return; }
+					  if(!spa.spell.system.spellType.value === 'attack') { return; }
             if(spa.expended) { return; }
             if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.system.resources.focus.value === 0){ return; }
             let level = `lv${sp.level}`
             const name = spa.spell.name;
             const spRD = spa.spell.getRollData({spellLvl: sp.level});
-            const formula = spa.spell.getDamageFormula(sp.level, spRD);
+            const formula = spa.spell.isCantrip ? spa.spell.getDamageFormula(Math.ceil(actor.level /2 ), spRD) : spa.spell.getDamageFormula(sp.level, spRD);
             if(sp.isCantrip) { level = `[Cantrip]`}
 				    const sname = `${name} ${level} (${e.name})`;
-            spells.push({name: sname, formula:formula, sEId: spellData.id, lvl: sp.level, spId: spa.spell.id, slug: spa.spell.slug, desc: spa.spell.description, DC: e.system.statisticData.dc.value, data: spRD, spell: spa, index: index, isSave: spa.chatData.isSave});
+            let isAttack = false;
+            if (spa.spell.system.spellType.value === 'attack') { isAttack = true; }
+            let isSave = false;
+            if (spa.spell.system.spellType.value === "save") { isSave = true; }
+            spells.push({name: sname, formula:formula, sEId: spellData.id, lvl: sp.level, spId: spa.spell.id, slug: spa.spell.slug, desc: spa.spell.description, DC: e.statistic.dc.value, data: spRD, spell: spa, index: index, isSave, isAttack});
 					});
 				});
 		  };
@@ -75,7 +79,6 @@ async function Eldritch_shot()
       /* Get the strike actions and roll strike */
       const strike = token.actor.system.actions.find(a => a.type === 'strike' && a.name === spell_choice[1]);
       const spc = spells.find(sp => sp.name === spell_choice[0]);
-      console.log(spc);
       const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);
       let pers;
       const key = s_entry.ability;
@@ -186,7 +189,7 @@ async function Eldritch_shot()
       let dos;
       if (critt === 'success') { dos = 'Success' }
       if (critt === 'criticalSuccess') { dos = 'Critical Success' }
-      if (spc.data.item.system.damage.value !== '' || spc.data.item.system.damage.value !== undefined || Object.entries(spc.spell.chatData.damage.value).length > 0){ traits = traits + `,damaging-effect`; }
+      if (spc.data.item.system.damage.value !== '' || spc.data.item.system.damage.value !== undefined || Object.entries(spc.spell.system.damage.value).length > 0){ traits = traits + `,damaging-effect`; }
       let flavName = `${spc.data.item.name} cast at Lv${spc.lvl}`;
       if (spc.data.item.isCantrip) { flavName = `${spc.data.item.name} (Cantrip)`; }
       let flavor = `<strong>Eldritch Shot</strong><br>@Compendium[pf2e.spells-srd.${spc.data.item.name}]{${flavName}} (${dos})<div class="tags">${ttags}</div><hr>`;
@@ -269,12 +272,12 @@ async function Eldritch_shot()
         if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
       }
       if (critt === 'success' || critt === 'criticalSuccess') {
-        if (spc.slug !== 'chromatic-ray' && ( spc.data.item.system.damage.value === '' || spc.data.item.system.damage.value === undefined || Object.entries(spc.spell.chatData.damage.value).length === 0 || !spc.spell.chatData.isAttack) ){
-          return await s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: true});
+        if (spc.slug !== 'chromatic-ray' && ( spc.data.item.system.damage.value === '' || spc.data.item.system.damage.value === undefined || Object.entries(spc.spell.system.damage.value).length === 0 || !spc.isAttack) ){
+          return await s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: true});
         }
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { spc.formula = ddice; } 
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledamage')) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }
-         if ( Object.entries(spc.spell.chatData.damage.value).length > 0 || (spc.slug === 'chromatic-ray' && spc.formula !== '') ){
+         if ( Object.entries(spc.spell.system.damage.value).length > 0 || (spc.slug === 'chromatic-ray' && spc.formula !== '') ){
           const droll = new Roll(spc.formula);
           await droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
         }
@@ -285,7 +288,7 @@ async function Eldritch_shot()
       }
       /* Expend slots */
       if ( spc.data.item.isCantrip ) { return; }
-      await s_entry.cast(spc.spell.spell,{slot: spc.index,level: spc.lvl,message: false});
+      await s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: false});
       }
 
 }
