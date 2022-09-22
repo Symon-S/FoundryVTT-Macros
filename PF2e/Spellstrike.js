@@ -1,5 +1,4 @@
 /*
-This is complete rewrite of the Spellstrike macro.
 To use this macro, you just have to target someone and use it.
 It will automatically roll damage based on degree of success.
 At the moment critical hits will only double dice if that setting is applied.
@@ -83,7 +82,7 @@ async function Spellstrike()
           let level = `lv${sp.level}`
           const name = spa.spell.name;
           const spRD = spa.spell.getRollData({spellLvl: sp.level});
-          const formula = spa.spell.isCantrip ? spa.spell.getDamageFormula(Math.ceil(actor.level /2 ), spRD) : spa.spell.getDamageFormula(sp.level, spRD);
+          const formula = spa.spell.isCantrip ? spa.spell.getDamageFormula(Math.ceil(actor.level /2), spRD) : spa.spell.getDamageFormula(sp.level, spRD);
 		      if(sp.isCantrip) { level = `[Cantrip]`}
 				  const sname = `${name} ${level} (${e.name})`;
           let isAttack = false;
@@ -111,11 +110,11 @@ async function Spellstrike()
     if (token.actor.itemTypes.feat.some(f => f.slug === 'starlit-span')) { 
       weapons = actor.system.actions.filter(i => i.type === "strike" && i.item.isEquipped);
       weapons.forEach( (w,index) => {
-        if ( w.name.includes("Thrown") || w.item.isRanged) { return; }
+        if ( w.label.includes("Thrown") || w.item.isRanged) { return; }
         if (w.item.system.traits.value.some(v => v.includes("thrown"))) {
           let tw = deepClone(w.altUsages[0]);
-          if (!tw.name.includes("Thrown")) {
-            tw.name = `Thrown ${tw.name}`
+          if (!tw.label.includes("Thrown")) {
+            tw.label = `Thrown ${tw.label}`
           }
           weapons.splice(index+1,0,tw);
         }
@@ -124,7 +123,7 @@ async function Spellstrike()
     else { 
       weapons = token.actor.system.actions.filter(i => i.type === "strike" && !i.item.isRanged && i.item.isEquipped && !i.item.system.traits.value.includes("ranged"));
     }
-    const map_weap = weapons.map(p => p.name);
+    const map_weap = weapons.map(p => p.label);
     
     /* Build dialog data */
     const es_data = [
@@ -136,7 +135,7 @@ async function Spellstrike()
     const spell_choice = await quickDialog({data : es_data, title : `Spellstrike`});
 		
     /* Get the strike actions and roll strike */
-    const strike = weapons.find(a => a.name === spell_choice[1]);
+    const strike = weapons.find(a => a.label === spell_choice[1]);
     let spc = spells.find(sp => sp.name === spell_choice[0]);
     const spcBack = spc;
     let sbsp;
