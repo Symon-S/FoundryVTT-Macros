@@ -307,7 +307,7 @@ async function applyChanges($html) {
     const useContinualRecovery = !useBattleMedicine &&
       checkFeat('continual-recovery');
     const bmUUID = 'Compendium.pf2e.feat-effects.2XEYQNZTCGpdkyR6';
-    const twUUID = 'Compendium.pf2e.feature-effects.Lb4q2bBAgxamtix5';
+    const twUUID = 'Compendium.pf2e.feat-effects.Lb4q2bBAgxamtix5';
     const immunityEffectUUID = useBattleMedicine ? bmUUID : twUUID;
     let immunityMacroLink = ``;
     if (game.modules.has('xdy-pf2e-workbench') && game.modules.get('xdy-pf2e-workbench').active) { 

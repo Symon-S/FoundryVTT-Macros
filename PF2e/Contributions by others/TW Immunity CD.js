@@ -12,7 +12,7 @@ A character with the Continual Recovery feat will only give a 10 minute cooldwon
 To remove an effect, right click it in the effect tracker (top right of the screen) as per normal
 */
 
-const tw_UUID = 'Compendium.pf2e.feature-effects.Lb4q2bBAgxamtix5'; //Treat Wounds Immunity effect
+const tw_UUID = 'Compendium.pf2e.feat-effects.Lb4q2bBAgxamtix5'; //Treat Wounds Immunity effect
 const showIcons = true;
 
 if (!token) {
