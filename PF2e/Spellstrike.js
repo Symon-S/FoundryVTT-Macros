@@ -155,7 +155,40 @@ async function Spellstrike()
       spc = sbsp;
     }
 
-    let s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);     
+    let s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);
+
+    // Check for spell variants
+    if(spc.spell.hasVariants && spc.isAttack){
+        let spell_variants = Array.from(spc.spell.overlays).map(ovr => ({name: spc.name + ovr.system.time.value, id: ovr._id, lvl:spc.lvl}));
+        spell_variants.sort((a, b) => {
+          if (a.lvl === b.lvl)
+          return a.name
+            .toUpperCase()
+            .localeCompare(b.name.toUpperCase(), undefined, {
+              sensitivity: "base",
+            });
+          return a.lvl - b.lvl;
+        });
+          
+          
+        // Build dialog data
+        const ovr_data = [
+          { label : `Choose a Spell Variant:`, type : `select`, options : spell_variants.map(p=> p.name) }
+        ];
+                 
+        // Query user for variant choice
+        const variant_choice = await quickDialog({data : ovr_data, title : `Variants Detected`});
+        
+        // Obtain the ID of the chosen variant, then use that ID to fetch the modified spell
+        const vrId = spell_variants.find(x => x.name === variant_choice[0]).id;
+        let variant = spc.spell.loadVariant({castLevel:spc.lvl, overlayIds:[vrId]});
+        spc.spell = variant;
+        // Re-calculate the damage formula for the spell.
+        let spRD = await variant.getRollData({castLevel:spc.lvl});
+        const formula = variant.isCantrip ? await variant.getDamageFormula(Math.ceil(actor.level /2 ), spRD) : await variant.getDamageFormula(spc.lvl, spRD);
+        // Overwrite the chosen spell's damage formula
+        spc.formula = formula;
+    }   
 
     let pers;
     const key = s_entry.ability;
@@ -163,32 +196,32 @@ async function Spellstrike()
     const c_mod = ` + ${token.actor.system.abilities[key].mod *2}`
     if (spc.slug === 'telekinetic-projectile') {
       const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["bludgeoning","piercing","slashing"]}, title: `Choose a damage type`});
-      spc.formula = spc.formula.replace("untyped",type);
+      spc.formula = spc.formula + `[${type[0]}]`;
     }
     if (spc.slug === 'gouging-claw') {
       const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["piercing","slashing"]}, title: `Choose a damage type`});
-      spc.formula = spc.formula.replace("untyped",type);
+      spc.formula = spc.formula + `[${type[0]}]`;
     }
     if (spc.slug === 'magnetic-acceleration' && token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery')) {
       const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["bludgeoning","piercing"]}, title: `Choose a damage type`});
-      spc.formula = spc.formula + `[${type}]`;
+      spc.formula = spc.formula + `[${type[0]}]`;
     }
     if (spc.slug === 'searing-light'){
       if (!game.user.targets.first().actor.traits.has('undead') && !game.user.targets.first().actor.traits.has('fiend')) { 
-        spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6 + ${spc.lvl}[fire]` : `${(spc.lvl-3)*2 + 5}d6`;
+        spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6 + ${spc.lvl}[fire]` : `${(spc.lvl-3)*2 + 5}d6[fire]`;
       }
       else {
         const type = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["fire","good"]}, title: `Choose a damage type`}) : '';
-        spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6[fire] + ${(spc.lvl-3)*2 + 5}d6[good] + ${spc.lvl}[${type}]` : `${(spc.lvl-3)*2 + 5}d6[fire] + ${(spc.lvl-3)*2 + 5}d6[good]`;
+        spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6[fire] + ${(spc.lvl-3)*2 + 5}d6[good] + ${spc.lvl}[${type[0]}]` : `${(spc.lvl-3)*2 + 5}d6[fire] + ${(spc.lvl-3)*2 + 5}d6[good]`;
       }
     }
     if (spc.slug === 'moonlight-ray'){
       if (!game.user.targets.first().actor.traits.has('undead') && !game.user.targets.first().actor.traits.has('fiend')) { 
-        spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6 + ${spc.lvl}[cold]` : `${(spc.lvl-3)*2 + 5}d6`;
+        spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6 + ${spc.lvl}[cold]` : `${(spc.lvl-3)*2 + 5}d6[cold]`;
       }
       else {
         const type = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["cold","good"]}, title: `Choose a damage type`}) : '';
-        spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6[cold] + ${(spc.lvl-3)*2 + 5}d6[good] + ${spc.lvl}[${type}]` : `${(spc.lvl-3)*2 + 5}d6[cold] + ${(spc.lvl-3)*2 + 5}d6[good]`;
+        spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6[cold] + ${(spc.lvl-3)*2 + 5}d6[good] + ${spc.lvl}[${type[0]}]` : `${(spc.lvl-3)*2 + 5}d6[cold] + ${(spc.lvl-3)*2 + 5}d6[good]`;
       }
     }
 
@@ -203,7 +236,7 @@ async function Spellstrike()
 
 
     const fsplit = spc.formula.split(" ");
-    let ddam,ddice = '';
+    let ddice = '';
     if (spc.isAttack){
       fsplit.forEach(f => {
         if (f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || []) === null) { return ddice = ddice + f; }
@@ -215,7 +248,6 @@ async function Spellstrike()
     /* Acid Splash */
     let splash = 0;
     if (spc.slug === 'acid-splash') {
-      const dtype = 'acid';
       if (actor.level < 5) {
         pers = 1;
         spc.formula = `{1d6}[acid]`;
@@ -248,9 +280,9 @@ async function Spellstrike()
       }
             
     }
-
+    
     let critt;
-    function SSDOS(cm, jq) {
+    function SSDOS(cm) {
       if (cm.user.id === game.userId && cm.isCheckRoll) { critt = cm.flags.pf2e.context.outcome; }
     }
 
@@ -275,8 +307,6 @@ async function Spellstrike()
     if (spc.slug === null) { flavor = `<strong>Spellstrike</strong><br>${flavName} [Custom Spell] (${dos})<div class="tags">${ttags}</div><hr>`; }
     if (spc.slug === 'acid-splash') { flavor = `<strong>Spellstrike</strong>@Compendium[pf2e.spells-srd.Acid Splash]{${flavName}} (${dos})<div class="tags">${ttags}</div>` }
     if (spc.isSave && spc.slug !== 'chromatic-ray') {
-      let basic = true;
-      if (spc.data.item.system.save.basic === '') { basic = false; }
       flavor = flavor + `<span data-pf2-check='${spc.data.item.system.save.value}' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>${spc.data.item.system.save.basic} ${spc.data.item.system.save.value} save</span>`;
     }
 
@@ -346,19 +376,20 @@ async function Spellstrike()
       if (critt === 'success') { await strike.damage({ event }); }
       if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
     }
-    if(!game.modules.has('xdy-pf2e-workbench')) { 
+    if(!game.modules.has('xdy-pf2e-workbench') || !game.modules.get('xdy-pf2e-workbench')?.active) { 
       if (critt === 'success') { await strike.damage({ event }); }
       if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
     }
     if (critt === 'success' || critt === 'criticalSuccess') {
-      if (spc.slug !== 'chromatic-ray' && ( spc.data.item.system.damage.value === '' || spc.data.item.system.damage.value === undefined || Object.entries(spc.spell.system.damage.value).length === 0 || !spc.isAttack) ){
+      let formula = spc.formula;
+      if (spc.slug !== 'chromatic-ray' && ( formula === '' || !spc.isAttack) ){
         return s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: true});
       }
       else {
-        if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { spc.formula = ddice; } 
+        if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { formula = ddice; } 
         if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledamage')) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }   
         if ( Object.entries(spc.spell.system.damage.value).length > 0 || (spc.slug === 'chromatic-ray' && spc.formula !== '')){
-            const droll = new Roll(spc.formula);
+            const droll = new Roll(formula);
             await droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
         }
         if ( spc.slug === 'acid-splash' ) {
