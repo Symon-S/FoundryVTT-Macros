@@ -70,7 +70,6 @@ async function Spellstrike()
         if (standby && sp.level < token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell === true).baseLevel) { return; }
         if(sp.isCantrip && standby) { return; }
         if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { return; }
-        let spa,index;
 				sp.active.forEach((spa,index) => {
 					if(spa === null) { return; }
 					if(!spa.spell.system.spellType.value === 'attack' && !token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike') && !standby) { return; }
@@ -286,11 +285,9 @@ async function Spellstrike()
       if (cm.user.id === game.userId && cm.isCheckRoll) { critt = cm.flags.pf2e.context.outcome; }
     }
 
-    Hooks.on('renderChatMessage', SSDOS);
+    Hooks.once('renderChatMessage', SSDOS);
 
     await strike.attack({ event });
-      
-    Hooks.off('renderChatMessage', SSDOS);
 
     let traits = spc.data.item.system.traits.value.join();
     let ttags = '';
