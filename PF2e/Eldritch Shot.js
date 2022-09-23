@@ -209,11 +209,9 @@ async function Eldritch_shot()
         if (cm.user.id === game.userId && cm.isCheckRoll) { critt = cm.flags.pf2e.context.outcome; }
       }
 
-      Hooks.on('renderChatMessage', SSDOS);
+      Hooks.once('renderChatMessage', SSDOS);
 
       await strike.attack({ event });
-      
-      Hooks.off('renderChatMessage', SSDOS);
 
       let traits = spc.data.item.system.traits.value.join();
       let ttags = '';
