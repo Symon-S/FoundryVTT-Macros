@@ -44,6 +44,7 @@ const condition_list = [
 	"stupefied",
 	"unconscious",
 	"wounded",
+  "undetected"
 ];
 
 const wV = [
