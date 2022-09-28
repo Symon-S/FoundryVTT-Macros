@@ -33,14 +33,7 @@ const rE = {
 };
 
 const dClass = dClassObj;
-/*dClass.initialized = true;
-dClass.sort = class1.sort;
-dClass._stats = class1._stats;
-dClass.effects = class1.effects;
-dClass.flags = class1.flags;
-dClass.type = "class";
-dClass.rules = class1.rules;
-dClass.ownership = class1.ownership;*/
+
 dClass.name = `${class1.name} - ${class2.name}`;
 
 //Attacks
@@ -75,8 +68,9 @@ if (class2.system.hp > dClass.system.hp) { dClass.system.hp = class2.system.hp }
 
 //Items
 Object.entries(class2.system.items).forEach( i => {
-  if(Object.values(dClass.system.items).some(x => x.id === i[1].id)) { return }
-  dClass.system.items[i[0]] = i[1];
+  if(Object.values(dClass.system.items).some(x => x.uuid === i[1].uuid && x.level <= i[1].level)) { return }
+  if (Object.values(dClass.system.items).some(x => x.uuid === i[1].uuid && x.level > i[1].level)) { return Object.values(dClass.system.items).find(x => x.uuid === i[1].uuid).level = i[1].level }
+  else { dClass.system.items[i[0]] = i[1]; }
 });
 
 //Key Ability
