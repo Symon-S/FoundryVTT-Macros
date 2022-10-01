@@ -1,26 +1,18 @@
 /*
 To use this macro, you need to have the lingering composition feat on your character sheet.
 To use inspire heroics, you must have the inspire heroics feat on your character sheet.
-If you are using PF2e Workbench, the macro will automatically use the effects in the workbench compendium.
-If you are not using workbench, ask your DM to import spell effects for the following spells if you have them:
-Inspire Courage, Inspire Defense, Triple Time, and Song of Strength
-The DM should then duplicate each imported entry.
-Have the DM edit the duration of one of the effects to 3 rounds and the other to 4, the DM can rename them to illustrate success or critical success
+This macro requires Workbench module., the macro will automatically use the effects in the workbench compendium.
 */
 
+if(!game.modules.get("xdy-pf2e-workbench")?.active) { return ui.notifications.error("This Macro requires PF2e Workbench module")}
 if (!actor || token.actor.type !== 'character') { return ui.notifications.warn("You must have a PC token selected"); }
 if (!token.actor.itemTypes.feat.some(lc => lc.slug === "lingering-composition")) { return ui.notifications.warn("The actor does not possess the Lingering Composition feat"); }
 if (actor.system.resources.focus.value === 0 || actor.system.resources.focus.value === undefined) { return ui.notifications.warn("You have no focus points"); }
 	
 const skillName = "Performance";
-var actionSlug = "lingering-composition"
-var actionName = "Lingering Composition"
-      
-const modifiers = []
-	// list custom modifiers for a single roll here
-	//const modifiers = [
-	//new game.pf2e.Modifier('Expanded Healer\'s Tools', 1, 'item')
-	//];
+const skillKey = "performance"
+let actionSlug = "lingering-composition"
+let actionName = "Lingering Composition"
       
 let cantrips = token.actor.itemTypes.spell.filter(s=> s.isFocusSpell === true && s.isCantrip === true && s.system.traits.value.includes('composition') && s.system.duration.value === '1 round');
             
@@ -39,60 +31,31 @@ const choice = await quickDialog({data: lc_data, title: `Lingering Composition`}
       
 const cast_spell = token.actor.itemTypes.spell.find(n => n.name === choice[0]);
       
-const com_id = cast_spell.sourceId.substr(27);
 let effectcom = game.packs.find(sp => sp.collection === "pf2e.spell-effects");
       
 let effects = await effectcom.getDocuments();
       
-let effect = effects.find(e => e.name.includes(choice[0]));
+const effect = effects.find(e => e.name.includes(choice[0]));
+let suc,cs;
       
-const notes = [...token.actor.system.skills.prf.notes];
-      
-if (choice[2] === true) {
-  if ( choice[0] === 'Inspire Courage' || choice[0] === 'Inspire Defense' || choice[0] === 'Song of Strength') {  
-    var actionSlug = "inspire-heroics";
-    var actionName = "Inspire Heroics";
-    let ihc = effects.find(e => e.name.includes(`${choice[0].substr(8)}, +3`));
-    let ihs = effects.find(e => e.name.includes(`${choice[0].substr(8)}, +2`));
-    notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${ihs.id}">${ihs.name}</a></p>`});
-    notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${ihc.id}">${ihc.name}</a></p>`});
-    notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> You don't spend the Focus Point for casting the spell</p>`});
-  }
-  else { ui.notifications.warn('Inspire Heroics is only applicable to Inspire Courage, Inspire Defense, or Song of Strength'); return; }
+if (choice[2]) {
+	if (choice[0] === 'Inspire Courage' || choice[0] === 'Inspire Defense' || choice[0] === 'Song of Strength') {  
+    actionSlug = "inspire-heroics";
+    actionName = "Inspire Heroics";
+    cs = effects.find(e => e.name.includes(`${choice[0].substr(8)}, +3`));
+    suc = effects.find(e => e.name.includes(`${choice[0].substr(8)}, +2`));
+	}
+	else { 
+		ui.notifications.warn('Inspire Heroics is only applicable to Inspire Courage, Inspire Defense, or Song of Strength'); return; 
+	}
 }
 
 if (effect !== undefined && (choice[2] === undefined || !choice[2])) {
-  if(game.items.some(i => i.slug === effect.slug) && !game.packs.some(s => s.collection === "xdy-pf2e-workbench.asymonous-benefactor-effects")) {
-    const success = game.items.find(s => s.slug === effect.slug && s.system.duration.value === 3);
-    const cs = game.items.find(s => s.slug === effect.slug && s.system.duration.value === 4);
-    notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-type="Item" data-entity="Item" data-id="${success.id}">${success.name}</a> lasts 3 rounds</p>`});
-    notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-type="Item" data-entity="Item" data-id="${cs.id}">${cs.name}</a> lasts 4 rounds</p>`});
-    notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
-  }
-  
-	if ( game.packs.some(s => s.collection === "xdy-pf2e-workbench.asymonous-benefactor-effects") ) {
     const pack = game.packs.find(s => s.collection === "xdy-pf2e-workbench.asymonous-benefactor-effects");
     const wbef = await pack.getDocuments();
-    const success = wbef.find( s => s.slug === effect.slug && s.system.duration.value === 3 );
-    const cs = wbef.find( s => s.slug === effect.slug && s.system.duration.value === 4 );
-    notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="xdy-pf2e-workbench.asymonous-benefactor-effects" data-id="${success.id}">${success.name}</a> lasts 3 rounds</p>`});
-    notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="xdy-pf2e-workbench.asymonous-benefactor-effects" data-id="${cs.id}">${cs.name}</a> lasts 4 rounds</p>`});
-    notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
-  }
-  
-	if(!game.items.some(i => i.slug === effect.slug) && !game.packs.some(s => s.collection === "xdy-pf2e-workbench.asymonous-benefactor-effects")) {
-    notes.push({"outcome":["success"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 3 rounds</p>`});
-    notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 4 rounds</p>`});
-    notes.push({"outcome":["failure"], "selector":"performance", "text":`<p><a class="entity-link content-link" draggable="true" data-pack="pf2e.spell-effects" data-id="${effect.id}">${effect.name}</a> lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
-  }
+    suc = wbef.find( s => s.slug === effect.slug && s.system.duration.value === 3 );
+    cs = wbef.find( s => s.slug === effect.slug && s.system.duration.value === 4 );
 }
-
-// add more notes if necessary
-// Syntax for a note: {"outcome":["success"], "selector":"performance", "text":'<p><a class="entity-link content-link" draggable="true" data-entity="Item" data-id="TSxkmgfLWwNQnAnA"> Overdrive II</a><strong>Critical Success</strong></p><p><a class="entity-link" draggable="true" data-entity="Item" data-id="MDGROvBFqiOFm8Iv"> Overdrive I</a><strong>Success</strong></p>'}//
-	
-const options = token.actor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
-options.push(`action:${actionSlug}`); // add more traits here in new lines
-//options.push(`secret`); // <--- This is what I am talking about
       
 let DCbyLevel = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50]
       
@@ -165,22 +128,45 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 		    		}
 		  		}));
 				}}
-	    }
+	    },
+		default: "Ok",
 	  })._render(true);
 	  document.getElementById("0qd").focus();
 	});
 }
-	
-const roll = await game.pf2e.Check.roll(
-	new game.pf2e.CheckModifier(
-	  `<span class="pf2-icon">A</span> <b>${actionName}</b><br><i>${choice[0]}</i> - <p class="compact-text">${skillName } Skill Check</p>`,
-	  token.actor.skills.performance, modifiers 
-	),
-	{ actor: token.actor, type: 'skill-check', options, notes, dc: { value: DC }, skipDialog: true }, // add dc: { value: 25 } in the object to roll against a dc
-	null
-	//for callback: ,(Roll) => {console.log(Roll);}
-);
+
+const aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.MRmGlGAFd3tSJioo")).toObject();
+aura.img = cast_spell.img;
+aura.name = `Aura: ${actionName} (${choice[0]})`
+aura.slug = `aura-${actionSlug}`
+aura.system.duration.sustained = false;
+if (effect === undefined) {
+	aura.system.rules[0].effects[0].uuid = ""
+}
+if (cs !== undefined) {
+	aura.img = cs.img;
+}
+const aroll = deepClone(token.actor.skills[skillKey]);
+aroll.label = `${skillName} - ${actionName}</br>@Compendium[pf2e.spells-srd.${choice[0]}]`	
+const roll = await aroll.check.roll({dc:{value:DC},skipDialog:true});
+if (roll.data.degreeOfSuccess === 3) {
+	if(choice[2] && effect !== undefined) {
+		aura.system.rules[0].effects[0].uuid = cs.uuid;
+	}
+	else {
+		aura.system.duration.value = 4
+	}
+}
+if (roll.data.degreeOfSuccess ===2) {
+	if(choice[2] && effect !== undefined) {
+		aura.system.rules[0].effects[0].uuid = suc.uuid;
+	}
+	else {
+		aura.system.duration.value = 3
+	}
+}
+await token.actor.createEmbeddedDocuments("Item",[aura]);
 if (roll.data.degreeOfSuccess !== 1) { 
   const currentpoints = actor.system.resources.focus.value-1;
-  actor.update({"system.resources.focus.value":currentpoints});
+  await actor.update({"system.resources.focus.value":currentpoints});
 }
