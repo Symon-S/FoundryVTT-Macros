@@ -103,7 +103,7 @@ async function main(html) {
 async function SRoll() {
   const aroll = deepClone(token.actor.skills[skillKey]);
   aroll.label = `${skillName} - ${actionName}`
-  const roll = await aroll.check.roll({extraRollOptions:[options],dc:{value:DC}});
+  const roll = await aroll.check.roll({extraRollOptions:[options],dc:{value:DC},skipDialog:true});
   if (roll.data.degreeOfSuccess === 2) {
     if(choice === 'dms'){
       const effect = (await fromUuid('Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.IkrhT9FMQDNALa8S')).toObject();
