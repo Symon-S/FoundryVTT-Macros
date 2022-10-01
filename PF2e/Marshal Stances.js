@@ -42,7 +42,7 @@ if (choice === "ims") {
     const rE4 = {"key":"PF2E.RuleElement.Note","title":`${actionName}`,"outcome":["criticalFailure"], "selector":"diplomacy", "text":`<p>You fail to enter the stance and can't take this action again for 1 minute.</p>`,"predicate":{"all":[`action:${actionSlug}`]}};
     const data = (await fromUuid(`Actor.${token.actor.id}.Item.${token.actor.itemTypes.feat.find(x => x.slug === actionSlug).id}`)).toObject();
     data.system.rules.push(rE1,rE2,rE3,rE4);
-    token.actor.updateEmbeddedDocuments("Item",[data]);
+    await token.actor.updateEmbeddedDocuments("Item",[data]);
   }
 }
 
@@ -59,7 +59,7 @@ if (choice === "dms") {
     const rE4 = {"key":"PF2E.RuleElement.Note","title":`${actionName}`,"outcome":["criticalFailure"], "selector":"intimidation", "text":`<p>You fail to enter the stance and can't take this action again for 1 minute.</p>`,"predicate":{"all":[`action:${actionSlug}`]}};
     const data = (await fromUuid(`Actor.${token.actor.id}.Item.${token.actor.itemTypes.feat.find(x => x.slug === actionSlug).id}`)).toObject();
     data.system.rules.push(rE1,rE2,rE3,rE4);
-    token.actor.updateEmbeddedDocuments("Item",[data]);
+    await token.actor.updateEmbeddedDocuments("Item",[data]);
   }
 }
 
