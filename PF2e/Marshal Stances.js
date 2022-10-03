@@ -75,18 +75,17 @@ options.push(`action:${actionSlug}`);
 if (custom) { await new Promise((resolve) => {
     new Dialog({
       title: 'Enter a custom DC',
-      content: `DC: <input id="dcinput" type="number" style="width: 50px;" value=''>`,
+      content: `DC: <input id="dcinput" type="number" autofocus style="width: 50px;" value=''>`,
       buttons: {
         enter: { label: 'Enter', callback: (html) => { main(html); } },
         cancel: { label: 'Cancel', callback: (html) => { return; } },
       },
-      render: () => document.getElementById("dcinput").focus(),
       default: 'enter'
     }).render(true);
   });
 }
 
-else { SRoll(); }
+else { await SRoll(); }
 
 async function main(html) {
   DC = parseInt(html.find("#dcinput")[0].value);
