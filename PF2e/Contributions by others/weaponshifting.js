@@ -1,4 +1,6 @@
 /* 
+Do not use this macro with homebrew weapons.
+
 Contributed by Uprooted Grunt (steev@2d12.com)
 
 Usage: A token with a melee weapon in inventory must be selected to run this macro.  Select the weapon to be shifted (by default, only includes melee weapons with Shifting runes, but select Blade Ally to show all melee weapons), then choose the weapon you wish to shift the weapon into.  Click OK to shift.
