@@ -5,7 +5,12 @@ Usage: A token with a melee weapon in inventory must be selected to run this mac
 Note that if the selected token doesn't have any weapons with Shifting runes, Blade Ally will be automatically checked and disabled, under the assumption that this is what is happening.
 The macro will create a new instance of that weapon, copy all materials and runes onto it, delete the original weapon, and make a chat message showing the action taken.
 Filters exist for rarity/complexity of the weapons chosen.  You can default those choices by updating the six variables below to be "" or "checked" accordingly.
+
+Slightly modified to work with findIndex by the macro fairies.
 */
+
+if (!actor){ return ui.notifications.warn("No PC Token Selected"); }
+if (!token.actor.itemTypes.weapon.some(a => a.isMelee && a.system.runes.property.includes("shifting")) && !token.actor.itemTypes.feat.some(s => s.slug === "divine-ally")) { return ui.notifications.warn("You do not possess a shifting weapon and do not have a Divine Ally"); }
 
 let defaultSimple="checked";
 let defaultMartial="checked";
@@ -14,48 +19,17 @@ let defaultCommon="checked";
 let defaultUncommon="";
 let defaultRare="";
 
-if (token == null)
-	{
-	Dialog.prompt({
-		title: "No Token Selected",
-		content: "A valid token with a shifting weapon must be selected for this macro to function.",
-		label: "OK",
-	});
-	return;
-	}
-
-let macroActor = token.actor;
-
-if (macroActor == null)
-	{
-	Dialog.prompt({
-		title: "No Associated Actor",
-		content: "A valid token with a shifting weapon must be selected for this macro to function.",
-		label: "OK",
-	});
-	return;
-	}
+const macroActor = token.actor;
 
 const CompendiumID = "pf2e.equipment-srd";
 const pack = game.packs.get(CompendiumID);
-const docs = await pack.getDocuments();
+const docs = (await pack.getIndex({fields:["system"]})).filter(t => t.type === "weapon" && !t.system.traits.value.includes("bomb") && !t.system.traits.value.includes("ranged") && !t.system.traits.value.includes("magical") && t.system.reload.value === '');
 
-let weapons = macroActor.items.filter(a=> a.type == "weapon" && a.isMelee && (a.system.propertyRune1.value=="shifting" || 
-a.system.propertyRune2.value=="shifting" || 
-a.system.propertyRune3.value=="shifting" || 
-a.system.propertyRune4.value=="shifting" ));
+let weapons = macroActor.itemTypes.weapon.filter(a => a.isMelee && a.system.runes.property.includes("shifting"));
 
-let allWeapons = macroActor.items.filter(a=>a.type == "weapon" && a.isMelee);
+let allWeapons = macroActor.itemTypes.weapon.filter(a => a.isMelee);
 
-if (allWeapons.length == 0)
-	{
-	Dialog.prompt({
-		title: "No Valid Weapon",
-		content: "A valid token with a melee weapon must be selected for this macro to function.",
-		label: "OK",
-	});
-	return;
-	}
+if (allWeapons.length === 0) { return ui.notifications.warn("A valid token with a melee weapon must be selected for this macro to function.")}
 
 let weaponList = "";
 weapons.forEach((item)=> {
@@ -88,7 +62,7 @@ let d = new Dialog ({
 		icon: '<i class="fas fa-check"></i>',
 		label: "OK",
 		callback: (html) => { 
-			itemSelectedCallback(allWeapons.find(t=>t.name==html.find('[name="weapon"]')[0].value), (html.find('[name="shifting"]')[0].value));
+			itemSelectedCallback(allWeapons.find(t=>t.name === html.find('[name="weapon"]')[0].value), (html.find('[name="shifting"]')[0].value));
 			},
 		},
 	cancel: {
@@ -110,11 +84,14 @@ This function checks to see if there are any weapons with a Shifting rune on the
 */
 function CheckForShiftingWeapons(html)
 {
-	if (weaponList.length == 0)
+	if (weaponList.length === 0 && token.actor.itemTypes.feat.some(s => s.slug === "divine-ally"))
 		{
 			html.find('[name="usingBladeAlly"]')[0].checked = true;
 			html.find('[name="usingBladeAlly"]')[0].disabled = true;
 		}
+	if (weaponList.length !== 0 && !token.actor.itemTypes.feat.some(s => s.slug === "divine-ally")) {
+		html.find('[name="usingBladeAlly"]')[0].disabled = true;
+	}
 }
 
 /*
@@ -123,7 +100,7 @@ This function updates the dropdown on the dialog to show all weapons or just tho
 */
 async function UpdateInventoryWeapons(html)
 {
-	let useAllWeapons = html.find('[name="usingBladeAlly"]')[0].checked || weaponList.length == 0;
+	let useAllWeapons = html.find('[name="usingBladeAlly"]')[0].checked || weaponList.length === 0;
 	if (useAllWeapons)
 		html.find('[name="weapon"]')[0].innerHTML = allWeaponList;
 	else
@@ -153,7 +130,7 @@ This function updates the lower dropdown based on the filters and selected weapo
 function UpdateAvailableOptions(html)
 {
 	let selectedText = html.find('[name="weapon"]')[0].value; 
-	let selected = allWeapons.find(t=>t.name==selectedText);
+	let selected = allWeapons.find(t=>t.name === selectedText);
 	let filterSimple = html.find('[name="simpleWeapons"]')[0].checked;
 	let filterMartial = html.find('[name="martialWeapons"]')[0].checked;
 	let filterAdvanced = html.find('[name="advancedWeapons"]')[0].checked;
@@ -161,13 +138,13 @@ function UpdateAvailableOptions(html)
 	let filterUncommon = html.find('[name="uncommonWeapons"]')[0].checked;
 	let filterRare = html.find('[name="rareWeapons"]')[0].checked;
 	
-	let entries=docs.filter(i => i.type == "weapon" && i.isMelee && i.hands==selected.hands && i.isMagical == false);
-	entries = entries.filter(i=> (i.category == "simple" && filterSimple==true) || (i.category=="martial" && filterMartial==true) || (i.category=="advanced" && filterAdvanced==true));
-	entries = entries.filter(i=> (i.rarity == "common" && filterCommon==true) || (i.rarity=="uncommon" && filterUncommon==true) || (i.rarity=="rare" && filterRare==true));
+	let entries = docs.filter(i => i.system.usage.value === selected.system.usage.value && i.system.slug !== selected.system.slug);
+	entries = entries.filter(i => (i.system.category === "simple" && filterSimple) || (i.system.category === "martial" && filterMartial) || (i.system.category === "advanced" && filterAdvanced === true));
+	entries = entries.filter(i=> (i.system.traits.rarity === "common" && filterCommon) || (i.system.traits.rarity === "uncommon" && filterUncommon) || (i.system.traits.rarity === "rare" && filterRare));
 	
 	let newWeapons = "";
 	entries.forEach((item)=> {
-		newWeapons += '<option value="' + item.id + '">' + item.name + '</option>';
+		newWeapons += '<option value="' + item._id + '">' + item.name + '</option>';
 		});
 	
 	html.find('[name="shifting"]')[0].innerHTML = newWeapons;			
@@ -200,7 +177,7 @@ async function itemSelectedCallback(weaponToShift, newWeaponID)
 	await macroActor.updateEmbeddedDocuments('Item',[{_id:nw[0].id, 'system.equipped':equippedStatus}]);
 					
 	let nin = nw[0].name;
-	await macroActor.deleteEmbeddedDocuments('Item', macroActor.items.filter(value=> (value.name==weaponToShift.name)).map(i=>i.id));	
+	await macroActor.deleteEmbeddedDocuments('Item', macroActor.items.filter(value=> (value.name === weaponToShift.name)).map(i=>i.id));	
 
 // One possible improvement here is the card-content, which is a copy-paste from the Shifting rune's description.  Perhaps there's a way to bring that in directly?	
 		let chatcontent = `
