@@ -169,6 +169,14 @@ async function itemSelectedCallback(weaponToShift, newWeaponID, revert)
     if (!revert) {
 	    let itemToMove = await pack.getDocument(newWeaponID);
 	    itemObject = await itemToMove.toObject();
+        itemObject.system.potencyRune.value = weaponToShift.system.potencyRune.value;
+	    itemObject.system.preciousMaterial.value = weaponToShift.system.preciousMaterial.value;
+	    itemObject.system.preciousMaterialGrade.value = weaponToShift.system.preciousMaterialGrade.value;
+	    itemObject.system.propertyRune1.value = weaponToShift.system.propertyRune1.value;
+	    itemObject.system.propertyRune2.value = weaponToShift.system.propertyRune2.value;
+	    itemObject.system.propertyRune3.value = weaponToShift.system.propertyRune3.value;
+	    itemObject.system.propertyRune4.value = weaponToShift.system.propertyRune4.value;
+	    itemObject.system.strikingRune.value = weaponToShift.system.strikingRune.value;
     }
     if (revert) { 
 		if (weaponToShift.flags.pf2e.originalItemData !== undefined){
@@ -176,14 +184,6 @@ async function itemSelectedCallback(weaponToShift, newWeaponID, revert)
 		}
 		else{ return ui.notifications.warn("This is the original weapon");}
     }
-	itemObject.system.potencyRune.value = weaponToShift.system.potencyRune.value;
-	itemObject.system.preciousMaterial.value = weaponToShift.system.preciousMaterial.value;
-	itemObject.system.preciousMaterialGrade.value = weaponToShift.system.preciousMaterialGrade.value;
-	itemObject.system.propertyRune1.value = weaponToShift.system.propertyRune1.value;
-	itemObject.system.propertyRune2.value = weaponToShift.system.propertyRune2.value;
-	itemObject.system.propertyRune3.value = weaponToShift.system.propertyRune3.value;
-	itemObject.system.propertyRune4.value = weaponToShift.system.propertyRune4.value;
-	itemObject.system.strikingRune.value = weaponToShift.system.strikingRune.value;
 
 	let equippedStatus = weaponToShift.system.equipped;
 
