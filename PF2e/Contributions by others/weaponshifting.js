@@ -1,6 +1,4 @@
 /* 
-Do not use this macro with homebrew weapons.
-
 Contributed by Uprooted Grunt (steev@2d12.com)
 
 Usage: A token with a melee weapon in inventory must be selected to run this macro.  Select the weapon to be shifted (by default, only includes melee weapons with Shifting runes, but select Blade Ally to show all melee weapons), then choose the weapon you wish to shift the weapon into.  Click OK to shift.
@@ -61,17 +59,25 @@ let d = new Dialog ({
  content: formContent,
  buttons: {
 	ok: {
-		icon: '<i class="fas fa-check"></i>',
-		label: "OK",
+		icon: '<i class="fa-solid fa-arrow-right-arrow-left"></i>',
+		label: "Shift",
 		callback: (html) => { 
-			itemSelectedCallback(allWeapons.find(t=>t.name === html.find('[name="weapon"]')[0].value), (html.find('[name="shifting"]')[0].value));
+			itemSelectedCallback(allWeapons.find(t=>t.name === html.find('[name="weapon"]')[0].value), (html.find('[name="shifting"]')[0].value), false);
 			},
 		},
+    original: {
+        icon: '<i class="fa-solid fa-arrow-rotate-left"></i>',
+        label: "Original",
+        callback: (html) => { 
+			itemSelectedCallback(allWeapons.find(t=>t.name === html.find('[name="weapon"]')[0].value), (html.find('[name="shifting"]')[0].value), true);
+			},
+    },    
 	cancel: {
 		icon: '<i class="fas fa-times"></i>',
 		label: "Cancel",
 		}
 	},
+    default: "ok",
  render: (html) => {
 	handleUpdates(html);
 	CheckForShiftingWeapons(html);
@@ -156,11 +162,20 @@ function UpdateAvailableOptions(html)
 FUNCTION itemSelectedCallback
 This is where the magic happens.  Create a new object from the selected weapon to shift into, copy all runes, materials, and equipped status from the original weapon onto it.  Add the new object to the token's actor.  Delete the old object.  Display a message to the chat.
 */
-async function itemSelectedCallback(weaponToShift, newWeaponID)
+async function itemSelectedCallback(weaponToShift, newWeaponID, revert)
 {
-	let itemToMove = await pack.getDocument(newWeaponID);
-	let itemObject = await itemToMove.toObject();
-	let originalItemName = weaponToShift.name;
+    let originalItemName = weaponToShift.name;
+    let itemObject;
+    if (!revert) {
+	    let itemToMove = await pack.getDocument(newWeaponID);
+	    itemObject = await itemToMove.toObject();
+    }
+    if (revert) { 
+		if (weaponToShift.flags.pf2e.originalItemData !== undefined){
+        itemObject = weaponToShift.flags.pf2e.originalItemData;
+		}
+		else{ return ui.notifications.warn("This is the original weapon");}
+    }
 	itemObject.system.potencyRune.value = weaponToShift.system.potencyRune.value;
 	itemObject.system.preciousMaterial.value = weaponToShift.system.preciousMaterial.value;
 	itemObject.system.preciousMaterialGrade.value = weaponToShift.system.preciousMaterialGrade.value;
@@ -169,10 +184,16 @@ async function itemSelectedCallback(weaponToShift, newWeaponID)
 	itemObject.system.propertyRune3.value = weaponToShift.system.propertyRune3.value;
 	itemObject.system.propertyRune4.value = weaponToShift.system.propertyRune4.value;
 	itemObject.system.strikingRune.value = weaponToShift.system.strikingRune.value;
+
 	let equippedStatus = weaponToShift.system.equipped;
 
 	let nw = await macroActor.createEmbeddedDocuments('Item',[itemObject]);
-	
+	if (weaponToShift.flags.pf2e.originalItemData === undefined && !revert){
+		await nw[0].setFlag("pf2e","originalItemData",weaponToShift);
+	}
+	if (weaponToShift.flags.pf2e.originalItemData !== undefined && !revert) {
+		await nw[0].setFlag("pf2e","originalItemData",weaponToShift.flags.pf2e.originalItemData);
+	}
 	// This line is needed as a separate call, because updating the equipped status on 
 	// the createEmbeddedDocuments call was immediately overwritten somewhere else in the 
 	// PF2E code
