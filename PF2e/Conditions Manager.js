@@ -145,7 +145,7 @@ let content = `
    margin: 1px auto;
    column-count: 3;
    column-width: 100px;
-   background: url(../assets/sheet/background.webp);
+   background: url(systems/pf2e/assets/sheet/background.webp);
   }
 
   .cond-buttons-pd, .cond-buttons-pd:focus {
