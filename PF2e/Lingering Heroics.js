@@ -35,7 +35,7 @@ let effectcom = game.packs.find(sp => sp.collection === "pf2e.spell-effects");
       
 let effects = await effectcom.getDocuments();
       
-const effect = effects.find(e => e.name.includes(choice[0]));
+const effect = effects.some(e => e.name.includes(choice[0])) ? effects.find(e => e.name.includes(choice[0])) : "";
 let suc,cs;
       
 if (choice[2]) {
@@ -61,7 +61,7 @@ let DCbyLevel = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,
       
 let level;
 let levels = [];
-
+const options = [];
 if (choice[0] === 'Dirge of Doom') {
   options.push(`secret`)
   const ids = game.user.targets.ids;
@@ -76,8 +76,9 @@ else {
 	canvas.tokens.placeables.filter(pc => pc?.actor?.hasPlayerOwner && pc?.actor?.type === "character").forEach(x => { levels.push(x.actor.level) });
 	level = Math.max(...levels);
 }
-      
-      
+
+
+if (level < 0) { level = 0 }      
 let DC;
 if ( isNaN(choice[1]) ) { 
 	if (choice[2] === true) {DC = DCbyLevel[level] + 5; }
@@ -135,20 +136,22 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 	});
 }
 
-const aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.MRmGlGAFd3tSJioo")).toObject();
+let aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.MRmGlGAFd3tSJioo")).toObject();
+console.log(aura);
+if (effect === "") {
+	aura.system.rules[0] = {key: "Aura", radius: 60, slug:"is-aura-effect"}
+}
+else { aura.system.rules[0].effects[0].uuid = effect.uuid; }
 aura.img = cast_spell.img;
 aura.name = `Aura: ${actionName} (${choice[0]})`
 aura.slug = `aura-${actionSlug}`
 aura.system.duration.sustained = false;
-if (effect === undefined) {
-	aura.system.rules[0].effects[0].uuid = ""
-}
 if (cs !== undefined) {
 	aura.img = cs.img;
 }
 const aroll = deepClone(token.actor.skills[skillKey]);
 aroll.label = `${skillName} - ${actionName}</br>@Compendium[pf2e.spells-srd.${choice[0]}]`	
-const roll = await aroll.check.roll({dc:{value:DC},skipDialog:true});
+const roll = await aroll.check.roll({extraRollOptions: options, dc:{value:DC},skipDialog:true});
 if (roll.data.degreeOfSuccess === 3) {
 	if(choice[2] && effect !== undefined) {
 		aura.system.rules[0].effects[0].uuid = cs.uuid;
