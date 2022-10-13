@@ -146,7 +146,6 @@ if (canvas.tokens.controlled.length !== 1){
             ${my_string}`,
             visible: false,
             whisper: game.users.contents.flatMap((user) => (user.isGM ? user.id : [])),
-            roll: await new Roll(`1d1`).roll({ async: true }),
             blind: true,
             speaker: await ChatMessage.getSpeaker(),
             flags: {pf2e: { recall: true } },
