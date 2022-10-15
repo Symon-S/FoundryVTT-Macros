@@ -32,7 +32,7 @@ let itemArray = [...Array(Math.round(picks[3])).keys()];
 let randomItems = [];
 
 //Populate items
-const iC = ["battlezoo-ancestries-dragons-pf2e.pf2e-battlezoo-dragon-equipment","pf2e.equipment-srd","battlezoo-bestiary-pf2e.pf2e-battlezoo-equipment","pf2e-expansion-pack.Expansion-Equipment","pf2e-wayfinder.wayfinder-equipment"];
+const iC = ["battlezoo-ancestries-dragons-pf2e.pf2e-battlezoo-dragon-equipment","pf2e.equipment-srd","battlezoo-bestiary-pf2e.pf2e-battlezoo-equipment"/*,"pf2e-expansion-pack.Expansion-Equipment","pf2e-wayfinder.wayfinder-equipment"*/]; //Removed two broken compendiums until they are fixed;
 const item = game.packs.filter(c => iC.includes(c.collection));
 const items = [];
 for (const i of item) {
@@ -48,7 +48,7 @@ let spellz;
 let spellS = [];
 
 if (picks[0] !== "Treasures") {
-  const iS = ["pf2e.spells-srd","pf2e-expansion-pack.Expansion-Spells","pf2e-wayfinder.wayfinder-spells"];
+  const iS = ["pf2e.spells-srd"/*,"pf2e-expansion-pack.Expansion-Spells","pf2e-wayfinder.wayfinder-spells"*/]; //same here
   spellz = game.packs.filter(c => iS.includes(c.collection));
   console.log(spellz);
   for (const s of spellz) {
