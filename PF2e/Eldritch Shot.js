@@ -219,8 +219,15 @@ async function Eldritch_shot()
       ttags = ttags + `<span class="tag tooltipstered" data-trait="${t}" data-description="PF2E.TraitDescription${t[0].toUpperCase() + t.substring(1)}">${t[0].toUpperCase() + t.substring(1)}</span>`
       });
       let dos;
-      if (critt === 'success') { dos = 'Success' }
-      if (critt === 'criticalSuccess') { dos = 'Critical Success' }
+      let hit = false
+
+      if (critt === 'success') { dos = 'Success'; hit = true }
+      if (critt === 'criticalSuccess') { dos = 'Critical Success'; hit = true}
+      
+      // Automated Animations insertion by MrVauxs
+      if (game.modules.get("autoanimations")?.active) {
+        AutomatedAnimations.playAnimation(token, spc.spell, { targets: Array.from(game.user.targets)[0], hitTargets: hit ? Array.from(game.user.targets)[0] : []})
+      }
       if (spc.data.item.system.damage.value !== '' || spc.data.item.system.damage.value !== undefined || Object.entries(spc.spell.system.damage.value).length > 0){ traits = traits + `,damaging-effect`; }
       let flavName = `${spc.data.item.name} cast at Lv${spc.lvl}`;
       if (spc.data.item.isCantrip) { flavName = `${spc.data.item.name} (Cantrip)`; }
