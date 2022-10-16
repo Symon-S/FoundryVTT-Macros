@@ -32,7 +32,7 @@ let itemArray = [...Array(Math.round(picks[3])).keys()];
 let randomItems = [];
 
 //Populate items
-const iC = ["battlezoo-ancestries-dragons-pf2e.pf2e-battlezoo-dragon-equipment","pf2e.equipment-srd","battlezoo-bestiary-pf2e.pf2e-battlezoo-equipment"/*,"pf2e-expansion-pack.Expansion-Equipment","pf2e-wayfinder.wayfinder-equipment"*/]; //Removed two broken compendiums until they are fixed;
+const iC = ["battlezoo-ancestries-dragons-pf2e.pf2e-battlezoo-dragon-equipment","pf2e.equipment-srd","battlezoo-bestiary-pf2e.pf2e-battlezoo-equipment","pf2e-expansion-pack.Expansion-Equipment","pf2e-wayfinder.wayfinder-equipment"];
 const item = game.packs.filter(c => iC.includes(c.collection));
 const items = [];
 for (const i of item) {
@@ -48,7 +48,7 @@ let spellz;
 let spellS = [];
 
 if (picks[0] !== "Treasures") {
-  const iS = ["pf2e.spells-srd"/*,"pf2e-expansion-pack.Expansion-Spells","pf2e-wayfinder.wayfinder-spells"*/]; //same here
+  const iS = ["pf2e.spells-srd","pf2e-expansion-pack.Expansion-Spells","pf2e-wayfinder.wayfinder-spells"]; 
   spellz = game.packs.filter(c => iS.includes(c.collection));
   console.log(spellz);
   for (const s of spellz) {
@@ -112,7 +112,7 @@ if (picks[0] === "Permanents") {
 
 	const treasure = items.filter(t => t.type === "armor" || t.type === "weapon" || t.type === "equipment" || t.type === "backpack" || t.system.traits.value.includes("wand"));
 	let treasures = treasure.filter( l => l.system.level.value === picks[1] );
-        if ( picks[4] !== "No filter" ) { treasures = treasures.filter( r => r.system.traits.rarity === picks[4].toLowerCase() || (r.system.slug.includes("magic-wand") && picks[4] !== "Unique")); }
+        if ( picks[4] !== "No filter" ) { treasures = treasures.filter( r => r.system.traits.rarity === picks[4].toLowerCase() || (r.system.slug?.includes("magic-wand") && picks[4] !== "Unique")); }
         if (treasures.length === 0) { return ui.notifications.info(`There are no ${picks[4].toLowerCase()} ${picks[0].toLowerCase()} at level ${picks[1]}`); }
 	itemArray.forEach( r => {
 		let random = Math.floor(Math.random() * treasures.length);
@@ -159,7 +159,7 @@ if (picks[0] === "Consumables") {
 	if(Noan(picks[1])) { return ui.notifications.error("Level of at least 0 must be entered");}
 	const treasure = items.filter(t => t.type === "consumable" && !t.system.traits.value.includes("wand"));
 	let treasures = treasure.filter( l => l.system.level.value === picks[1] );
-        if ( picks[4] !== "No filter" ) { treasures = treasures.filter( r => r.system.traits.rarity === picks[4].toLowerCase() || (r.system.slug.includes("scroll-of-") && picks[4] !== "Unique")); }
+        if ( picks[4] !== "No filter" ) { treasures = treasures.filter( r => r.system.traits.rarity === picks[4].toLowerCase() || (r.system.slug?.includes("scroll-of-") && picks[4] !== "Unique")); }
         if (treasures.length === 0) { return ui.notifications.info(`There are no ${picks[4].toLowerCase()} ${picks[0].toLowerCase()} at level ${picks[1]}`); }        
 	itemArray.forEach( r => {
 		const random = Math.floor(Math.random() * treasures.length);
