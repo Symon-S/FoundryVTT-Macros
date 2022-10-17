@@ -1,4 +1,5 @@
 /**
+ * This macro will currently not work properly within Workbench from the Symon-provided macros folder due to the PF2e system workaround introduced in version 4.2.5. Please use the full version of the macro in the XDY internal utility macros, do not import folder.
  * Contributed by JDCalvert
  * Allows the user to update the radius of an active aura effect. Useful for auras like Protective Ward
  */
