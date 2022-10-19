@@ -24,699 +24,703 @@ This Macro works just like the system's Treat Wounds macro, except for the follo
  * @param {string} slug
  * @returns {boolean} true if the feature exists, false otherwise
  */
-const checkFeat = (slug) =>
-  token.actor.items
-    .filter((item) => item.type === 'feat')
-    .some((item) => item.data.data.slug === slug);
+ const checkFeat = (slug) =>
+ token.actor.items
+   .filter((item) => item.type === 'feat')
+   .some((item) => item.slug === slug);
 
 /**
- * Check if any itemType feat of the actor matches a slug (and optionally a name)
- *
- * @param {string} slug Slug of the feature to search
- * @param {string} name Optional name of the feature
- * @returns {boolean} true if the actor has a matching item feat
- */
+* Check if any itemType feat of the actor matches a slug (and optionally a name)
+*
+* @param {string} slug Slug of the feature to search
+* @param {string} name Optional name of the feature
+* @returns {boolean} true if the actor has a matching item feat
+*/
 const checkItemTypeFeat = (slug, name) =>
-  token.actor.itemTypes.feat.some(
-    (feat) => feat.slug === slug && (!name || feat.name === name)
-  );
+ token.actor.itemTypes.feat.some(
+   (feat) => feat.slug === slug && (!name || feat.name === name)
+ );
 
 /**
- * Check if any itemType equipment of the actor matches a slug (and optionally checks in how many hands it is held)
- *
- * @param {string} slug Slug of the equipment to search
- * @param {int} hands Number of hands the item shall be held
- * @returns {boolean} true if the actor has a matching item equipment
- */
+* Check if any itemType equipment of the actor matches a slug (and optionally checks in how many hands it is held)
+*
+* @param {string} slug Slug of the equipment to search
+* @param {int} hands Number of hands the item shall be held
+* @returns {boolean} true if the actor has a matching item equipment
+*/
 const checkItemPresent = (slug, hands) =>
 token.actor.itemTypes.equipment.some(
-  (equipment) => equipment.slug === slug && (!hands || equipment.handsHeld === hands)
+ (equipment) => equipment.slug === slug && (!hands || equipment.handsHeld === hands)
 );
 
 /**
- * Get the available roll options
- *
- * @param {Object} options
- * @param {boolean} options.isRiskySurgery Is this a risky surgery?
- * @returns {string[]} All available roll options
- */
+* Get the available roll options
+*
+* @param {Object} options
+* @param {boolean} options.isRiskySurgery Is this a risky surgery?
+* @returns {string[]} All available roll options
+*/
 const getRollOptions = ({ isRiskySurgery } = {}) => [
-  ...token.actor.getRollOptions(['all', 'skill-check', 'medicine']),
-  'treat wounds',
-  'action:treat-wounds',
-  // This conditionally adds some elements to the available options
-  // If there are more cases like this, it might be good to rewrite this with
-  // if(...){....push(...)}
-  ...(isRiskySurgery ? ['risky-surgery'] : []),
+ ...token.actor.getRollOptions(['all', 'skill-check', 'medicine']),
+ 'treat wounds',
+ 'action:treat-wounds',
+ // This conditionally adds some elements to the available options
+ // If there are more cases like this, it might be good to rewrite this with
+ // if(...){....push(...)}
+ ...(isRiskySurgery ? ['risky-surgery'] : []),
 ];
 
 /**
- * Get the formula for healing and the success label
- *
- * @param {Object} options
- * @param {0|1|2|3} options.success Level of success
- * @param {boolean} options.useMagicHands Actor uses the feat magic-hands
- * @param {boolean} options.useMortalHealing Actor uses the feat mortal healing
- * @param {boolean} options.isRiskySurgery Actor uses the feat risky surgery 
- * @param {string} options.bonusString Bonus String for this throw
- * @returns {{healFormula: string, successLabel: string}} Dice heal formula and success label
- */
+* Get the formula for healing and the success label
+*
+* @param {Object} options
+* @param {0|1|2|3} options.success Level of success
+* @param {boolean} options.useMagicHands Actor uses the feat magic-hands
+* @param {boolean} options.useMortalHealing Actor uses the feat mortal healing
+* @param {boolean} options.isRiskySurgery Actor uses the feat risky surgery 
+* @param {string} options.bonusString Bonus String for this throw
+* @returns {{healFormula: string, successLabel: string}} Dice heal formula and success label
+*/
 const getHealSuccess = ({
-  success,
-  useMagicHands,
-  useMortalHealing,
-  isRiskySurgery,
-  bonusString,
+ success,
+ useMagicHands,
+ useMortalHealing,
+ isRiskySurgery,
+ bonusString,
 }) => {
-  let healFormula;
-  let successLabel;
-  switch (success) {
-    case 0:
-      healFormula = '1d8';
-      successLabel = 'Critical Failure';
-      break;
-    case 1:
-      successLabel = 'Failure';
-      break;
-    case 2:
-      if (isRiskySurgery) {
-        healFormula = useMagicHands ? `32${bonusString}` : `4d8${bonusString}`;
-        successLabel = 'Success with risky surgery';
-      } else if (useMortalHealing) {
-        // Mortal Healing (can't have a deity) + Magic Hands (must have a deity) is not possible.
-        healFormula = `4d8${bonusString}`;
-        successLabel = 'Success with mortal healing';
-      } else {
-        healFormula = useMagicHands ? `16${bonusString}` : `2d8${bonusString}`;
-        successLabel = 'Success';
-      }
-      break;
-    case 3:
-      healFormula = useMagicHands ? `32${bonusString}` : `4d8${bonusString}`;
-      successLabel = 'Critical Success';
-      break;
-    default:
-      ui.notifications.warn(`Success value of ${success} is not defined.`);
-  }
-  return {
-    healFormula,
-    successLabel,
-  };
+ let healFormula;
+ let successLabel;
+ switch (success) {
+   case 0:
+     healFormula = '1d8';
+     successLabel = 'Critical Failure';
+     break;
+   case 1:
+     successLabel = 'Failure';
+     break;
+   case 2:
+     if (isRiskySurgery) {
+       healFormula = useMagicHands ? `32${bonusString}` : `4d8${bonusString}`;
+       successLabel = 'Success with risky surgery';
+     } else if (useMortalHealing) {
+       // Mortal Healing (can't have a deity) + Magic Hands (must have a deity) is not possible.
+       healFormula = `4d8${bonusString}`;
+       successLabel = 'Success with mortal healing';
+     } else {
+       healFormula = useMagicHands ? `16${bonusString}` : `2d8${bonusString}`;
+       successLabel = 'Success';
+     }
+     break;
+   case 3:
+     healFormula = useMagicHands ? `32${bonusString}` : `4d8${bonusString}`;
+     successLabel = 'Critical Success';
+     break;
+   default:
+     ui.notifications.warn(`Success value of ${success} is not defined.`);
+ }
+ return {
+   healFormula,
+   successLabel,
+ };
 };
 
 /**
- * Perform a roll on treating wounds
- *
- * @param {Object} options
- * @param {number} options.DC
- * @param {number} options.bonus Bonus on this roll
- * @param {number} options.med Medical skill
- * @param {boolean} options.isRiskySurgery Is a risky surgery
- * @param {boolean} options.useMortalHealing Uses mortal healing
- * @param {boolean} options.assurance Has assurance
- * @param {number} options.bmtw bmtw
- * @param {Object} options.target current target
- * @param {Object} options.immunityEffect the immunity effect  
- * @param {string} options.immunityMacroLink the immunity Macro Link
- */
+* Perform a roll on treating wounds
+*
+* @param {Object} options
+* @param {number} options.DC
+* @param {number} options.bonus Bonus on this roll
+* @param {number} options.med Medical skill
+* @param {boolean} options.isRiskySurgery Is a risky surgery
+* @param {boolean} options.useMortalHealing Uses mortal healing
+* @param {boolean} options.assurance Has assurance
+* @param {number} options.bmtw bmtw
+* @param {Object} options.target current target
+* @param {Object} options.immunityEffect the immunity effect  
+* @param {string} options.immunityMacroLink the immunity Macro Link
+*/
 const rollTreatWounds = async ({
-  DC,
-  bonus,
-  med,
-  isRiskySurgery,
-  useMortalHealing,
-  useMagicHands,
-  assurance,
-  bmtw,
-  target,
-  immunityEffect,
-  immunityMacroLink,
+ DC,
+ bonus,
+ med,
+ isRiskySurgery,
+ useMortalHealing,
+ useMagicHands,
+ assurance,
+ bmtw,
+ target,
+ immunityEffect,
+ immunityMacroLink,
 }) => {
-  const dc = {
-    value: DC,
-    visibility: 'all',
-  };
-  if (isRiskySurgery || useMortalHealing) {
-    dc.modifiers = {
-      success: 'one-degree-better',
-    };
-  }
+ const dc = {
+   value: DC,
+   visibility: 'all',
+ };
+ if (isRiskySurgery || useMortalHealing) {
+   dc.modifiers = {
+     success: 'one-degree-better',
+   };
+ }
 
-  const bonusString = bonus > 0 ? ` + ${bonus}` : '';
-  const immunityMessage = `${target.name} is now immune to ${immunityEffect.name} for ${immunityEffect.data.duration.value} ${immunityEffect.data.duration.unit}.<br>${immunityMacroLink}`;
+ const bonusString = bonus > 0 ? ` + ${bonus}` : '';
+ const immunityMessage = `${target.name} is now immune to ${immunityEffect.name} for ${immunityEffect.system.duration.value} ${immunityEffect.system.duration.unit}.<br>${immunityMacroLink}`;
 
-  if (assurance) {
-    const aroll = await new Roll(
-      `10 + ${med.modifiers.find((m) => m.type === 'proficiency').modifier}`
-    ).roll({ async: true });
-    ChatMessage.create({
-      user: game.user.id,
-      type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-      flavor: `<strong>Assurance Roll: ${
-        med.name[0].toUpperCase() + med.name.substring(1)
-      }</strong> vs DC ${DC}<br><small>Do not apply any other bonuses, penalties, or modifiers</small><br>${immunityMessage}`,
-      roll: aroll,
-      speaker: ChatMessage.getSpeaker(),
-    });
+ if (assurance) {
+   const aroll = await new Roll(
+     `10 + ${med.modifiers.find((m) => m.type === 'proficiency').modifier}`
+   ).roll({ async: true });
+   ChatMessage.create({
+     user: game.user.id,
+     type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+     flavor: `<strong>Assurance Roll: ${
+       med.name[0].toUpperCase() + med.name.substring(1)
+     }</strong> vs DC ${DC}<br><small>Do not apply any other bonuses, penalties, or modifiers</small><br>${immunityMessage}`,
+     roll: aroll,
+     speaker: ChatMessage.getSpeaker(),
+   });
 
-    const atot = aroll.total - DC;
+   const atot = aroll.total - DC;
 
-    const success = atot >= 10 ? 3 : atot >= 0 ? 2 : atot <= -10 ? 0 : 1;
+   const success = atot >= 10 ? 3 : atot >= 0 ? 2 : atot <= -10 ? 0 : 1;
 
-    const { healFormula, successLabel } = getHealSuccess({
-      success,
-      useMagicHands,
-      useMortalHealing,
-      isRiskySurgery,
-      bonusString,
-    });
+   const { healFormula, successLabel } = getHealSuccess({
+     success,
+     useMagicHands,
+     useMortalHealing,
+     isRiskySurgery,
+     bonusString,
+   });
 
-    if (isRiskySurgery) {
-      ChatMessage.create({
-        user: game.user.id,
-        type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-        flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
-        roll: await new Roll('{1d8}[slashing]').roll({ async: true }),
-        speaker: ChatMessage.getSpeaker(),
-      });
-    }
-    if (healFormula !== undefined) {
-      const rollType = success > 1 ? 'Healing' : 'Damage';
-      const healRoll = await new Roll(`{${healFormula}}[${rollType}]`).roll({
-        async: true,
-      });
-      ChatMessage.create({
-        user: game.user.id,
-        type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-        flavor: `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`,
-        roll: healRoll,
-        speaker: ChatMessage.getSpeaker(),
-      });
-    }
-  } else {
-    med.roll({
-      dc: dc,
-      event: event,
-      options: getRollOptions({ isRiskySurgery: isRiskySurgery }),
-      callback: async (roll) => {
-        const { healFormula, successLabel } = getHealSuccess({
-          success: roll.data.degreeOfSuccess,
-          useMagicHands,
-          useMortalHealing,
-          isRiskySurgery,
-          bonusString,
-        });
-        if (isRiskySurgery) {
-          ChatMessage.create({
-            user: game.user.id,
-            type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-            flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
-            roll: await new Roll('{1d8}[slashing]').roll({ async: true }),
-            speaker: ChatMessage.getSpeaker(),
-          });
-        }
-        if (healFormula !== undefined) {
-          const rollType = roll.data.degreeOfSuccess > 1 ? 'Healing' : 'Damage';
-          const healRoll = await new Roll(`{${healFormula}}[${rollType}]`).roll(
-            { async: true }
-          );
-          ChatMessage.create({
-            user: game.user.id,
-            type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-            flavor: `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`,
-            roll: healRoll,
-            speaker: ChatMessage.getSpeaker(),
-          });
-        }
-        ChatMessage.create({
-          user: game.user.id,
-          type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-          flavor: `${immunityMessage}`,
-          speaker: ChatMessage.getSpeaker(),
-        });
-      },
-    });
-  }
+   if (isRiskySurgery) {
+     ChatMessage.create({
+       user: game.user.id,
+       type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+       flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
+       roll: await new Roll('{1d8}[slashing]').roll({ async: true }),
+       speaker: ChatMessage.getSpeaker(),
+     });
+   }
+   if (healFormula !== undefined) {
+     const rollType = success > 1 ? 'Healing' : 'Damage';
+     const healRoll = await new Roll(`{${healFormula}}[${rollType}]`).roll({
+       async: true,
+     });
+     ChatMessage.create({
+       user: game.user.id,
+       type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+       flavor: `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`,
+       roll: healRoll,
+       speaker: ChatMessage.getSpeaker(),
+     });
+   }
+ } else {
+   med.roll({
+     dc: dc,
+     event: event,
+     options: getRollOptions({ isRiskySurgery: isRiskySurgery }),
+     callback: async (roll) => {
+       const { healFormula, successLabel } = getHealSuccess({
+         success: roll.data.degreeOfSuccess,
+         useMagicHands,
+         useMortalHealing,
+         isRiskySurgery,
+         bonusString,
+       });
+       if (isRiskySurgery) {
+         ChatMessage.create({
+           user: game.user.id,
+           type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+           flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
+           roll: await new Roll('{1d8}[slashing]').roll({ async: true }),
+           speaker: ChatMessage.getSpeaker(),
+         });
+       }
+       if (healFormula !== undefined) {
+         const rollType = roll.data.degreeOfSuccess > 1 ? 'Healing' : 'Damage';
+         const healRoll = await new Roll(`{${healFormula}}[${rollType}]`).roll(
+           { async: true }
+         );
+         ChatMessage.create({
+           user: game.user.id,
+           type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+           flavor: `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`,
+           roll: healRoll,
+           speaker: ChatMessage.getSpeaker(),
+         });
+       }
+       ChatMessage.create({
+         user: game.user.id,
+         type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+         flavor: `${immunityMessage}`,
+         speaker: ChatMessage.getSpeaker(),
+       });
+     },
+   });
+ }
 };
 
 async function applyChanges($html) {
-  for (const token of canvas.tokens.controlled) {
-    var med = token.actor.data.data.skills.med;
-    if (!med) {
-      ui.notifications.warn(
-        `Token ${token.name} does not have the medicine skill`
-      );
-      continue;
-    }
-    const hasWardMedic = checkFeat('ward-medic');
-    const useBattleMedicine =
-      parseInt($html.find('[name="useBattleMedicine"]')[0]?.value) === 1;
-    const bmtw = useBattleMedicine ? 'Battle Medicine' : 'Treat Wounds';
-    const maxTargets = useBattleMedicine? 1 : hasWardMedic? 2**(med.rank-1): 1;
-    if (game.user.targets.size > maxTargets){
-      ui.notifications.warn(`Too many targets (${game.user.targets.size}) for ${bmtw}. You can select a maximum of ${maxTargets} targets.`);
-      continue;
-    }
-    const useHealingPlaster = $html.find('[name="useHealingPlaster"]')[0]?.checked;
-    const useBuiltInTools = $html.find('[name="useBuiltInTools"]')[0]?.checked;
-    if (useBuiltInTools) {
-      // skip the following else/if.
-    } else if (!useBattleMedicine && useHealingPlaster === false ){
-      ui.notifications.warn(`You can't ${bmtw} without Healer's Tools or a Healing Plaster.`);
-      continue;
-    } else if (useBattleMedicine && useHealingPlaster !== undefined) {
-      ui.notifications.warn(`You can't use ${bmtw} without Healer's Tools.`);
-      continue;
-    }
-    const { name } = token;
-    const level = token.actor.data.data.details.level.value;
-    const mod = parseInt($html.find('[name="modifier"]').val()) || 0;
-    const assurance = $html.find('[name="assurance_bool"]')[0]?.checked;
-    const requestedProf =
-      parseInt($html.find('[name="dc-type"]')[0].value) || 1;
-    const hasMedicDedication = checkFeat('medic-dedication');
-    // Risky Surgery does not apply when Battle Medicine is used.
-    const isRiskySurgery = !useBattleMedicine &&
-      $html.find('[name="risky_surgery_bool"]')[0]?.checked;
-    // Mortal Healing does not apply when Battle Medicine is used.
-    const useMortalHealing = !useBattleMedicine && 
-      $html.find('[name="mortal_healing_bool"]')[0]?.checked;
-    // Magic Hands do not apply when Battle Medicine is used.
-    const useMagicHands = !useBattleMedicine &&
-      checkFeat('magic-hands');
-    const useContinualRecovery = !useBattleMedicine &&
-      checkFeat('continual-recovery');
-    const bmUUID = 'Compendium.pf2e.feat-effects.2XEYQNZTCGpdkyR6';
-    const twUUID = 'Compendium.pf2e.feat-effects.Lb4q2bBAgxamtix5';
-    const immunityEffectUUID = useBattleMedicine ? bmUUID : twUUID;
-    let immunityMacroLink = ``;
-    if (game.modules.has('xdy-pf2e-workbench') && game.modules.get('xdy-pf2e-workbench').active) { 
-      // Extract the Macro ID from the asynomous benefactor macro compendium.
-      const macroName = useBattleMedicine ? `BM Immunity CD`: `TW Immunity CD`;
-      const macroId = (await game.packs.get('xdy-pf2e-workbench.asymonous-benefactor-macros')).index.find(n => n.name === macroName)?._id;
-      immunityMacroLink = TextEditor.enrichHTML(`@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Apply ${bmtw} Immunity Cooldown}`);
-    } else {
-      ui.notifications.warn(`Workbench Module not active! Linking Immunity effect Macro not possible.`);
-    }
-    const forensicMedicine = checkFeat('forensic-medicine-methodology');
+ for (const token of canvas.tokens.controlled) {
+   var med = token.actor.system.skills.med;
+   console.log("xxxxxxxxxxxxxxxxxxxxxx");
+   console.log("med");
+   console.log(token);
 
-    const skill = $html.find('[name="skill"]')[0]?.value;
+   if (!med) {
+     ui.notifications.warn(
+       `Token ${token.name} does not have the medicine skill`
+     );
+     continue;
+   }
+   const hasWardMedic = checkFeat('ward-medic');
+   const useBattleMedicine =
+     parseInt($html.find('[name="useBattleMedicine"]')[0]?.value) === 1;
+   const bmtw = useBattleMedicine ? 'Battle Medicine' : 'Treat Wounds';
+   const maxTargets = useBattleMedicine? 1 : hasWardMedic? 2**(med.rank-1): 1;
+   if (game.user.targets.size > maxTargets){
+     ui.notifications.warn(`Too many targets (${game.user.targets.size}) for ${bmtw}. You can select a maximum of ${maxTargets} targets.`);
+     continue;
+   }
+   const useHealingPlaster = $html.find('[name="useHealingPlaster"]')[0]?.checked;
+   const useBuiltInTools = $html.find('[name="useBuiltInTools"]')[0]?.checked;
+   if (useBuiltInTools) {
+     // skip the following else/if.
+   } else if (!useBattleMedicine && useHealingPlaster === false ){
+     ui.notifications.warn(`You can't ${bmtw} without Healer's Tools or a Healing Plaster.`);
+     continue;
+   } else if (useBattleMedicine && useHealingPlaster !== undefined) {
+     ui.notifications.warn(`You can't use ${bmtw} without Healer's Tools.`);
+     continue;
+   }
+   const { name } = token;
+   const level = token.actor.system.details.level.value;
+   const mod = parseInt($html.find('[name="modifier"]').val()) || 0;
+   const assurance = $html.find('[name="assurance_bool"]')[0]?.checked;
+   const requestedProf =
+     parseInt($html.find('[name="dc-type"]')[0].value) || 1;
+   const hasMedicDedication = checkFeat('medic-dedication');
+   // Risky Surgery does not apply when Battle Medicine is used.
+   const isRiskySurgery = !useBattleMedicine &&
+     $html.find('[name="risky_surgery_bool"]')[0]?.checked;
+   // Mortal Healing does not apply when Battle Medicine is used.
+   const useMortalHealing = !useBattleMedicine && 
+     $html.find('[name="mortal_healing_bool"]')[0]?.checked;
+   // Magic Hands do not apply when Battle Medicine is used.
+   const useMagicHands = !useBattleMedicine &&
+     checkFeat('magic-hands');
+   const useContinualRecovery = !useBattleMedicine &&
+     checkFeat('continual-recovery');
+   const bmUUID = 'Compendium.pf2e.feat-effects.2XEYQNZTCGpdkyR6';
+   const twUUID = 'Compendium.pf2e.feat-effects.Lb4q2bBAgxamtix5';
+   const immunityEffectUUID = useBattleMedicine ? bmUUID : twUUID;
+   let immunityMacroLink = ``;
+   if (game.modules.has('xdy-pf2e-workbench') && game.modules.get('xdy-pf2e-workbench').active) { 
+     // Extract the Macro ID from the asynomous benefactor macro compendium.
+     const macroName = useBattleMedicine ? `BM Immunity CD`: `TW Immunity CD`;
+     const macroId = (await game.packs.get('xdy-pf2e-workbench.asymonous-benefactor-macros')).index.find(n => n.name === macroName)?._id;
+     immunityMacroLink = TextEditor.enrichHTML(`@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Apply ${bmtw} Immunity Cooldown}`);
+   } else {
+     ui.notifications.warn(`Workbench Module not active! Linking Immunity effect Macro not possible.`);
+   }
+   const forensicMedicine = checkFeat('forensic-medicine-methodology');
 
-    // Handle Rule Interpretation
-    if (game.user.isGM) {
-      await game.settings.set(
-        'pf2e',
-        'RAI.TreatWoundsAltSkills',
-        $html.find('[name="strict_rules"]')[0]?.checked
-      );
-    }
+   const skill = $html.find('[name="skill"]')[0]?.value;
 
-    let usedProf = 0;
-    if (game.settings.get('pf2e', 'RAI.TreatWoundsAltSkills')) {
-      if (skill === 'cra') {
-        med = token.actor.data.data.skills['cra'];
-      }
-      if (skill === 'nat') {
-        med = token.actor.data.data.skills['nat'];
-      }
-      usedProf = requestedProf <= med.rank ? requestedProf : med.rank;
-    } else {
-      usedProf = requestedProf <= med.rank ? requestedProf : med.rank;
-      if (skill === 'cra') {
-        med = token.actor.data.data.skills['cra'];
-      }
-      if (skill === 'nat') {
-        med = token.actor.data.data.skills['nat'];
-        if (usedProf === 0) {
-          usedProf = 1;
-        }
-      }
-    }
-    if (checkItemTypeFeat('clever-improviser') && usedProf === 0) {
-      usedProf = 1;
-    }
-    const medicBonus = hasMedicDedication ? (usedProf - 1) * 5 : 0;
-    const useBattleMedicineBonus = useBattleMedicine * level * forensicMedicine;
+   // Handle Rule Interpretation
+   if (game.user.isGM) {
+     await game.settings.set(
+       'pf2e',
+       'RAI.TreatWoundsAltSkills',
+       $html.find('[name="strict_rules"]')[0]?.checked
+     );
+   }
 
-    const showIcons = true;
-    const immunityEffect = (await fromUuid(immunityEffectUUID)).toObject();
-    immunityEffect.data.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
-    immunityEffect.flags.core ??= {};
-    immunityEffect.flags.core.sourceId = immunityEffectUUID;
+   let usedProf = 0;
+   if (game.settings.get('pf2e', 'RAI.TreatWoundsAltSkills')) {
+     if (skill === 'cra') {
+       med = token.actor.system.skills['cra'];
+     }
+     if (skill === 'nat') {
+       med = token.actor.system.skills['nat'];
+     }
+     usedProf = requestedProf <= med.rank ? requestedProf : med.rank;
+   } else {
+     usedProf = requestedProf <= med.rank ? requestedProf : med.rank;
+     if (skill === 'cra') {
+       med = token.actor.system.skills['cra'];
+     }
+     if (skill === 'nat') {
+       med = token.actor.system.skills['nat'];
+       if (usedProf === 0) {
+         usedProf = 1;
+       }
+     }
+   }
+   if (checkItemTypeFeat('clever-improviser') && usedProf === 0) {
+     usedProf = 1;
+   }
+   const medicBonus = hasMedicDedication ? (usedProf - 1) * 5 : 0;
+   const useBattleMedicineBonus = useBattleMedicine * level * forensicMedicine;
 
-    for(let target of game.user.targets){
-      let targetActor = target.actor;
+   const showIcons = true;
+   const immunityEffect = (await fromUuid(immunityEffectUUID)).toObject();
+   immunityEffect.system.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
+   immunityEffect.flags.core ??= {};
+   immunityEffect.flags.core.sourceId = immunityEffectUUID;
 
-      immunityEffect.name = useBattleMedicine ? `${bmtw} by ${name}`: `${bmtw}`;
-      const hasGodlessHealing = targetActor.items.filter((item) => item.type === 'feat').some((item) => item.data.data.slug === "godless-healing");
-      const godlessHealingBonus = hasGodlessHealing ? 5 : 0;
+   for(let target of game.user.targets){
+     let targetActor = target.actor;
 
-      // check if the person being healed is currently immune. If so, check if healer is a medic
-      var isImmune = targetActor.itemTypes.effect.find(obj => {
-        return obj.data.name === immunityEffect.name
-      })
-      if (isImmune) {
-          if (useBattleMedicine && hasMedicDedication) {
-              var medicCooldown = token.actor.itemTypes.effect.find(obj => {
-                  return obj.data.name === "Medic dedication used"
-              })
-              if (medicCooldown) {
-                  ui.notifications.warn(targetActor.name + ` is currently immune to ${bmtw} by ` + token.name);
-                  continue;
-              } else {
-                  const applicatorImmunityEffect = (await fromUuid(immunityEffectUUID)).toObject();
-                  applicatorImmunityEffect.data.tokenIcon.show = showIcons; 
-                  applicatorImmunityEffect.flags.core ??= {};
-                  applicatorImmunityEffect.flags.core.sourceId = immunityEffectUUID;
-                  if (token.actor.data.data.skills.med.rank > 2) {
-                    applicatorImmunityEffect.data.duration.unit = "hours"; //Cooldown of Medic Dedication depends on medicine skill rank
-                  }
+     immunityEffect.name = useBattleMedicine ? `${bmtw} by ${name}`: `${bmtw}`;
+     const hasGodlessHealing = targetActor.items.filter((item) => item.type === 'feat').some((item) => item.data.data.slug === "godless-healing");
+     const godlessHealingBonus = hasGodlessHealing ? 5 : 0;
 
-                  applicatorImmunityEffect.name = "Medic dedication used";
-                  await token.actor.createEmbeddedDocuments("Item", [applicatorImmunityEffect]);
-                  ui.notifications.info(token.name + ` has now used their Medic Dedication to apply ${bmtw} to ` + targetActor.name);
-              }
-          } else {
-              ui.notifications.warn(targetActor.name + ` is currently immune to ${bmtw} by ` + token.name);
-              continue;
-          }
-      }
+     // check if the person being healed is currently immune. If so, check if healer is a medic
+     var isImmune = targetActor.itemTypes.effect.find(obj => {
+       return obj.data.name === immunityEffect.name
+     })
+     if (isImmune) {
+         if (useBattleMedicine && hasMedicDedication) {
+             var medicCooldown = token.actor.itemTypes.effect.find(obj => {
+                 return obj.data.name === "Medic dedication used"
+             })
+             if (medicCooldown) {
+                 ui.notifications.warn(targetActor.name + ` is currently immune to ${bmtw} by ` + token.name);
+                 continue;
+             } else {
+                 const applicatorImmunityEffect = (await fromUuid(immunityEffectUUID)).toObject();
+                 applicatorImmunityEffect.system.tokenIcon.show = showIcons; 
+                 applicatorImmunityEffect.flags.core ??= {};
+                 applicatorImmunityEffect.flags.core.sourceId = immunityEffectUUID;
+                 if (token.actor.system.skills.med.rank > 2) {
+                   applicatorImmunityEffect.system.duration.unit = "hours"; //Cooldown of Medic Dedication depends on medicine skill rank
+                 }
 
-      if (forensicMedicine || hasGodlessHealing) {
-        immunityEffect.data.duration.unit = "hours";
-      }
-      if (useContinualRecovery) {
-        immunityEffect.data.duration.unit = "minutes";
-        immunityEffect.data.duration.value = 10;
-      }
-      
-      // does only work if both tokens have the same owner.
-      // await targetActor.createEmbeddedDocuments("Item", [immunityEffect]);
-      // ui.notifications.info(targetActor.name + ` is now immune to ${bmtw} by ` + token.name);
+                 applicatorImmunityEffect.name = "Medic dedication used";
+                 await token.actor.createEmbeddedDocuments("Item", [applicatorImmunityEffect]);
+                 ui.notifications.info(token.name + ` has now used their Medic Dedication to apply ${bmtw} to ` + targetActor.name);
+             }
+         } else {
+             ui.notifications.warn(targetActor.name + ` is currently immune to ${bmtw} by ` + token.name);
+             continue;
+         }
+     }
 
-      // Roll for Treat Wounds/Battle Med
-      switch (usedProf) {
-        case 0:
-          ui.notifications.warn(
-            `${name} is not trained in Medicine and doesn't know how to ${bmtw}.`
-          );
-          break;
-        case 1:
-          rollTreatWounds({
-            DC: 15 + mod,
-            bonus: 0 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
-            med,
-            isRiskySurgery,
-            useMortalHealing,
-            useMagicHands,
-            assurance,
-            bmtw,
-            target,
-            immunityEffect,
-            immunityMacroLink,
-          });
-          break;
-        case 2:
-          rollTreatWounds({
-            DC: 20 + mod,
-            bonus: 10 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
-            med,
-            isRiskySurgery,
-            useMortalHealing,
-            useMagicHands,
-            assurance,
-            bmtw,
-            target,
-            immunityEffect,  
-            immunityMacroLink,
-          });
-          break;
-        case 3:
-          rollTreatWounds({
-            DC: 30 + mod,
-            bonus: 30 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
-            med,
-            isRiskySurgery,
-            useMortalHealing,
-            useMagicHands,
-            assurance,
-            bmtw,
-            target,
-            immunityEffect,
-            immunityMacroLink,
-          });
-          break;
-        case 4:
-          rollTreatWounds({
-            DC: 40 + mod,
-            bonus: 50 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
-            med,
-            isRiskySurgery,
-            useMortalHealing,
-            useMagicHands,
-            assurance,
-            bmtw,
-            target,
-            immunityEffect,
-            immunityMacroLink,
-          });
-          break;
-        default:
-          ui.notifications.warn(
-            `${name} has an invalid usedProf value of ${usedProf}.`
-          );
-      }
-    }
-  }
+     if (forensicMedicine || hasGodlessHealing) {
+       immunityEffect.system.duration.unit = "hours";
+     }
+     if (useContinualRecovery) {
+       immunityEffect.system.duration.unit = "minutes";
+       immunityEffect.system.duration.value = 10;
+     }
+     
+     // does only work if both tokens have the same owner.
+     // await targetActor.createEmbeddedDocuments("Item", [immunityEffect]);
+     // ui.notifications.info(targetActor.name + ` is now immune to ${bmtw} by ` + token.name);
+
+     // Roll for Treat Wounds/Battle Med
+     switch (usedProf) {
+       case 0:
+         ui.notifications.warn(
+           `${name} is not trained in Medicine and doesn't know how to ${bmtw}.`
+         );
+         break;
+       case 1:
+         rollTreatWounds({
+           DC: 15 + mod,
+           bonus: 0 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
+           med,
+           isRiskySurgery,
+           useMortalHealing,
+           useMagicHands,
+           assurance,
+           bmtw,
+           target,
+           immunityEffect,
+           immunityMacroLink,
+         });
+         break;
+       case 2:
+         rollTreatWounds({
+           DC: 20 + mod,
+           bonus: 10 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
+           med,
+           isRiskySurgery,
+           useMortalHealing,
+           useMagicHands,
+           assurance,
+           bmtw,
+           target,
+           immunityEffect,  
+           immunityMacroLink,
+         });
+         break;
+       case 3:
+         rollTreatWounds({
+           DC: 30 + mod,
+           bonus: 30 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
+           med,
+           isRiskySurgery,
+           useMortalHealing,
+           useMagicHands,
+           assurance,
+           bmtw,
+           target,
+           immunityEffect,
+           immunityMacroLink,
+         });
+         break;
+       case 4:
+         rollTreatWounds({
+           DC: 40 + mod,
+           bonus: 50 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
+           med,
+           isRiskySurgery,
+           useMortalHealing,
+           useMagicHands,
+           assurance,
+           bmtw,
+           target,
+           immunityEffect,
+           immunityMacroLink,
+         });
+         break;
+       default:
+         ui.notifications.warn(
+           `${name} has an invalid usedProf value of ${usedProf}.`
+         );
+     }
+   }
+ }
 }
 
 /**
- * Render the content for the dialog
- *
- * @param {Object} options
- * @param {boolean} options.hasChirurgeon Is the actor a chirurgeon
- * @param {boolean} options.hasNaturalMedicine Does the actor have natural medicine
- * @param {boolean} options.hasBattleMedicine Does the actor have battle medicine
- * @param {boolean} options.tmed Does the actor have medicine
- * @param {number} options.totalAssurance Assurance of the actor
- * @returns {string} The Dialog content
- */
+* Render the content for the dialog
+*
+* @param {Object} options
+* @param {boolean} options.hasChirurgeon Is the actor a chirurgeon
+* @param {boolean} options.hasNaturalMedicine Does the actor have natural medicine
+* @param {boolean} options.hasBattleMedicine Does the actor have battle medicine
+* @param {boolean} options.tmed Does the actor have medicine
+* @param {number} options.totalAssurance Assurance of the actor
+* @returns {string} The Dialog content
+*/
 const renderDialogContent = ({
-  hasChirurgeon,
-  hasNaturalMedicine,
-  hasBattleMedicine,
-  tmed,
-  totalAssurance,
-  hasHealersTools,
-  hasHealersToolsHeld,
+ hasChirurgeon,
+ hasNaturalMedicine,
+ hasBattleMedicine,
+ tmed,
+ totalAssurance,
+ hasHealersTools,
+ hasHealersToolsHeld,
 }) => `
-  <div>
-    Attempt to heal the target by 2d8 hp.<br>You have to hold healer's tools, or you are wearing them and have a hand free!<br>
-    <small>Hover the options for more information.</small>
-  </div>
-  <hr/>
-  ${
-    !hasHealersTools 
-      ? `<b>You don't have healer's tools on your character!</b>
-        ${
-          checkItemTypeFeat('built-in-tools')
-            ? `<form>
-              <div class="form-group">
-                <label title="Are you wielding, wearing, or adjacent to your innovation?">Is healer's tools one of your Built-In Tools?</label>
-                <input type="checkbox" id="useBuiltInTools" name="useBuiltInTools" checked></input>
-              </div>
-            </form>`
-            : ``
-        }
-        <form>
-          <div class="form-group">
-           <label title="Healing Plaster is a cantrip which can can replace healer's tools for Treat Wounds.">Are you using Healing Plaster? <small>(only for Treat wounds)</small></label>
-            <input type="checkbox" id="useHealingPlaster" name="useHealingPlaster"></input>
-          </div>
-        </form>`
-      : ``
-  }
-  ${
-    hasChirurgeon || hasNaturalMedicine
-      ? `<form>
-          <div class="form-group">
-          <label title="Select the skill you want to use.">Treat Wounds Skill:</label>
-            <select id="skill" name="skill">
-              ${tmed ? `<option value="med">Medicine</option>` : ``}
-              ${hasChirurgeon ? `<option value="cra">Crafting</option>` : ``}
-              ${hasNaturalMedicine ? `<option value="nat">Nature</option>` : ``}
-            </select>
-          </div>
-        </form>`
-      : ''
-  }
-  <form>
-      <div class="form-group">
-          <select id="useBattleMedicine" name="useBattleMedicine">
-              <option value="0">Treat Wounds</option>
-              ${
-                hasBattleMedicine
-                  ? '<option value="1">Battle Medicine</option>'
-                  : ''
-              }
-          </select>
-      </div>
-  </form>
-  ${
-    checkFeat('forensic-medicine-methodology')
-      ? `<form>
-          <div class="form-group">
-              <label title="When you use Battle Medicine, on a success the target recovers additional Hit Points equal to your level.">Forensic Medicine Bonus applies when selecting Battle Medicine.</label>
-          </div>
-        </form>`
-      : ``
-  }
-  ${
-    (hasChirurgeon &&
-      (checkItemTypeFeat('assurance', 'Assurance (Crafting)') ||
-        checkItemTypeFeat('assurance-crafting'))) ||
-    (hasNaturalMedicine &&
-      (checkItemTypeFeat('assurance', 'Assurance (Nature)') ||
-        checkItemTypeFeat('assurance-nature'))) ||
-    checkItemTypeFeat('assurance', 'Assurance (Medicine)') ||
-    checkItemTypeFeat('assurance-medicine')
-      ? `<form>
-      <div class="form-group">
-          <label>Use Assurance? <small>This will beat DC ${totalAssurance}</small></label>
-          <input type="checkbox" id="assurance_bool" name="assurance_bool"></input>
-      </div>
-  </form>`
-      : ``
-  }
-  <form>
-      <div class="form-group">
-          <label title="Select a target DC. Remember that you can't attempt a heal above your proficiency. Attempting to do so will downgrade the DC and amount healed to the highest you're capable of.">Medicine DC:</label>
-          <select id="dc-type" name="dc-type">
-              <option value="1" selected>Trained DC 15</option>
-          ${
-            checkFeat('medic-dedication') 
-              ? ` <option value="2">Expert DC 20, +15 Healing</option>
-                  <option value="3">Master DC 30, +40 Healing</option>
-                  <option value="4">Legendary DC 40, +65 Healing</option>`
-              : ` <option value="2">Expert DC 20, +10 Healing</option>
-                  <option value="3">Master DC 30, +30 Healing</option>
-                  <option value="4">Legendary DC 40, +50 Healing</option>`
-          }
-          </select>
-      </div>
-  </form>
-  <form>
-      <div class="form-group">
-          <label title="Any circumstance or other dc modifiers at your GMs decission.">DC Modifier:</label>
-          <input id="modifier" name="modifier" type="number"/>
-      </div>
-  </form>
-  ${
-    checkFeat('risky-surgery')
-      ? `<form>
-          <div class="form-group">
-            <label title"Will not be applied when using Battle Medicine.">Risky Surgery</label>
-            <input type="checkbox" id="risky_surgery_bool" name="risky_surgery_bool"></input>
-          </div>
-        </form>`
-      : ``
-  }
-  ${
-    checkFeat('mortal-healing')
-      ? `<form>
-          <div class="form-group">
-            <label title="Target creature must not have regained Hit Points from divine magic in the past 24 hours.
-                          Will not be applied when using Battle Medicine.">Mortal Healing</label>
-            <input type="checkbox" id="mortal_healing_bool" name="mortal_healing_bool" checked></input>
-          </div>
-        </form>`
-      : ``
-  }
-  ${
-    game.user.isGM
-      ? `<form>
-          <div class="form-group">
-            <label>Allow higher DC from alternate skills?</label>
-            <input type="checkbox" id="strict_rules" name="strict_rules"${
-              game.settings.get('pf2e', 'RAI.TreatWoundsAltSkills')
-                ? ` checked`
-                : ``
-            }
-            ></input>
-          </div>
-        </form>`
-      : ``
-  }
-  ${
-    !hasHealersToolsHeld
-      ? `<b>Note: To gain the bonus of Healer's Tools (if any), you have to set the Healer's Tools to be held with both hands, due to how the item is implemented in the pf2e core system.</b>`
-      : ``
-  }
-  </form>
+ <div>
+   Attempt to heal the target by 2d8 hp.<br>You have to hold healer's tools, or you are wearing them and have a hand free!<br>
+   <small>Hover the options for more information.</small>
+ </div>
+ <hr/>
+ ${
+   !hasHealersTools 
+     ? `<b>You don't have healer's tools on your character!</b>
+       ${
+         checkItemTypeFeat('built-in-tools')
+           ? `<form>
+             <div class="form-group">
+               <label title="Are you wielding, wearing, or adjacent to your innovation?">Is healer's tools one of your Built-In Tools?</label>
+               <input type="checkbox" id="useBuiltInTools" name="useBuiltInTools" checked></input>
+             </div>
+           </form>`
+           : ``
+       }
+       <form>
+         <div class="form-group">
+          <label title="Healing Plaster is a cantrip which can can replace healer's tools for Treat Wounds.">Are you using Healing Plaster? <small>(only for Treat wounds)</small></label>
+           <input type="checkbox" id="useHealingPlaster" name="useHealingPlaster"></input>
+         </div>
+       </form>`
+     : ``
+ }
+ ${
+   hasChirurgeon || hasNaturalMedicine
+     ? `<form>
+         <div class="form-group">
+         <label title="Select the skill you want to use.">Treat Wounds Skill:</label>
+           <select id="skill" name="skill">
+             ${tmed ? `<option value="med">Medicine</option>` : ``}
+             ${hasChirurgeon ? `<option value="cra">Crafting</option>` : ``}
+             ${hasNaturalMedicine ? `<option value="nat">Nature</option>` : ``}
+           </select>
+         </div>
+       </form>`
+     : ''
+ }
+ <form>
+     <div class="form-group">
+         <select id="useBattleMedicine" name="useBattleMedicine">
+             <option value="0">Treat Wounds</option>
+             ${
+               hasBattleMedicine
+                 ? '<option value="1">Battle Medicine</option>'
+                 : ''
+             }
+         </select>
+     </div>
+ </form>
+ ${
+   checkFeat('forensic-medicine-methodology')
+     ? `<form>
+         <div class="form-group">
+             <label title="When you use Battle Medicine, on a success the target recovers additional Hit Points equal to your level.">Forensic Medicine Bonus applies when selecting Battle Medicine.</label>
+         </div>
+       </form>`
+     : ``
+ }
+ ${
+   (hasChirurgeon &&
+     (checkItemTypeFeat('assurance', 'Assurance (Crafting)') ||
+       checkItemTypeFeat('assurance-crafting'))) ||
+   (hasNaturalMedicine &&
+     (checkItemTypeFeat('assurance', 'Assurance (Nature)') ||
+       checkItemTypeFeat('assurance-nature'))) ||
+   checkItemTypeFeat('assurance', 'Assurance (Medicine)') ||
+   checkItemTypeFeat('assurance-medicine')
+     ? `<form>
+     <div class="form-group">
+         <label>Use Assurance? <small>This will beat DC ${totalAssurance}</small></label>
+         <input type="checkbox" id="assurance_bool" name="assurance_bool"></input>
+     </div>
+ </form>`
+     : ``
+ }
+ <form>
+     <div class="form-group">
+         <label title="Select a target DC. Remember that you can't attempt a heal above your proficiency. Attempting to do so will downgrade the DC and amount healed to the highest you're capable of.">Medicine DC:</label>
+         <select id="dc-type" name="dc-type">
+             <option value="1" selected>Trained DC 15</option>
+         ${
+           checkFeat('medic-dedication') 
+             ? ` <option value="2">Expert DC 20, +15 Healing</option>
+                 <option value="3">Master DC 30, +40 Healing</option>
+                 <option value="4">Legendary DC 40, +65 Healing</option>`
+             : ` <option value="2">Expert DC 20, +10 Healing</option>
+                 <option value="3">Master DC 30, +30 Healing</option>
+                 <option value="4">Legendary DC 40, +50 Healing</option>`
+         }
+         </select>
+     </div>
+ </form>
+ <form>
+     <div class="form-group">
+         <label title="Any circumstance or other dc modifiers at your GMs decission.">DC Modifier:</label>
+         <input id="modifier" name="modifier" type="number"/>
+     </div>
+ </form>
+ ${
+   checkFeat('risky-surgery')
+     ? `<form>
+         <div class="form-group">
+           <label title"Will not be applied when using Battle Medicine.">Risky Surgery</label>
+           <input type="checkbox" id="risky_surgery_bool" name="risky_surgery_bool"></input>
+         </div>
+       </form>`
+     : ``
+ }
+ ${
+   checkFeat('mortal-healing')
+     ? `<form>
+         <div class="form-group">
+           <label title="Target creature must not have regained Hit Points from divine magic in the past 24 hours.
+                         Will not be applied when using Battle Medicine.">Mortal Healing</label>
+           <input type="checkbox" id="mortal_healing_bool" name="mortal_healing_bool" checked></input>
+         </div>
+       </form>`
+     : ``
+ }
+ ${
+   game.user.isGM
+     ? `<form>
+         <div class="form-group">
+           <label>Allow higher DC from alternate skills?</label>
+           <input type="checkbox" id="strict_rules" name="strict_rules"${
+             game.settings.get('pf2e', 'RAI.TreatWoundsAltSkills')
+               ? ` checked`
+               : ``
+           }
+           ></input>
+         </div>
+       </form>`
+     : ``
+ }
+ ${
+   !hasHealersToolsHeld
+     ? `<b>Note: To gain the bonus of Healer's Tools (if any), you have to set the Healer's Tools to be held with both hands, due to how the item is implemented in the pf2e core system.</b>`
+     : ``
+ }
+ </form>
 `;
 
 if (canvas.tokens.controlled.length !== 1){
-  ui.notifications.warn('You need to select exactly one token as the healer.');
+ ui.notifications.warn('You need to select exactly one token as the healer.');
 } else if (game.user.targets.size < 1){
-    ui.notifications.warn(`You must target at least one token.`);
+   ui.notifications.warn(`You must target at least one token.`);
 } else {
-  const hasChirurgeon = checkFeat('chirurgeon');
-  const hasNaturalMedicine = checkFeat('natural-medicine');
-  const hasBattleMedicine = checkFeat('battle-medicine');
-  let tmed = token.actor.data.data.skills['med'].rank > 0;
-  if (
-    !tmed &&
-    !hasChirurgeon &&
-    !hasNaturalMedicine &&
-    !checkItemTypeFeat('clever-improviser')
-  ) {
-    ui.notifications.warn(
-      'Medicine is not trained and you do not possess a feat or feature to use another skill'
-    );
-  } else {
-    let bmtw_skill = 0
-    if (tmed && (checkItemTypeFeat('assurance', 'Assurance (Medicine)') ||
-     checkItemTypeFeat('assurance-medicine'))) {
-      bmtw_skill = token.actor.data.data.skills['med'];
-    } else if (hasChirurgeon && (checkItemTypeFeat('assurance', 'Assurance (Crafting)') ||
-     checkItemTypeFeat('assurance-crafting'))) {
-      bmtw_skill = token.actor.data.data.skills['cra'];
-    } else if (hasNaturalMedicine && (checkItemTypeFeat('assurance', 'Assurance (Nature)') ||
-     checkItemTypeFeat('assurance-nature'))) {
-      bmtw_skill = token.actor.data.data.skills['nat'];
-    }
-    const hasHealersTools = checkItemPresent('healer-s-tools') || checkItemPresent('healers-tools') 
-                            || checkItemPresent('healers-tools-expanded') || checkItemPresent('violet-ray')
-                            || checkItemPresent('marvelous-medicines') || checkItemPresent('marvelous-medicines-greater');
-    const hasHealersToolsHeld = !hasHealersTools || checkItemPresent('healer-s-tools', 2) || checkItemPresent('healers-tools', 2)
-                            || checkItemPresent('healers-tools-expanded', 2) || checkItemPresent('violet-ray', 2)
-                            || checkItemPresent('marvelous-medicines', 2) || checkItemPresent('marvelous-medicines-greater', 2);
-    const level = token.actor.data.data.details.level.value;
-    const totalAssurance = 10 + (bmtw_skill.rank * 2 + level);
-    const dialog = new Dialog({
-      title: 'Treat Wounds / Battle Medicine',
-      content: renderDialogContent({
-        hasChirurgeon,
-        hasNaturalMedicine,
-        hasBattleMedicine,
-        tmed,
-        totalAssurance,
-        hasHealersTools,
-        hasHealersToolsHeld,
-      }),
-      buttons: {
-        yes: {
-          icon: `<i class="fas fa-hand-holding-medical"></i>`,
-          label: 'Treat Wounds',
-          callback: applyChanges,
-        },
-        no: {
-          icon: `<i class="fas fa-times"></i>`,
-          label: 'Cancel',
-        },
-      },
-      default: 'yes',
-    });
-    dialog.render(true);
-  }
+ const hasChirurgeon = checkFeat('chirurgeon');
+ const hasNaturalMedicine = checkFeat('natural-medicine');
+ const hasBattleMedicine = checkFeat('battle-medicine');
+ let tmed = token.actor.system.skills['med'].rank > 0;
+ if (
+   !tmed &&
+   !hasChirurgeon &&
+   !hasNaturalMedicine &&
+   !checkItemTypeFeat('clever-improviser')
+ ) {
+   ui.notifications.warn(
+     'Medicine is not trained and you do not possess a feat or feature to use another skill'
+   );
+ } else {
+   let bmtw_skill = 0
+   if (tmed && (checkItemTypeFeat('assurance', 'Assurance (Medicine)') ||
+    checkItemTypeFeat('assurance-medicine'))) {
+     bmtw_skill = token.actor.system.skills['med'];
+   } else if (hasChirurgeon && (checkItemTypeFeat('assurance', 'Assurance (Crafting)') ||
+    checkItemTypeFeat('assurance-crafting'))) {
+     bmtw_skill = token.actor.system.skills['cra'];
+   } else if (hasNaturalMedicine && (checkItemTypeFeat('assurance', 'Assurance (Nature)') ||
+    checkItemTypeFeat('assurance-nature'))) {
+     bmtw_skill = token.actor.system.skills['nat'];
+   }
+   const hasHealersTools = checkItemPresent('healer-s-tools') || checkItemPresent('healers-tools') 
+                           || checkItemPresent('healers-tools-expanded') || checkItemPresent('violet-ray')
+                           || checkItemPresent('marvelous-medicines') || checkItemPresent('marvelous-medicines-greater');
+   const hasHealersToolsHeld = !hasHealersTools || checkItemPresent('healer-s-tools', 2) || checkItemPresent('healers-tools', 2)
+                           || checkItemPresent('healers-tools-expanded', 2) || checkItemPresent('violet-ray', 2)
+                           || checkItemPresent('marvelous-medicines', 2) || checkItemPresent('marvelous-medicines-greater', 2);
+   const level = token.actor.system.details.level.value;
+   const totalAssurance = 10 + (bmtw_skill.rank * 2 + level);
+   const dialog = new Dialog({
+     title: 'Treat Wounds / Battle Medicine',
+     content: renderDialogContent({
+       hasChirurgeon,
+       hasNaturalMedicine,
+       hasBattleMedicine,
+       tmed,
+       totalAssurance,
+       hasHealersTools,
+       hasHealersToolsHeld,
+     }),
+     buttons: {
+       yes: {
+         icon: `<i class="fas fa-hand-holding-medical"></i>`,
+         label: 'Treat Wounds',
+         callback: applyChanges,
+       },
+       no: {
+         icon: `<i class="fas fa-times"></i>`,
+         label: 'Cancel',
+       },
+     },
+     default: 'yes',
+   });
+   dialog.render(true);
+ }
 }
