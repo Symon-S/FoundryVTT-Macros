@@ -262,9 +262,6 @@ const rollTreatWounds = async ({
 async function applyChanges($html) {
  for (const token of canvas.tokens.controlled) {
    var med = token.actor.system.skills.med;
-   console.log("xxxxxxxxxxxxxxxxxxxxxx");
-   console.log("med");
-   console.log(token);
 
    if (!med) {
      ui.notifications.warn(
@@ -318,7 +315,7 @@ async function applyChanges($html) {
      // Extract the Macro ID from the asynomous benefactor macro compendium.
      const macroName = useBattleMedicine ? `BM Immunity CD`: `TW Immunity CD`;
      const macroId = (await game.packs.get('xdy-pf2e-workbench.asymonous-benefactor-macros')).index.find(n => n.name === macroName)?._id;
-     immunityMacroLink = TextEditor.enrichHTML(`@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Apply ${bmtw} Immunity Cooldown}`);
+     immunityMacroLink = `@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Apply ${bmtw} Immunity Cooldown`
    } else {
      ui.notifications.warn(`Workbench Module not active! Linking Immunity effect Macro not possible.`);
    }
@@ -372,17 +369,17 @@ async function applyChanges($html) {
      let targetActor = target.actor;
 
      immunityEffect.name = useBattleMedicine ? `${bmtw} by ${name}`: `${bmtw}`;
-     const hasGodlessHealing = targetActor.items.filter((item) => item.type === 'feat').some((item) => item.data.data.slug === "godless-healing");
+     const hasGodlessHealing = targetActor.items.filter((item) => item.type === 'feat').some((item) => item.system.slug === "godless-healing");
      const godlessHealingBonus = hasGodlessHealing ? 5 : 0;
 
      // check if the person being healed is currently immune. If so, check if healer is a medic
      var isImmune = targetActor.itemTypes.effect.find(obj => {
-       return obj.data.name === immunityEffect.name
+       return obj.name === immunityEffect.name
      })
      if (isImmune) {
          if (useBattleMedicine && hasMedicDedication) {
              var medicCooldown = token.actor.itemTypes.effect.find(obj => {
-                 return obj.data.name === "Medic dedication used"
+                 return obj.name === "Medic dedication used"
              })
              if (medicCooldown) {
                  ui.notifications.warn(targetActor.name + ` is currently immune to ${bmtw} by ` + token.name);
