@@ -146,7 +146,7 @@ if (mmch.wand) {
   				"name": `${mmch.name} Effect`,
   				"type": "effect",
   				"img": "systems/pf2e/icons/equipment/wands/specialty-wands/wand-of-manifold-missiles.webp",
-  				"data": {
+  				"system": {
     					"description": {
       						"value": `<p><strong>Requirements</strong> You used Wand of Manifold Missiles to cast Magic Missile.</p>\n<hr />\n<p>After you cast the spell, an additional missile or missiles are released from the wand at the start of each of your turns, as though you cast the 1-action version of magic missile. Choose targets each time. This lasts for 1 minute, until you are no longer wielding the wand, or until you try to activate the wand again.</p>`
     					},
