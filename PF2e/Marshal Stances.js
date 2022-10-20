@@ -106,15 +106,15 @@ async function SRoll() {
     if(choice === 'dms'){
       const effect = (await fromUuid('Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.IkrhT9FMQDNALa8S')).toObject();
       effect.img = img;
-      effect.data.rules.shift();
-      effect.data.rules[0].radius = 10;
+      effect.system.rules.shift();
+      effect.system.rules[0].radius = 10;
       await token.actor.createEmbeddedDocuments("Item", [effect]);
     }
     if (choice === 'ims'){
       const effect = (await fromUuid('Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.eGFBzz1oAd6w3GTz')).toObject();
       effect.img = img;
-      effect.data.rules.shift();
-      effect.data.rules[0].radius = 10;
+      effect.system.rules.shift();
+      effect.system.rules[0].radius = 10;
       await token.actor.createEmbeddedDocuments("Item", [effect]);
     }
   }
@@ -122,15 +122,15 @@ async function SRoll() {
     if(choice === 'dms'){
       const effect = (await fromUuid('Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.IkrhT9FMQDNALa8S')).toObject();
       effect.img = img;
-      effect.data.rules.shift();
-      effect.data.rules[0].radius = 20;
+      effect.system.rules.shift();
+      effect.system.rules[0].radius = 20;
       await token.actor.createEmbeddedDocuments("Item", [effect]);
     }
     if (choice === 'ims'){
       const effect = (await fromUuid('Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.eGFBzz1oAd6w3GTz')).toObject();
       effect.img = img;
-      effect.data.rules.shift();
-      effect.data.rules[0].radius = 20;
+      effect.system.rules.shift();
+      effect.system.rules[0].radius = 20;
       await token.actor.createEmbeddedDocuments("Item", [effect]);
     }
   }
@@ -139,7 +139,7 @@ async function SRoll() {
       type: 'effect',
       name: 'Marshal Stance Critical Failure Cooldown',
       img: img,
-      data: {
+      system: {
         slug: stance,
         tokenIcon: {
           show: true
