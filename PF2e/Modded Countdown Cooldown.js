@@ -8,7 +8,7 @@ const effect = {
     type: 'effect',
     name: 'Countdown',
     img: 'systems/pf2e/icons/spells/time-beacon.webp',
-    data: {
+    system: {
       tokenIcon: {
           show: true
       },       
@@ -73,7 +73,7 @@ async function main(html) {
     }
     if (isCooldown) {countdownNumber = parseInt(countdownNumber) +1};
     
-    effect.data.duration.unit = unit;
-    effect.data.duration.value = countdownNumber;
+    effect.system.duration.unit = unit;
+    effect.system.duration.value = countdownNumber;
     await token.actor.createEmbeddedDocuments("Item", [effect]);
 }
