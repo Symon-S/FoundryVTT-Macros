@@ -29,9 +29,9 @@ function CheckFeat(slug, healer) {
 }
 
 function battlemedicineEffect() {
-    let playersNames = canvas.tokens.placeables.filter(pc => pc.actor?.hasPlayerOwner && pc.actor.type === "character" && pc.actor.itemTypes.feat.some(x => x.slug === 'battle-medicine')).map(pc => pc.actor.data.name);
+    let playersNames = canvas.tokens.placeables.filter(pc => pc.actor?.hasPlayerOwner && pc.actor.type === "character" && pc.actor.itemTypes.feat.some(x => x.slug === 'battle-medicine')).map(pc => pc.actor.name);
     let playerNameList = '';
-    let immunityConferer = game.messages.contents.filter(m => m.data.flavor?.includes("immune to Battle Medicine")).pop().actor?.data.name;
+    let immunityConferer = game.messages.contents.filter(m => m.flavor?.includes("immune to Battle Medicine")).pop().actor?.name;
     playersNames.map((el) => {
         playerNameList += `<option value="${el}"${immunityConferer===el?` selected`:``}>${el}</option>`;
     });
@@ -60,18 +60,18 @@ function battlemedicineEffect() {
 async function main(html) {
 
     const bmEffect = (await fromUuid(bm_UUID)).toObject();
-    bmEffect.data.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
+    bmEffect.system.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
     bmEffect.flags.core ??= {};
     bmEffect.flags.core.sourceId = bm_UUID;
 
     const applicator = game.actors.getName(html.find("#playerName")[0].value);
-    bmEffect.name = "Battle Medicine by " + applicator.data.name;
-    bmEffect.img = applicator.data.token.img;
+    bmEffect.name = "Battle Medicine by " + applicator.name;
+    bmEffect.img = applicator.img;
     const isgodless = CheckFeat('godless-healing', token.actor); //godless healing affects the patient, not the healer
     const isForensic = CheckFeat('forensic-medicine-methodology', applicator);
 
     if (isForensic || isgodless) {
-        bmEffect.data.duration.unit = "hours";
+        bmEffect.system.duration.unit = "hours";
     }
 
     await token.actor.createEmbeddedDocuments("Item", [bmEffect]);
