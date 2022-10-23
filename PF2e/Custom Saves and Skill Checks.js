@@ -15,6 +15,27 @@ if (canvas.tokens.controlled.length === 1) { lvl = token.actor.level; }
 if (canvas.tokens.controlled.length > 1) { lvl = Math.max(...canvas.tokens.controlled.map(l => l.actor.level)); }
 
 const ldc = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50];
+
+let answer = "";
+async function Answers(){
+    answer = await new Promise((resolve) => {
+        new Dialog({
+            title: "To Journal or Message?",
+            buttons:{
+                message: {
+                label: "Message",
+                callback: async() => { resolve('message') }
+                },
+                journal: {
+                label: "Journal",
+                callback: async() => { resolve('journal') }
+                },
+            },
+            default:'message'
+        }).render(true);
+    })
+}
+
 const check = new Dialog({
     title: "Save or Skill Check?",
     buttons: {
@@ -53,12 +74,26 @@ console.log(bst);
     const flavor = $html.find('[name="flavor"]')[0].value || '';
     let content = `@Check[type:${save}|traits:${traits}|dc:${DC}|basic:${bst}]`;
     content += (flavor) ? `{${flavor}}` : "";
-    ChatMessage.create(
-    {
-        user: game.user.id,
-        content: content
+    await Answers();
+    if (answer === 'message') {
+        ChatMessage.create({
+            user: game.user.id,
+            content: content
+        });
     }
-    );
+    if (answer === 'journal') {
+        if (!game.journal.some(j => j.name === "Custom Saves and Skill Checks")) {
+            await JournalEntry.create(new JournalEntry({_id:randomID(),name:"Custom Saves and Skill Checks", pages: [await(new JournalEntryPage({_id:randomID(),name:"To Send to Chat",text:{content}})).toObject()]}));
+            ui.notifications.info('New Jounral "Custom Saves and Skill Checks" created');
+        }
+        else { 
+            const page = game.journal.find(x => x.name === "Custom Saves and Skill Checks").pages.contents[0];
+            page.text.content += "<br>" + content;
+            await game.journal.find(x => x.name === "Custom Saves and Skill Checks").updateEmbeddedDocuments("JournalEntryPage",[page]);
+            await game.journal.find(x => x.name === "Custom Saves and Skill Checks").render();
+            ui.notifications.info(`New Entry ${content} added to Custom Saves and Skill Checks journal`);
+        }
+    }
 }
 
 const dialog = new Dialog({
@@ -115,7 +150,7 @@ const dialog = new Dialog({
         </form>
         <form>
         <div class="form-group">
-        <label>Traits (poison,fire,...):</label>
+        <label>Traits (poison,fire,damaging-effect...):</label>
         <input type="text" id="traits" name="traits"></textarea>
         </div>
         </form>
@@ -143,71 +178,68 @@ new Dialog({
     buttons: {
      acr: {
       label: 'Acrobatics',
-      callback: async(skill) => { resolve('acrobatics'); }
+      callback: async() => { resolve('acrobatics'); }
      },
      arc: {
       label: 'Arcana',
-      callback: async(skill) => { resolve('arcana'); },
+      callback: async() => { resolve('arcana'); },
      },
      ath: {
       label: 'Athletics',
-      callback: async(skill) => { resolve('athletics'); },
+      callback: async() => { resolve('athletics'); },
      },
      crf: {
       label: 'Crafting',
-      callback: async(skill) => { resolve('crafting'); },
+      callback: async() => { resolve('crafting'); },
      },
      dcp: {
       label: 'Deception',
-      callback: async(skill) => { resolve('deception'); },
+      callback: async() => { resolve('deception'); },
      },
      dip: {
       label: 'Diplomacy',
-      callback: async(skill) => { resolve('diplomacy'); },
+      callback: async() => { resolve('diplomacy'); },
      },
      int: {
       label: 'Intimidation',
-      callback: async(skill) => { resolve('intimidation'); },
+      callback: async() => { resolve('intimidation'); },
      },
      med: {
       label: 'Medicine',
-      callback: async(skill) => { resolve('medicine'); },
+      callback: async() => { resolve('medicine'); },
      },
      nat: {
       label: 'Nature',
-      callback: async(skill) => { resolve('nature'); },
+      callback: async() => { resolve('nature'); },
      },
      occ: {
       label: 'Occultism',
-      callback: async(skill) => { resolve('occultism'); },
+      callback: async() => { resolve('occultism'); },
      },
      per: {
       label: 'Performance',
-      callback: async(skill) => { resolve('performance'); },
+      callback: async() => { resolve('performance'); },
      },
      rel: {
       label: 'Religion',
-      callback: async(skill) => { resolve('religion'); },
+      callback: async() => { resolve('religion'); },
      },
      soc: {
       label: 'Society',
-      callback: async(skill) => { resolve('society'); },
+      callback: async() => { resolve('society'); },
      },
      sth: {
       label: 'Stealth',
-      callback: async(skill) => { resolve('stealth'); },
+      callback: async() => { resolve('stealth'); },
      },
      sur: {
       label: 'Survival',
-      callback: async(skill) => { resolve('survival'); },
+      callback: async() => { resolve('survival'); },
      },
      thi: {
       label: 'Thievery',
-      callback: async(skill) => { resolve('thievery'); },
+      callback: async() => { resolve('thievery'); },
      },
-     /*cancel: {
-      label: 'Cancel',
-     },*/
     },
  }).render(true);
 });
@@ -226,12 +258,27 @@ async function postSkill($html) {
     DC += adjDif;
     let content = `@Check[type:${skillType}|traits:${traits}|dc:${DC}]`;
     content += (flavor) ? `{${flavor}}` : "";
-    ChatMessage.create(
-    {
-        user: game.user.id,
-        content: content
+
+    await Answers();
+    if (answer === 'message') {
+        ChatMessage.create({
+            user: game.user.id,
+            content: content
+        });
     }
-    );
+    if (answer === 'journal') {
+        if (!game.journal.some(j => j.name === "Custom Saves and Skill Checks")) {
+            await JournalEntry.create(new JournalEntry({_id:randomID(),name:"Custom Saves and Skill Checks", pages: [await(new JournalEntryPage({_id:randomID(),name:"To Send to Chat",text:{content}})).toObject()]}));
+            ui.notifications.info('New Jounral "Custom Saves and Skill Checks" created');
+        }
+        else { 
+            const page = game.journal.find(x => x.name === "Custom Saves and Skill Checks").pages.contents[0];
+            page.text.content += "<br>" + content;
+            await game.journal.find(x => x.name === "Custom Saves and Skill Checks").updateEmbeddedDocuments("JournalEntryPage",[page]);
+            await game.journal.find(x => x.name === "Custom Saves and Skill Checks").render();
+            ui.notifications.info(`New Entry ${content} added to Custom Saves and Skill Checks journal`);
+        }
+    }
 }
 
 const dialog = new Dialog({
