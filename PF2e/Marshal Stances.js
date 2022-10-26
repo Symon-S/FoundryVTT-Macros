@@ -15,8 +15,8 @@ if (token.actor.itemTypes.feat.some(ms => ms.slug === "dread-marshal-stance") &&
     new Dialog({
       title: 'Which Stance?',
       buttons: {
-        ims: { label: 'Inspiring Marshal Stance', callback: async(rar) => { resolve("ims"); } },
-        dms: { label: 'Dread Marshal Stance', callback: async(rar) => { resolve("dms"); } },
+        ims: { label: 'Inspiring Marshal Stance', callback: async() => { resolve("ims"); } },
+        dms: { label: 'Dread Marshal Stance', callback: async() => { resolve("dms"); } },
       }
     }).render(true);
   });
@@ -58,8 +58,8 @@ const custom = await new Promise((resolve) => {
   new Dialog({
   	title: 'Custom DC?',
     buttons: {
-      yes: { label: 'Yes', callback: async(rar) => { resolve(true); } },
-      no: { label: 'No', callback: async(rar) => { resolve(false); } },
+      yes: { label: 'Yes', callback: async() => { resolve(true); } },
+      no: { label: 'No', callback: async() => { resolve(false); } },
     },
     default: 'no'
   }).render(true);
@@ -72,13 +72,13 @@ let DC = DCbyLevel[level];
 const options = token.actor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
 options.push(`action:${actionSlug}`);
 
-if (custom) { await new Promise((resolve) => {
+if (custom) { await new Promise(() => {
     new Dialog({
       title: 'Enter a custom DC',
       content: `DC: <input id="dcinput" type="number" autofocus style="width: 50px;" value=''>`,
       buttons: {
         enter: { label: 'Enter', callback: (html) => { main(html); } },
-        cancel: { label: 'Cancel', callback: (html) => { return; } },
+        cancel: { label: 'Cancel', callback: () => { return; } },
       },
       default: 'enter'
     }).render(true);
@@ -108,6 +108,7 @@ async function SRoll() {
       effect.img = img;
       effect.system.rules.shift();
       effect.system.rules[0].radius = 10;
+      effect.system.rules[0].slug = "marshal-drd-stance";
       await token.actor.createEmbeddedDocuments("Item", [effect]);
     }
     if (choice === 'ims'){
@@ -115,6 +116,8 @@ async function SRoll() {
       effect.img = img;
       effect.system.rules.shift();
       effect.system.rules[0].radius = 10;
+      effect.system.rules[0].slug = "marshal-insp-stance";
+      console.log(effect);
       await token.actor.createEmbeddedDocuments("Item", [effect]);
     }
   }
@@ -124,6 +127,7 @@ async function SRoll() {
       effect.img = img;
       effect.system.rules.shift();
       effect.system.rules[0].radius = 20;
+      effect.system.rules[0].slug = "marshal-drd-stance-cs";
       await token.actor.createEmbeddedDocuments("Item", [effect]);
     }
     if (choice === 'ims'){
@@ -131,6 +135,8 @@ async function SRoll() {
       effect.img = img;
       effect.system.rules.shift();
       effect.system.rules[0].radius = 20;
+      effect.system.rules[0].slug = "marshal-insp-stance-cs";
+      console.log(effect);
       await token.actor.createEmbeddedDocuments("Item", [effect]);
     }
   }
