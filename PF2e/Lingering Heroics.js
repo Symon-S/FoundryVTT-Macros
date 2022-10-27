@@ -137,7 +137,6 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 }
 
 let aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.MRmGlGAFd3tSJioo")).toObject();
-console.log(aura);
 if (effect === "") {
 	aura.system.rules[0] = {key: "Aura", radius: 60, slug:"is-aura-effect"}
 }
@@ -149,8 +148,11 @@ aura.system.duration.sustained = false;
 if (cs !== undefined) {
 	aura.img = cs.img;
 }
-const aroll = deepClone(token.actor.skills[skillKey]);
-aroll.label = `${skillName} - ${actionName}</br>@Compendium[pf2e.spells-srd.${choice[0]}]`	
+
+const aroll = await deepClone(token.actor.skills[skillKey]);
+let link = `</br>@Compendium[pf2e.spells-srd.${choice[0]}]`
+if (effect !== '') {link = `<br>${effect.link}`}
+aroll.check.label = `${skillName} - ${actionName}${link}`;
 const roll = await aroll.check.roll({extraRollOptions: options, dc:{value:DC},skipDialog:true});
 if (roll.data.degreeOfSuccess === 3) {
 	if(choice[2] && effect !== undefined) {
@@ -160,7 +162,7 @@ if (roll.data.degreeOfSuccess === 3) {
 		aura.system.duration.value = 4
 	}
 }
-if (roll.data.degreeOfSuccess ===2) {
+if (roll.data.degreeOfSuccess === 2) {
 	if(choice[2] && effect !== undefined) {
 		aura.system.rules[0].effects[0].uuid = suc.uuid;
 	}
