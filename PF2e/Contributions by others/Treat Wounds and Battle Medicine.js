@@ -220,7 +220,7 @@ const rollTreatWounds = async ({
      options: getRollOptions({ isRiskySurgery: isRiskySurgery }),
      callback: async (roll) => {
        const { healFormula, successLabel } = getHealSuccess({
-         success: roll.data.degreeOfSuccess,
+         success: roll.options.degreeOfSuccess,
          useMagicHands,
          useMortalHealing,
          isRiskySurgery,
@@ -236,7 +236,7 @@ const rollTreatWounds = async ({
          });
        }
        if (healFormula !== undefined) {
-         const rollType = roll.data.degreeOfSuccess > 1 ? 'Healing' : 'Damage';
+         const rollType = roll.options.degreeOfSuccess > 1 ? 'Healing' : 'Damage';
          const healRoll = await new Roll(`{${healFormula}}[${rollType}]`).roll(
            { async: true }
          );
