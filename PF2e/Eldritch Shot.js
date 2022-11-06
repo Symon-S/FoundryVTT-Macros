@@ -205,7 +205,7 @@ async function Eldritch_shot()
       }
       
       let critt;
-      function SSDOS(cm, jq) {
+      function SSDOS(cm) {
         if (cm.user.id === game.userId && cm.isCheckRoll) { critt = cm.flags.pf2e.context.outcome; }
       }
 
