@@ -52,6 +52,7 @@ if (choice[2]) {
 			notes.push({"outcome":["success"], "selector":"performance", "text":`<p>${suc.link}</p>`});
     		notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p>${cs.link}</p>`});
     		notes.push({"outcome":["failure"], "selector":"performance", "text":`<p>${effect.link} You don't spend the Focus Point for casting the spell</p>`});
+			notes.push({"outcome":["criticalFailure"], "selector":"performance", "text":`<p>${effect.link}</p>`});
 		}
 	}
 	else { 
@@ -69,6 +70,7 @@ if (effect !== undefined && (choice[2] === undefined || !choice[2])) {
 		notes.push({"outcome":["success"], "selector":"performance", "text":`<p>${suc.link} lasts 3 rounds</p>`});
     	notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p>${cs.link} lasts 4 rounds</p>`});
     	notes.push({"outcome":["failure"], "selector":"performance", "text":`<p>${effect.link} lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
+		notes.push({"outcome":["criticalFailure"], "selector":"performance", "text":`<p>${effect.link}</p>`});
 	}
 }
       
