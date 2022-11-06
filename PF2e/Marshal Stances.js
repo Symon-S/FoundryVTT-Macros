@@ -102,7 +102,8 @@ async function SRoll() {
     { actor: token.actor, type: 'skill-check', options, notes, flag: 'marshal-stance', dc: { value: DC }, skipDialog: true },
 	null,
   );
-  if (roll.data.degreeOfSuccess === 2) {
+
+  if (roll.options.degreeOfSuccess === 2) {
     if(choice === 'dms'){
       const effect = (await fromUuid('Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.IkrhT9FMQDNALa8S')).toObject();
       effect.img = img;
@@ -117,11 +118,10 @@ async function SRoll() {
       effect.system.rules.shift();
       effect.system.rules[0].radius = 10;
       effect.system.rules[0].slug = "marshal-insp-stance";
-      console.log(effect);
       await token.actor.createEmbeddedDocuments("Item", [effect]);
     }
   }
-  if (roll.data.degreeOfSuccess === 3) {
+  if (roll.options.degreeOfSuccess === 3) {
     if(choice === 'dms'){
       const effect = (await fromUuid('Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.IkrhT9FMQDNALa8S')).toObject();
       effect.img = img;
@@ -136,11 +136,10 @@ async function SRoll() {
       effect.system.rules.shift();
       effect.system.rules[0].radius = 20;
       effect.system.rules[0].slug = "marshal-insp-stance-cs";
-      console.log(effect);
       await token.actor.createEmbeddedDocuments("Item", [effect]);
     }
   }
-  if (roll.data.degreeOfSuccess === 0) {
+  if (roll.options.degreeOfSuccess === 0) {
     const effect = {     
       type: 'effect',
       name: 'Marshal Stance Critical Failure Cooldown',
