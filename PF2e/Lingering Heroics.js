@@ -8,11 +8,14 @@ if(!game.modules.get("xdy-pf2e-workbench")?.active) { return ui.notifications.er
 if (!actor || token.actor.type !== 'character') { return ui.notifications.warn("You must have a PC token selected"); }
 if (!token.actor.itemTypes.feat.some(lc => lc.slug === "lingering-composition")) { return ui.notifications.warn("The actor does not possess the Lingering Composition feat"); }
 if (actor.system.resources.focus.value === 0 || actor.system.resources.focus.value === undefined) { return ui.notifications.warn("You have no focus points"); }
-	
+
+const modifiers = [];
+const notes = [];
 const skillName = "Performance";
-const skillKey = "performance"
-let actionSlug = "lingering-composition"
-let actionName = "Lingering Composition"
+const skillKey = "prf";
+let actionSlug = "lingering-composition";
+let actionName = "Lingering Composition";
+const options = token.actor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
       
 let cantrips = token.actor.itemTypes.spell.filter(s=> s.isFocusSpell === true && s.isCantrip === true && s.system.traits.value.includes('composition') && s.system.duration.value === '1 round');
             
@@ -40,10 +43,16 @@ let suc,cs;
       
 if (choice[2]) {
 	if (choice[0] === 'Inspire Courage' || choice[0] === 'Inspire Defense' || choice[0] === 'Song of Strength') {  
-    actionSlug = "inspire-heroics";
-    actionName = "Inspire Heroics";
-    cs = effects.find(e => e.name.includes(`${choice[0].substr(8)}, +3`));
-    suc = effects.find(e => e.name.includes(`${choice[0].substr(8)}, +2`));
+    	actionSlug = "inspire-heroics";
+    	actionName = "Inspire Heroics";
+		options.push(`action:${actionSlug}`);
+    	cs = effects.find(e => e.name.includes(`${choice[0].substr(8)}, +3`));
+    	suc = effects.find(e => e.name.includes(`${choice[0].substr(8)}, +2`));
+		if(effect !== ''){
+			notes.push({"outcome":["success"], "selector":"performance", "text":`<p>${suc.link}</p>`});
+    		notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p>${cs.link}</p>`});
+    		notes.push({"outcome":["failure"], "selector":"performance", "text":`<p>${effect.link} You don't spend the Focus Point for casting the spell</p>`});
+		}
 	}
 	else { 
 		ui.notifications.warn('Inspire Heroics is only applicable to Inspire Courage, Inspire Defense, or Song of Strength'); return; 
@@ -55,13 +64,18 @@ if (effect !== undefined && (choice[2] === undefined || !choice[2])) {
     const wbef = await pack.getDocuments();
     suc = wbef.find( s => s.slug === effect.slug && s.system.duration.value === 3 );
     cs = wbef.find( s => s.slug === effect.slug && s.system.duration.value === 4 );
+	options.push(`action:${actionSlug}`);
+	if(effect !== ''){
+		notes.push({"outcome":["success"], "selector":"performance", "text":`<p>${suc.link} lasts 3 rounds</p>`});
+    	notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p>${cs.link} lasts 4 rounds</p>`});
+    	notes.push({"outcome":["failure"], "selector":"performance", "text":`<p>${effect.link} lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
+	}
 }
       
 let DCbyLevel = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50]
       
 let level;
 let levels = [];
-const options = [];
 if (choice[0] === 'Dirge of Doom') {
   options.push(`secret`)
   const ids = game.user.targets.ids;
@@ -149,11 +163,12 @@ if (cs !== undefined) {
 	aura.img = cs.img;
 }
 
-const aroll = await deepClone(token.actor.skills[skillKey]);
-let link = `</br>@Compendium[pf2e.spells-srd.${choice[0]}]`
-if (effect !== '') {link = `<br>${effect.link}`}
-aroll.check.label = `${skillName} - ${actionName}${link}`;
-const roll = await aroll.check.roll({extraRollOptions: options, dc:{value:DC},skipDialog:true});
+const roll = await game.pf2e.Check.roll(
+	new game.pf2e.CheckModifier(
+	  `<span class="pf2-icon">A</span> <b>${actionName}</b><br><i>${choice[0]}</i> - <p class="compact-text">${skillName } Skill Check</p>`,
+	  token.actor.skills.performance, modifiers 
+	), { actor: token.actor, type: 'skill-check', options, notes, dc: { value: DC }, skipDialog: true }, null);
+
 if (roll.options.degreeOfSuccess === 3) {
 	if(choice[2] && effect !== undefined) {
 		aura.system.rules[0].effects[0].uuid = cs.uuid;
