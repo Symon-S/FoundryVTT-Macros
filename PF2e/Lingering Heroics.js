@@ -154,7 +154,7 @@ let link = `</br>@Compendium[pf2e.spells-srd.${choice[0]}]`
 if (effect !== '') {link = `<br>${effect.link}`}
 aroll.check.label = `${skillName} - ${actionName}${link}`;
 const roll = await aroll.check.roll({extraRollOptions: options, dc:{value:DC},skipDialog:true});
-if (roll.data.degreeOfSuccess === 3) {
+if (roll.options.degreeOfSuccess === 3) {
 	if(choice[2] && effect !== undefined) {
 		aura.system.rules[0].effects[0].uuid = cs.uuid;
 	}
@@ -162,7 +162,7 @@ if (roll.data.degreeOfSuccess === 3) {
 		aura.system.duration.value = 4
 	}
 }
-if (roll.data.degreeOfSuccess === 2) {
+if (roll.options.degreeOfSuccess === 2) {
 	if(choice[2] && effect !== undefined) {
 		aura.system.rules[0].effects[0].uuid = suc.uuid;
 	}
@@ -171,7 +171,7 @@ if (roll.data.degreeOfSuccess === 2) {
 	}
 }
 await token.actor.createEmbeddedDocuments("Item",[aura]);
-if (roll.data.degreeOfSuccess !== 1) { 
+if (roll.options.degreeOfSuccess !== 1) { 
   const currentpoints = actor.system.resources.focus.value-1;
   await actor.update({"system.resources.focus.value":currentpoints});
 }
