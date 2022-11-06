@@ -161,7 +161,6 @@ const rollTreatWounds = async ({
      success: 'one-degree-better',
    };
  }
-
  const bonusString = bonus > 0 ? ` + ${bonus}` : '';
  const immunityMessage = `${target.name} is now immune to ${immunityEffect.name} for ${immunityEffect.system.duration.value} ${immunityEffect.system.duration.unit}.<br>${immunityMacroLink}`;
 
@@ -173,12 +172,12 @@ const rollTreatWounds = async ({
      user: game.user.id,
      type: CONST.CHAT_MESSAGE_TYPES.ROLL,
      flavor: `<strong>Assurance Roll: ${
-       med.name[0].toUpperCase() + med.name.substring(1)
+       med.label[0].toUpperCase() + med.label.substring(1)
      }</strong> vs DC ${DC}<br><small>Do not apply any other bonuses, penalties, or modifiers</small><br>${immunityMessage}`,
      roll: aroll,
      speaker: ChatMessage.getSpeaker(),
    });
-
+   console.log(aroll)
    const atot = aroll.total - DC;
 
    const success = atot >= 10 ? 3 : atot >= 0 ? 2 : atot <= -10 ? 0 : 1;
@@ -214,7 +213,7 @@ const rollTreatWounds = async ({
      });
    }
  } else {
-   med.roll({
+   med.check.roll({
      dc: dc,
      event: event,
      options: getRollOptions({ isRiskySurgery: isRiskySurgery }),
@@ -261,7 +260,8 @@ const rollTreatWounds = async ({
 
 async function applyChanges($html) {
  for (const token of canvas.tokens.controlled) {
-   var med = token.actor.system.skills.med;
+   var med = token.actor.skills.medicine;
+
 
    if (!med) {
      ui.notifications.warn(
@@ -315,7 +315,7 @@ async function applyChanges($html) {
      // Extract the Macro ID from the asynomous benefactor macro compendium.
      const macroName = useBattleMedicine ? `BM Immunity CD`: `TW Immunity CD`;
      const macroId = (await game.packs.get('xdy-pf2e-workbench.asymonous-benefactor-macros')).index.find(n => n.name === macroName)?._id;
-     immunityMacroLink = `@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Apply ${bmtw} Immunity Cooldown`
+     immunityMacroLink = `@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Apply ${bmtw} Immunity Cooldown}`
    } else {
      ui.notifications.warn(`Workbench Module not active! Linking Immunity effect Macro not possible.`);
    }
@@ -335,19 +335,19 @@ async function applyChanges($html) {
    let usedProf = 0;
    if (game.settings.get('pf2e', 'RAI.TreatWoundsAltSkills')) {
      if (skill === 'cra') {
-       med = token.actor.system.skills['cra'];
+       med = token.actor.skills.crafting;
      }
      if (skill === 'nat') {
-       med = token.actor.system.skills['nat'];
+       med = token.actor.skills.nature;
      }
      usedProf = requestedProf <= med.rank ? requestedProf : med.rank;
    } else {
      usedProf = requestedProf <= med.rank ? requestedProf : med.rank;
      if (skill === 'cra') {
-       med = token.actor.system.skills['cra'];
-     }
+       med = token.actor.skills.crafting;
+    }
      if (skill === 'nat') {
-       med = token.actor.system.skills['nat'];
+       med = token.actor.skills.nature;
        if (usedProf === 0) {
          usedProf = 1;
        }
@@ -389,7 +389,7 @@ async function applyChanges($html) {
                  applicatorImmunityEffect.system.tokenIcon.show = showIcons; 
                  applicatorImmunityEffect.flags.core ??= {};
                  applicatorImmunityEffect.flags.core.sourceId = immunityEffectUUID;
-                 if (token.actor.system.skills.med.rank > 2) {
+                 if (token.actor.skills.medicine.rank > 2) {
                    applicatorImmunityEffect.system.duration.unit = "hours"; //Cooldown of Medic Dedication depends on medicine skill rank
                  }
 
@@ -664,7 +664,7 @@ if (canvas.tokens.controlled.length !== 1){
  const hasChirurgeon = checkFeat('chirurgeon');
  const hasNaturalMedicine = checkFeat('natural-medicine');
  const hasBattleMedicine = checkFeat('battle-medicine');
- let tmed = token.actor.system.skills['med'].rank > 0;
+ let tmed = token.actor.skills.medicine.rank > 0;
  if (
    !tmed &&
    !hasChirurgeon &&
@@ -678,13 +678,13 @@ if (canvas.tokens.controlled.length !== 1){
    let bmtw_skill = 0
    if (tmed && (checkItemTypeFeat('assurance', 'Assurance (Medicine)') ||
     checkItemTypeFeat('assurance-medicine'))) {
-     bmtw_skill = token.actor.system.skills['med'];
+     bmtw_skill = token.actor.skills.medicine;
    } else if (hasChirurgeon && (checkItemTypeFeat('assurance', 'Assurance (Crafting)') ||
     checkItemTypeFeat('assurance-crafting'))) {
-     bmtw_skill = token.actor.system.skills['cra'];
+     bmtw_skill = token.actor.skills.crafting;
    } else if (hasNaturalMedicine && (checkItemTypeFeat('assurance', 'Assurance (Nature)') ||
     checkItemTypeFeat('assurance-nature'))) {
-     bmtw_skill = token.actor.system.skills['nat'];
+     bmtw_skill = token.actor.skills.nature;
    }
    const hasHealersTools = checkItemPresent('healer-s-tools') || checkItemPresent('healers-tools') 
                            || checkItemPresent('healers-tools-expanded') || checkItemPresent('violet-ray')
