@@ -42,7 +42,7 @@ if (canvas.tokens.controlled.length !== 1){
             }[coreRoll.terms[0].results[0].result] ?? "black";
 
             my_string += `<br>${
-                coreSkill.name[0].toUpperCase() + coreSkill.name.substring(1)
+                coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)
                 }+${coreSkill.totalModifier} <span style="color: ${rollColor}">[[${coreRoll.total}]]</span>`
         } 
     }
@@ -104,7 +104,6 @@ if (canvas.tokens.controlled.length !== 1){
                 default:  
                     break; 
             }
-
             my_string += `<br><strong>vs. ${targetActor.name}</strong><br>1st: DC ${dcs[0]}; 2nd: DC ${dcs[1]}; 3rd: DC ${dcs[2]}; 4th: DC ${dcs[3]}`;
             for (primaryskill of primaryskills) {
                 const coreSkill = token.actor.system.skills[primaryskill];
@@ -112,7 +111,7 @@ if (canvas.tokens.controlled.length !== 1){
                     `1d20 + ${coreSkill.totalModifier}`
                 ).roll({ async: true });
 
-                const atot = coreRoll.total - dc;
+                const atot = coreRoll.total - dcs[0];
                 let success = atot >= 10 ? 3 : atot >= 0 ? 2 : atot <= -10 ? 0 : 1;
                 success += (coreRoll.terms[0].results[0].result === 1) ? -1 : (coreRoll.terms[0].results[0].result === 20) ? 1 : 0;
                 success = Math.min(Math.max(success, 0), 3)
@@ -133,7 +132,7 @@ if (canvas.tokens.controlled.length !== 1){
                 }[success>=2];
 
                 my_string += `<br>${
-                    coreSkill.name[0].toUpperCase() + coreSkill.name.substring(1)
+                    coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)
                     }+${coreSkill.totalModifier} <span style="color: ${rollColor}">[[${coreRoll.total}]]</span> = <span
                     style="color: ${outcomeColor}">${outcome}</span>`
             } 
