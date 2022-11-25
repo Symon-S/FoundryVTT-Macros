@@ -226,7 +226,7 @@ async function Eldritch_shot()
       
       // Automated Animations insertion by MrVauxs
       if (game.modules.get("autoanimations")?.active) {
-        AutomatedAnimations.playAnimation(token, spc.spell, { targets: Array.from(game.user.targets)[0], hitTargets: hit ? Array.from(game.user.targets)[0] : []})
+        AutomatedAnimations.playAnimation(token, spc.spell, { targets: [Array.from(game.user.targets)[0]], hitTargets: hit ? [Array.from(game.user.targets)[0]] : []})
       }
       if (spc.data.item.system.damage.value !== '' || spc.data.item.system.damage.value !== undefined || Object.entries(spc.spell.system.damage.value).length > 0){ traits = traits + `,damaging-effect`; }
       let flavName = `${spc.data.item.name} cast at Lv${spc.lvl}`;
