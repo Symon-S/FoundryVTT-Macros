@@ -83,7 +83,13 @@ async function Eldritch_shot()
 
       // Check for spell variants
       if(spc.spell.hasVariants && spc.isAttack){
-        let spell_variants = Array.from(spc.spell.overlays).map(ovr => ({name: spc.name + ovr.system.time.value, id: ovr._id, lvl:spc.lvl}));
+        let spell_variants;
+        if (spc.spell.overlays.contents[0].system.time !== undefined){
+          spell_variants = Array.from(spc.spell.overlays).map(ovr => ({name: spc.name + ovr.system.time.value, id: ovr._id, lvl:spc.lvl}));
+        }
+        else { 
+          spell_variants = Array.from(spc.spell.overlays).map(ovr => ({name: ovr.name, id: ovr._id, lvl:spc.lvl}));
+        }
           spell_variants.sort((a, b) => {
             if (a.lvl === b.lvl)
             return a.name
@@ -112,6 +118,9 @@ async function Eldritch_shot()
         const formula = variant.isCantrip ? await variant.getDamageFormula(Math.ceil(actor.level /2 ), spRD) : await variant.getDamageFormula(spc.lvl, spRD);
         // Overwrite the chosen spell's damage formula
         spc.formula = formula;
+        if (variant.system?.damage?.value[0]?.type?.value !== undefined) {
+          spc.formula += `[${variant.system.damage.value[0].type.value}]`
+        }
       }   
 
       let pers;
@@ -119,10 +128,6 @@ async function Eldritch_shot()
       const s_mod = ` + ${token.actor.system.abilities[key].mod}`
       const c_mod = ` + ${token.actor.system.abilities[key].mod *2}`
 
-      if (spc.slug === 'telekinetic-projectile') {
-        const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["bludgeoning","piercing","slashing"]}, title: `Choose a damage type`});
-        spc.formula = spc.formula + `[${type[0]}]`;
-      }
       if (spc.slug === 'gouging-claw') {
         const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["piercing","slashing"]}, title: `Choose a damage type`});
         spc.formula = spc.formula + `[${type[0]}]`;
