@@ -19,7 +19,7 @@ const height = await Dialog.wait({
     },
     default: "ok",
 },{width:300});
-console.log(height);
+
 if (height === "cancel") { return }
 
 for (const t of canvas.tokens.controlled) {
