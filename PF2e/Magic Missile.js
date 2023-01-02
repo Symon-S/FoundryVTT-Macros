@@ -26,8 +26,9 @@ for (const e of mmE) {
     const spellData = await e.getSpellData();
 	for (const sp of spellData.levels) {
         if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { continue; }
-        let index = 0;
+        let i = 0;
 	    for ( const spa of sp.active){
+		  const index = i++
 	      if(spa === null) { continue; }
               if(spa.spell.slug !== "magic-missile") { continue; }
               if(spa.expended) { continue; }
