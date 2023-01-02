@@ -180,7 +180,6 @@ const rollTreatWounds = async ({
      roll: aroll,
      speaker: ChatMessage.getSpeaker(),
    });
-   console.log(aroll)
    const atot = aroll.total - DC;
 
    const success = atot >= 10 ? 3 : atot >= 0 ? 2 : atot <= -10 ? 0 : 1;
