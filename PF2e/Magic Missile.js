@@ -12,35 +12,36 @@ Further modified by MrVauxs to be usable with and without animations.
 const mani = ["wand-of-manifold-missiles-1st-level-spell","wand-of-manifold-missiles-3rd-level-spell","wand-of-manifold-missiles-5th-level-spell","wand-of-manifold-missiles-7th-level-spell"]
 if (!token.actor.itemTypes.spell.some(s => s.slug === 'magic-missile') && !token.actor.itemTypes.consumable.some(s => s.system.spell?.system?.slug === 'magic-missile') && !token.actor.itemTypes.equipment.some(s => mani.includes(s.slug))) { return ui.notifications.error('You do not have Magic Missile') }if (game.user.targets.ids === undefined || game.user.targets.ids.length === 0) { return ui.notifications.error('At least 1 target is required'); }
 
+const DamageRoll = CONFIG.Dice.rolls.find(((R) => R.name === "DamageRoll"));
 const mmE = token.actor.itemTypes.spellcastingEntry.filter(m => m.spells.some(x => x.slug === 'magic-missile') === true);
 
 const mmIds = [];
-token.actor.itemTypes.spell.forEach(id => {
+for ( const id of token.actor.itemTypes.spell){
 	if(id.slug === 'magic-missile') { mmIds.push(id.id); }
-});
+};
 
 const mm = [];
-const formula =  `{1d4 + 1}[force]`;
 
 for (const e of mmE) {
-          const spellData = await e.getSpellData();
-	  spellData.levels.forEach(sp => {
-            if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { return; }
-	    sp.active.forEach((spa,index) => {
-	      if(spa === null) { return; }
-              if(spa.spell.slug !== "magic-missile") { return; }
-              if(spa.expended) { return; }
-              if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.system.resources.focus.value === 0){ return; }
+    const spellData = await e.getSpellData();
+	for (const sp of spellData.levels) {
+        if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { continue; }
+        let index = 0;
+	    for ( const spa of sp.active){
+	      if(spa === null) { continue; }
+              if(spa.spell.slug !== "magic-missile") { continue; }
+              if(spa.expended) { continue; }
+              if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.system.resources.focus.value === 0){ continue; }
               let level = `lv${sp.level}`
               const name = spa.spell.name;
-	      const sname = `${name} ${level} (${e.name})`;
+	          const sname = `${name} ${level} (${e.name})`;
               mm.push({name: sname, entryId: spellData.id, level: sp.level, spId: spa.spell.id, slug: spa.spell.slug, spell: spa.spell, index: index});
-	    });
-	  });
+	    };
+	};
 };	
 
-token.actor.itemTypes.consumable.forEach(s => {
-	if (!s.system.traits.value.includes("wand") && !s.system.traits.value.includes("scroll")) { return; }
+for ( const s of token.actor.itemTypes.consumable){
+	if (!s.system.traits.value.includes("wand") && !s.system.traits.value.includes("scroll")) { continue; }
 	if (s.system.spell?.system?.slug === 'magic-missile') { 
 		if (s.system.traits.value.includes("wand") && s.system.charges.value > 0) {
 			mm.push({name: `${s.name}`, level: parseInt(s.slug.substr(11,1)), prepared: false, entryId: s.id , wand: true, scroll: false, spont: false,  }) 
@@ -49,12 +50,12 @@ token.actor.itemTypes.consumable.forEach(s => {
 			mm.push({name: `${s.name}`, level: s.system.spell.heightenedLevel, prepared: false, entryId: s.id, wand: false, scroll: true, spont: false })
 		}
 	}
-});
-token.actor.itemTypes.equipment.forEach(s => {
+};
+for ( const s of token.actor.itemTypes.equipment){
 	if (mani.includes(s.slug)) { 
 		mm.push({name: `${s.name}`, level: parseInt(s.slug.substr(26,1)), prepared: false, entryId: s.slug, wand: true, scroll: false, spont: false}); 
 	}
-});
+};
 
 if (token.actor.itemTypes.effect.some(e => e.slug === "maniEF")) {
 	const effect = token.actor.itemTypes.effect.find(e => e.slug === "maniEF");
@@ -87,10 +88,10 @@ const targetIds = game.user.targets.ids;
 const targets = canvas.tokens.placeables.filter(t => targetIds.includes(t.id));
 
 const tdata = [];
-targets.forEach(t => {
+for ( const t of targets ){
 	if(t.actor.hasPlayerOwner) { ui.notifications.info(`${t.name} is most likely an ally`);}
 	tdata.push({label: t.name, type: 'number', options: [1]});
-});
+};
 
 if (targetIds.length === 1) { tdata[0].options = [multi]; }
 
@@ -99,22 +100,22 @@ const tdiag = await quickDialog({data : tdata, title : `Distribute ${multi} Miss
 let tot = 0;
 let i;
 const fmm = [];
-tdiag.forEach(m => {
+for (const m of tdiag){
 	tot = tot + m
 	if( i !== undefined) { i++ }
 	if( i === undefined) { i = 0}
 	fmm.push({name: targets[i].name, num: m})
-});
+};
 
 if (tot > multi) { return ui.notifications.warn(`You have entered ${tot - multi} too many missiles. Please try again`)}
 if (tot < multi) { return ui.notifications.warn(`You have entered ${ multi - tot} too few missiles. Please try again`)}
 
 let targetNum = 0
-fmm.forEach(a => {
-        if(a.num === 0 || a.num === undefined) { return; }
-	let dam = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? formula.repeat(a.num).replace(/]{/g,'] + {') + ` + {${mmch.level}}[status,force]` : formula.repeat(a.num).replace(/]{/g,'] + {');
-	var droll = new Roll(dam);
-        droll.toMessage({ flavor: `<strong>${a.num} Magic Missile(s) targeting ${a.name}</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="gKKqvLohtrSJj3BM"><strong>Magic Missile</strong></a>`, speaker: ChatMessage.getSpeaker() });
+for (const a of fmm){
+    if(a.num === 0 || a.num === undefined) { continue; }
+	let dam = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? `(${a.num}d6 + ${a.num} + ${mmch.level})[force]` : `(${a.num}d6 + ${a.num})[force]`;
+	const droll = new DamageRoll(dam);
+    droll.toMessage({ flavor: `<strong>${a.num} Magic Missile(s) targeting ${a.name}</strong><br>${mmch.spell.link}`, speaker: ChatMessage.getSpeaker() });
 	if (game.modules.get("sequencer")?.active && (game.modules.get("JB2A_DnD5e")?.active || game.modules.get("jb2a_patreon")?.active)) {new Sequence()
         .effect()
             .file(`jb2a.magic_missile`)
@@ -124,7 +125,7 @@ fmm.forEach(a => {
             .delay(300,600)
         .play()}
     targetNum++
-    });
+    };
 
 const s_entry = mmE.find(e => e.id === mmch.entryId);
 
