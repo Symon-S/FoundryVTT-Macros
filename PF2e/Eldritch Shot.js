@@ -24,7 +24,6 @@ async function Eldritch_shot()
       /* New Spell getter*/
       const spells = [];
       for (const e of token.actor.itemTypes.spellcastingEntry) {
-        console.log(e);
         if (e.isRitual) { continue; }
 			  const spellData = await e.getSpellData();
          for(const sp of spellData.levels) {
@@ -61,7 +60,6 @@ async function Eldritch_shot()
       });
 
       if(spells.length === 0) { return ui.notifications.info("You have no spells available"); }
-      console.log(spells);
 
       /* Get them bows baby */
       const weapons = token.actor.itemTypes.weapon.filter(i => i.isEquipped && i.system.group === 'bow');
@@ -121,7 +119,6 @@ async function Eldritch_shot()
         spc.roll = roll;
       }
 
-      console.log(spc);
       let pers;      
       let critt;
       function SSDOS(cm) {
@@ -133,7 +130,6 @@ async function Eldritch_shot()
       await strike.attack({ event });
       
       const { actionTraits, spellTraits} = await spc.spell.getChatData();
-      console.log(actionTraits,spellTraits);
       let ttags = '';
       for (const a of actionTraits) {
         ttags += `<span class="tag" data-trait=${a.name} data-description=${a.description}>${a.name[0].toUpperCase() + a.name.substring(1)}</span>`
