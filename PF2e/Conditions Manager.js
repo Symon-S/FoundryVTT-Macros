@@ -90,23 +90,17 @@ const script4 = async function CCon() {
     const c = html.find("#condition")[0].value;
     for(const token of canvas.tokens.controlled) {
       if (token.actor === null) { ui.notifications.warn(`${token.name} does not have an actor or is broken`); continue; }
-      if ( token.actor.itemTypes.effect.some(f => f.name === c) ) { (await token.actor.itemTypes.effect.find(n => n.name === c)).delete(); continue; }
       if (!token.actor.itemTypes.condition.some(p => p.slug === c) || token.actor.itemTypes.condition.some(p => p.slug === c && p.system.references.parent !== undefined)) { continue; }
       if (token.actor !== null) { await token.actor.toggleCondition(c); }
     }
   }
   const cons = []; 
-  canvas.tokens.controlled.forEach( t=> {
-    if (game.modules.has("pf2e-persistent-damage") && game.modules.get("pf2e-persistent-damage").active) {
-      t.actor.itemTypes.effect.forEach( e => {
-        if (e.slug.includes("persistent-damage")) { cons.push(e.name) }
-      });
-    }
-    t.actor.itemTypes.condition.forEach ( c => {
+  for (const t of canvas.tokens.controlled) {
+    for ( const c of t.actor.itemTypes.condition) {
       if (c.system.references.parent !== undefined) { return; }
       cons.push(c.slug);
-    });
-  });
+    };
+  };
   const ccon = [...new Set(cons)].sort();
   if (ccon.length === 0) { return ui.notifications.info("No conditions to clear at this time.") }
   if (ccon.length === 1) { 
@@ -114,7 +108,6 @@ const script4 = async function CCon() {
       if(token.actor.hasCondition(ccon[0])) {
         await token.actor.toggleCondition(ccon[0]); 
       }
-      if(token.actor.itemTypes.effect.find(n => n.name === ccon[0]) && game.modules.has("pf2e-persistent-damage") && game.modules.get("pf2e-persistent-damage").active) { (await token.actor.itemTypes.effect.find(n => n.name === ccon[0])).delete(); }
     }
   }
   else{
@@ -197,12 +190,7 @@ condition_list.forEach((c,i) => {
     }
     else {
      if ( c === "persistent-damage" ) { 
-      	if (game.modules.has("pf2e-persistent-damage") && game.modules.get("pf2e-persistent-damage").active) {
-	  content += `<button name="button${i}" class="cond-buttons-pd" type="button" onclick="PF2EPersistentDamage.showDialog()">Persistent Damage</button> `
-	}
-	else {
-       	  content += `<button name="button${i}" class="cond-buttons-pd" type="button" onclick="CToggle('${c}')">Persistent Damage</button> ` 
-	}
+	  content += `<button name="button${i}" class="cond-buttons-pd" type="button" onclick="game.pf2e.gm.editPersistent({actors:canvas.tokens.controlled?.map((t) => t.actor)})">Persistent Damage</button> `
      }
      else{
        content += `<button name="button${i}" class="cond-buttons ${i}" type="button" onclick="CToggle('${c}')">${c[0].toUpperCase() + c.substring(1)}</button> `;
