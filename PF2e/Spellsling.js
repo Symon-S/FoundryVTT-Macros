@@ -1,8 +1,5 @@
 /*
 To use this macro, you just have to target someone and use it.
-It will automatically roll damage based on degree of success.
-At the moment critical hits will only double dice if that setting is applied.
-I may integrate double damage again in the future, for now, just apply damage with the double button when applying.
 */
 
 
@@ -10,7 +7,7 @@ Spellsling();
 
 async function Spellsling()
 {
-	/* Throw warning if token is not selected*/
+    /* Throw warning if token is not selected*/
     if (canvas.tokens.controlled.length < 1) { return ui.notifications.warn('No token is selected.'); }
     if (canvas.tokens.controlled.length > 1) { return ui.notifications.warn('Only 1 token should be selected'); }
     if (game.user.targets.size < 1) { return ui.notifications.warn('Please target a token'); }
@@ -26,28 +23,30 @@ async function Spellsling()
       /* New Spell getter*/
       const spells = [];
       for (const e of token.actor.itemTypes.spellcastingEntry) {
-        if (e.isRitual) { return; }
+        if (e.isRitual) { continue; }
 			  const spellData = await e.getSpellData();
-			  spellData.levels.forEach(sp => {
-          if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { return; }
-				  sp.active.forEach((spa,index) => {
-					  if(spa === null) { return; }
-					  if(spa.spell.system.spellType.value !== 'attack') { return; }
-            if(spa.expended) { return; }
-            if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.system.resources.focus.value === 0){ return; }
+         for(const sp of spellData.levels) {
+           if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { continue; }
+           let i = 0;
+           for (const spa of sp.active) {
+            const index = i++
+            if(spa === null) { continue; }
+					  if(spa.spell.system.spellType.value !== 'attack') { continue; }
+            if(spa.expended) { continue; }
+            if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.system.resources.focus.value === 0){ continue; }
             let level = `lv${sp.level}`
             const name = spa.spell.name;
-            const spRD = spa.spell.getRollData({spellLvl: sp.level});
-            const formula = spa.spell.isCantrip ? spa.spell.getDamageFormula(Math.ceil(actor.level /2 ), spRD) : spa.spell.getDamageFormula(sp.level, spRD);
-		        if(sp.isCantrip) { level = `[Cantrip]`}
-				    const sname = `${name} ${level} (${e.name})`;
+            const spRD = spa.spell.getRollData({castLevel: spa.spell.isCantrip ? Math.ceil(actor.level/2) : sp.level});
+            const roll = spRD.item.damage?.roll;
+            if(sp.isCantrip) { level = `[Cantrip]`}
+	    const sname = `${name} ${level} (${e.name})`;
             let isAttack = false;
             if (spa.spell.system.spellType.value === 'attack') { isAttack = true; }
             let isSave = false;
-            if (spa.spell.system.spellType.value === "save") { isSave = true; }
-            spells.push({name: sname, formula:formula, sEId: spellData.id, lvl: sp.level, spId: spa.spell.id, slug: spa.spell.slug, desc: spa.spell.description, DC: e.statistic.dc.value, data: spRD, spell: spa.spell, index: index, isSave, isAttack});
-					});
-				});
+            if (spa.spell.system.spellType.value === "save" || spa.spell.system.save?.value !== "") { isSave = true; }
+            spells.push({name: sname, roll, sEId: spellData.id, lvl: sp.level, spId: spa.spell.id, slug: spa.spell.slug, desc: spa.spell.description, DC: e.statistic.dc.value, data: spRD, spell: spa.spell, index: index, isSave, isAttack});
+           }
+         }
 		  };
 		  spells.sort((a, b) => {
         if (a.lvl === b.lvl)
@@ -58,6 +57,7 @@ async function Spellsling()
           });
         return a.lvl - b.lvl;
       });
+
 
       if(spells.length === 0) { return ui.notifications.info("You have no spells available"); }
 
@@ -114,97 +114,12 @@ async function Spellsling()
         spc.spell = variant;
         // Re-calculate the damage formula for the spell.
         let spRD = await variant.getRollData({castLevel:spc.lvl});
-        const formula = variant.isCantrip ? await variant.getDamageFormula(Math.ceil(actor.level /2 ), spRD) : await variant.getDamageFormula(spc.lvl, spRD);
+        const roll = spRD.item.damage?.roll;
         // Overwrite the chosen spell's damage formula
-        spc.formula = formula;
-        if (variant.system?.damage?.value[0]?.type?.value !== undefined) {
-          spc.formula += `[${variant.system.damage.value[0].type.value}]`
-        }
-      }   
+        spc.roll = roll;
+      }
 
       let pers;
-      const key = s_entry.ability;
-      const s_mod = ` + ${token.actor.system.abilities[key].mod}`
-      const c_mod = ` + ${token.actor.system.abilities[key].mod *2}`
-
-      if (spc.slug === 'gouging-claw') {
-        const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["piercing","slashing"]}, title: `Choose a damage type`});
-        spc.formula = spc.formula + `[${type[0]}]`;
-      }
-      if (spc.slug === 'magnetic-acceleration' && token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery')) {
-        const type = await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["bludgeoning","piercing"]}, title: `Choose a damage type`});
-        spc.formula = spc.formula + `[${type[0]}]`;
-      }
-            if (spc.slug === 'searing-light'){
-        if (!game.user.targets.first().actor.traits.has('undead') && !game.user.targets.first().actor.traits.has('fiend')) { 
-           spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6 + ${spc.lvl}[fire]` : `${(spc.lvl-3)*2 + 5}d6[fire]`;
-         }
-         else {
-           const type = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["fire","good"]}, title: `Choose a damage type`}) : '';
-           spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6[fire] + ${(spc.lvl-3)*2 + 5}d6[good] + ${spc.lvl}[${type[0]}]` : `${(spc.lvl-3)*2 + 5}d6[fire] + ${(spc.lvl-3)*2 + 5}d6[good]`;
-         }
-       }
-
-       if (spc.slug === 'moonlight-ray'){
-         if (!game.user.targets.first().actor.traits.has('undead') && !game.user.targets.first().actor.traits.has('fiend')) { 
-           spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6 + ${spc.lvl}[cold]` : `${(spc.lvl-3)*2 + 5}d6[cold]`;
-         }
-         else {
-           const type = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? await quickDialog({data: {label:'Choose Damage Type:', type: 'select', options:["cold","good"]}, title: `Choose a damage type`}) : '';
-           spc.formula = token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') ? `${(spc.lvl-3)*2 + 5}d6[cold] + ${(spc.lvl-3)*2 + 5}d6[good] + ${spc.lvl}[${type[0]}]` : `${(spc.lvl-3)*2 + 5}d6[cold] + ${(spc.lvl-3)*2 + 5}d6[good]`;
-         }
-       }
-
-      if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery') && spc.slug !== 'magnetic-acceleration' && spc.slug !== 'moonlight-ray' && spc.slug !== 'searing-light' && Object.entries(spc.data.item.system.damage.value).length !== 0 && !spc.data.item.isCantrip ) {
-        spc.formula = spc.formula + `[${spc.data.item.system.damage.value[0].type.value}]`;
-      }
-
-
-      const fsplit = spc.formula.split(" ");
-      let ddice = '';
-      fsplit.forEach(f => {
-        if (f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || []) === null ) { return ddice = ddice + f; }
-        const double = `${parseInt(f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || [])[0]) * 2}`;
-        ddice = ddice + f.replace(f.match((/\d+\.\d+|\d+\b|\d+(?=\w)/g) || [])[0], double)
-      });
-
-      /* Acid Splash */
-      let splash = 0;
-      if (spc.slug === 'acid-splash') {
-        const dtype = 'acid';
-        if (actor.level < 5) {
-          pers = 1;
-          spc.formula = `{1d6}[acid]`;
-          ddice = `{2d6}[acid]`;
-          splash = '{1}[acid]'
-        }
-        else if (actor.level >= 5 && actor.level < 9) {
-          pers = 2;
-          spc.formula = `{1d6${s_mod}}[acid]`;
-          ddice = `{2d6${c_mod}}[acid]`;
-          splash = '{1}[acid]'
-        }
-        else if (actor.level >= 9 && actor.level < 13) {
-          pers = 3;
-          spc.formula = `{2d6${s_mod}}[acid]`;
-          ddice = `{4d6${c_mod}}[acid]`;
-          splash = '{2}[acid]'
-        }
-        else if (actor.level >= 13 && actor.level < 18) {
-          pers = 4;
-          spc.formula = `{3d6${s_mod}}[acid]`;
-          ddice = `{6d6${c_mod}}[acid]`;
-          splash = '{3}[acid]'
-        }
-        else { 
-          pers = 5;
-          spc.formula = `{4d6${s_mod}}[acid]`;
-          ddice = `{8d6${c_mod}}[acid]`;
-          splash = `{4}[acid]`
-        }
-            
-      }
-
       let critt;
       function SSDOS(cm) {
         if (cm.user.id === game.userId && cm.isCheckRoll) { critt = cm.flags.pf2e.context.outcome; }
@@ -214,13 +129,19 @@ async function Spellsling()
 
       await strike.attack({ event });
 
-      let traits = spc.data.item.system.traits.value.join();
+      const { actionTraits, spellTraits} = await spc.spell.getChatData();
       let ttags = '';
-      spc.data.item.system.traits.value.forEach( t => {
-      ttags = ttags + `<span class="tag tooltipstered" data-trait="${t}" data-description="PF2E.TraitDescription${t[0].toUpperCase() + t.substring(1)}">${t[0].toUpperCase() + t.substring(1)}</span>`
-      });
+      for (const a of actionTraits) {
+        ttags += `<span class="tag" data-trait=${a.name} data-description=${a.description}>${a.name[0].toUpperCase() + a.name.substring(1)}</span>`
+      }
+      ttags += '<hr class="vr">';  
+      for (const s of spellTraits) {
+        ttags += `<span class="tag tag_alt" data-trait=${s.value} data-description=${s.description}>${s.value[0].toUpperCase() + s.value.substring(1)}</span>`
+      }
+
       let dos;
       let hit = false
+
       if (critt === 'success') { dos = 'Success'; hit = true }
       if (critt === 'criticalSuccess') { dos = 'Critical Success'; hit = true}
       
@@ -228,111 +149,81 @@ async function Spellsling()
       if (game.modules.get("autoanimations")?.active) {
         AutomatedAnimations.playAnimation(token, spc.spell, { targets: [Array.from(game.user.targets)[0]], hitTargets: hit ? [Array.from(game.user.targets)[0]] : []})
       }
-if (spc.data.item.system.damage.value !== '' || spc.data.item.system.damage.value !== undefined || Object.entries(spc.spell.system.damage.value).length > 0){ traits = traits + `,damaging-effect`; }
-      let flavName = `${spc.data.item.name} cast at Lv${spc.lvl}`;
-      if (spc.data.item.isCantrip) { flavName = `${spc.data.item.name} (Cantrip)`; }
-let flavor = `<strong>Spellsling</strong><br>@Compendium[pf2e.spells-srd.${spc.data.item.name}]{${flavName}} (${dos})<div class="tags">${ttags}</div><hr>`;
-if (spc.slug === null) { flavor = `<strong>Spellsling</strong><br>${flavName} [Custom Spell] (${dos})<div class="tags">${ttags}</div><hr>`; }
-      if (spc.slug === 'acid-splash') { flavor = `<strong>Spellsling</strong><br>@Compendium[pf2e.spells-srd.Acid Splash]{${flavName}} (${dos})<div class="tags">${ttags}</div>` }
-      if (spc.isSave && spc.slug !== 'chromatic-ray') {
-        flavor = flavor + `<span data-pf2-check='${spc.data.item.system.save.value}' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>${spc.data.item.system.save.basic} ${spc.data.item.system.save.value} save</span>`;
+      let flavName = `${spc.spell.name} cast at Lv${spc.lvl}`;
+      if (spc.spell.isCantrip) { flavName = `${spc.data.item.name} (Cantrip)`; }
+      let flavor = `<strong>Spellsling</strong><br>@Compendium[pf2e.spells-srd.${spc.spell.name}]{${flavName}} (${dos})<div class="tags">${ttags}</div><hr>`;
+      if (spc.slug === null) { flavor = `<strong>Spellsling</strong><br>${flavName} [Custom Spell] (${dos})<div class="tags">${ttags}</div><hr>`; }
+      if (spc.isSave) {
+        let basic = false;
+        if (spc.spell.system.save.basic === "basic") { basic = true }
+        flavor += `@Check[type:${spc.spell.system.save.value}|dc:${spc.DC}|traits:damaging-effect,${spc.spell.system.traits.value.join()}|basic:${basic}]`;
       }
 
-
-      if(spc.slug === 'chromatic-ray' && (critt === 'success' || critt === 'criticalSuccess')) {
-        flavor = `<strong>Spellsling</strong><br>@Compendium[pf2e.spells-srd.${spc.data.item.name}]{${flavName}} (${dos})<div class="tags">${ttags}`;
-        spc.formula = '';
-        ddice = '';
-        let ds = '';
-        let dsc = '';
-        if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery')) { 
-          ds = ` + ${spc.lvl}`; 
-          dsc = ` + ${spc.lvl * 2}`
+      /* Acid Splash */
+      if(spc.slug === 'acid-splash') {
+        let pers = 0;
+        spc.roll = spc.spell.loadVariant({castLevel:Math.ceil(actor.level / 2)}).damage.roll;
+        if (actor.level < 5) {
+          pers = 1;
+          splash = '1'
         }
-        const chroma = [
-          {d:`{30${ds}}[fire]`,f:`<span class="tag tooltipstered" data-trait="fire" data-description="PF2E.TraitDescriptionFire">Fire</span></div><hr><p class='compact-text'>1.<strong>Red</strong> (fire) The ray deals 30 fire damage to the target. Double on a Critical.</p>`,dd:`{60${dsc}}[fire]`},
-          {d:`{40${ds}}[acid]`,f:`<span class="tag tooltipstered" data-trait="acid" data-description="PF2E.TraitDescriptionAcid">Acid</span></div><hr><p class='compact-text'>2.<strong>Orange</strong> (acid) The ray deals 40 acid damage to the target. Double on a Critical.</p>`,dd:`{80${dsc}}[acid]`},
-          {d:`{50${ds}}[electricity]`,f:`<span class="tag tooltipstered" data-trait="electricity" data-description="PF2E.TraitDescriptionElectricity">Electricity</span></div><hr><p class='compact-text'>3.<strong>Yellow</strong> <br>(electricity) The ray deals 50 electricity damage to the target. Double on a Critical.</p>`,dd:`{100${dsc}}[electricity]`},
-          {d:`{25${ds}}[poison]`,f:`<span class="tag tooltipstered" data-trait="poison" data-description="PF2E.TraitDescriptionPoison">Poison</span></div><hr><p class='compact-text'>4.<strong>Green</strong> (poison) The ray deals 25 poison damage to the target, double on a Critical, and the target must succeed at a <span data-pf2-check='fortitude' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits},poison' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>Fortitude save</span> or be @Compendium[pf2e.conditionitems.Enfeebled]{Enfeebled 1} for 1 minute (@Compendium[pf2e.conditionitems.Enfeebled]{Enfeebled 2} on a critical failure).</p>`,dd:`{50${dsc}}[poison]`},
-          {f:`</div><hr><p class='compact-text'>5.<strong>Blue</strong> The ray has the effect of the @Compendium[pf2e.spells-srd.Flesh to Stone]{Flesh to Stone} spell. On a critical hit, the target is @Compendium[pf2e.conditionitems.Clumsy]{Clumsy 1} as long as it’s slowed by the flesh to stone effect.<br><span data-pf2-check='fortitude' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='${spc.data.item.name} DC'><strong>DC ${spc.DC} </strong>Fortitude save</span></p>`},
-          {f:`<span class="tag tooltipstered" data-trait="emotion" data-description="PF2E.TraitDescriptionEmotion">Emotion</span><span class="tag tooltipstered" data-trait="incapacitation" data-description="PF2E.TraitDescriptionIncapacitation">Incapacitation</span><span class="tag tooltipstered" data-trait="mental" data-description="PF2E.TraitDescriptionMental">Mental</span></div><hr><p class='compact-text'>6.<strong>Indigo</strong> (emotion, incapacitation, mental) The ray has the effect of the @Compendium[pf2e.spells-srd.Confusion]{Confusion} spell. On a critical hit, it has the effect of @Compendium[pf2e.spells-srd.Warp Mind]{Warp Mind} instead.<br><span data-pf2-check='will' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits},emotion,incapacitation,mental' data-pf2-label='Indigo DC'><strong>DC ${spc.DC} </strong>Will save</span></p>`},
-          {f:`</div><hr><p class='compact-text'>7.<strong>Violet</strong> <br>The target is @Compendium[pf2e.conditionitems.Slowed]{Slowed} for 1 minute. It must also succeed at a <span data-pf2-check='will' data-pf2-dc='${spc.DC}' data-pf2-traits='${traits}' data-pf2-label='Violet DC'><strong>DC ${spc.DC} </strong>Will save</span> or be teleported 120 feet directly away from you (if there isn’t room for it to appear there, it appears in the nearest open space); this is a teleportation effect.</p>`},
-          {f:`</div><hr><p class='compact-text'>8.<strong>Intense Color</strong> The target is @Compendium[pf2e.conditionitems.Dazzled]{Dazzled} until the end of your next turn, or @Compendium[pf2e.conditionitems.Blinded]{Blinded} if your attack roll was a critical hit. Roll again and add the effects of another color (rerolling results of 8).</p>`},
-        ];
-        let chromaD = '1d4';
-        if (spc.lvl > 5) { 
-          chromaD = '1d8';
-          chroma[0].d = `{40${ds}}[fire]`;
-          chroma[0].dd = `{80${dsc}}[fire]`;
-          chroma[0].f = chroma[0].f.replace('30','40');
-          chroma[1].d = `{50${ds}}[acid]`;
-          chroma[1].dd = `{100${dsc}}[acid]`;
-          chroma[1].f = chroma[1].f.replace('40','50');
-          chroma[2].d = `{60${ds}}[electricity]`;
-          chroma[2].dd = `{120${dsc}}[electricity]`;
-          chroma[2].f = chroma[2].f.replace('50','60');
-          chroma[3].d = `{35${ds}}[poison]`;
-          chroma[3].dd = `{70${dsc}}[poison]`;
-          chroma[3].f = chroma[3].f.replace('25','35');
+        else if (actor.level >= 5 && actor.level < 9) {
+          pers = 2;
+          splash = '1'
         }
-        const chromaR = new Roll(chromaD).roll({ async : false }).total;
-        if (chromaR < 5) { ddice = chroma[chromaR-1].dd; flavor = flavor + chroma[chromaR-1].f; spc.formula = chroma[chromaR-1].d}
-        if (chromaR > 4 && chromaR <= 7) { flavor = flavor + chroma[chromaR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor});}
-        if (chromaR === 8) {
-          const flavor2 = flavor + chroma[chromaR-1].f;
-          await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor2});
-          if (critt === 'criticalSuccess') {
-            const chromaRR = new Roll('1d7').roll({ async : false }).total;
-            if (chromaRR < 5) { ddice = chroma[chromaRR-1].dd; flavor = flavor + chroma[chromaRR-1].f; spc.formula = chroma[chromaRR-1].d }
-            if (chromaRR > 4) { flavor = flavor + chroma[chromaRR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor}); spc.formula = ''}
-					}
-      	}
-      }
-
-
-      if(spc.slug === 'acid-splash' && critt === 'criticalSuccess') {
-        flavor = flavor + `<hr>[[/r {${pers}}[persistent,acid]]] @Compendium[pf2e.conditionitems.Persistent Damage]{Persistent Acid Damage}`
+        else if (actor.level >= 9 && actor.level < 13) {
+          pers = 3;
+          splash = '2'
+        }
+        else if (actor.level >= 13 && actor.level < 18) {
+          pers = 4;
+          splash = '3'
+        }
+        else { 
+          pers = 5;
+          splash = `4`
+        }     
+        flavor += `[[/r ${splash}[splash,acid]]] splash`
+        if (critt === 'criticalSuccess'){
+          flavor += `<br>[[/r ${pers}[persistent,acid]]]`
+        }
       }
       if(spc.slug === 'produce-flame' && critt === 'criticalSuccess') {
         pers = Math.ceil(actor.level / 2) + "d4";
-        flavor = flavor + `<br>[[/r {${pers}}[persistent,fire]]] @Compendium[pf2e.conditionitems.Persistent Damage]{Persistent Fire Damage}`
+        flavor += `[[/r ${pers}[persistent,fire]]]`
       }
       if(spc.slug === 'gouging-claw' && critt === 'criticalSuccess') {
         pers = Math.ceil(actor.level / 2) + "d4";
-        flavor = flavor + `<br>[[/r {${pers}}[persistent,bleed]]] @Compendium[pf2e.conditionitems.Persistent Damage]{Persistent Bleed Damage}`
+        flavor += `[[/r ${pers}[persistent,bleed]]]`
       }
-
-      if (game.modules.get('xdy-pf2e-workbench').active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
+      if(spc.slug === 'searing-light' || spc.slug === 'moonlight-ray'){
+        if (game.user.targets.first().actor.traits.has('undead') || game.user.targets.first().actor.traits.has('fiend')) {
+          flavor += `[[/r ${(spc.lvl-3)*2 + 5}d6[good]]]`
+        }
+      }
+      if (game.modules.get('xdy-pf2e-workbench')?.active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
         if (critt === 'success') { await strike.damage({ event }); }
         if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
-      }
+       }
       if(!game.modules.has('xdy-pf2e-workbench') || !game.modules.get('xdy-pf2e-workbench')?.active) { 
         if (critt === 'success') { await strike.damage({ event }); }
         if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
       }
       if (critt === 'success' || critt === 'criticalSuccess') {
-        if (spc.slug !== 'chromatic-ray' && ( spc.data.item.system.damage.value === '' || spc.data.item.system.damage.value === undefined || Object.entries(spc.spell.system.damage.value).length === 0 || !spc.isAttack) ){
+        if (spc.roll === undefined) {
           return await s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: true});
         }
-        if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledice')) { spc.formula = ddice; } 
-        if (critt === 'criticalSuccess' && (game.settings.get("pf2e","critRule") === 'doubledamage')) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }   
-         if ( Object.entries(spc.spell.system.damage.value).length > 0 || (spc.slug === 'chromatic-ray' && spc.formula !== '') ){
-          const droll = new Roll(spc.formula);
-          await droll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
-        }
-
-        if ( spc.slug === 'acid-splash' ) {
-         const sroll = new Roll(splash);
-         await sroll.toMessage({flavor: `<strong>${spc.data.item.name} Splash Damage</strong><div class="tags">${ttags}</div><hr>`, speaker: ChatMessage.getSpeaker() });
+        if (critt === 'criticalSuccess') {  ui.notifications.info('Spell damage will need to be doubled when applied'); }
+        if ( spc.roll !== undefined) {
+          await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
         }
       }
       /* Expend slots */
-      if ( spc.data.item.isCantrip ) { return; }
-			await s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: false});
-	}
+      if ( spc.spell.isCantrip ) { return; }
+      await s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: false});
+      }
 
 }
-
 /* Dialog box */
 async function quickDialog({data, title = `Quick Dialog`} = {}) {
   data = data instanceof Array ? data : [data];
