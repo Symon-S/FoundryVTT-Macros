@@ -116,7 +116,7 @@ for (const a of fmm){
     if(a.num === 0 || a.num === undefined) { continue; }
 	let dam = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? `(${a.num}d6 + ${a.num} + ${mmch.level})[force]` : `(${a.num}d6 + ${a.num})[force]`;
 	const droll = new DamageRoll(dam);
-    droll.toMessage({ flavor: `<strong>${a.num} Magic Missile(s) targeting ${a.name}</strong><br>${mmch.spell.link}`, speaker: ChatMessage.getSpeaker() });
+    droll.toMessage({ flavor: `<strong>${a.num} Magic Missile(s) targeting ${a.name}</strong><br>${mmch.spell.link} cast at Lv${mmch.level}`, speaker: ChatMessage.getSpeaker() });
 	if (game.modules.get("sequencer")?.active && (game.modules.get("JB2A_DnD5e")?.active || game.modules.get("jb2a_patreon")?.active)) {new Sequence()
         .effect()
             .file(`jb2a.magic_missile`)
