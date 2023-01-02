@@ -149,9 +149,9 @@ async function Eldritch_shot()
       if (game.modules.get("autoanimations")?.active) {
         AutomatedAnimations.playAnimation(token, spc.spell, { targets: [Array.from(game.user.targets)[0]], hitTargets: hit ? [Array.from(game.user.targets)[0]] : []})
       }
-      let flavName = `${spc.spell.name} cast at Lv${spc.lvl}`;
-      if (spc.spell.isCantrip) { flavName = `${spc.data.item.name} (Cantrip)`; }
-      let flavor = `<strong>Eldritch Shot</strong><br>@Compendium[pf2e.spells-srd.${spc.spell.name}]{${flavName}} (${dos})<div class="tags">${ttags}</div><hr>`;
+      let flavName = ` cast at Lv${spc.lvl}`;
+      if (spc.spell.isCantrip) { flavName = ` (Cantrip)`; }
+      let flavor = `<strong>Eldritch Shot</strong><br>${spc.spell.link}${flavName} (${dos})<div class="tags">${ttags}</div><hr>`;
       if (spc.slug === null) { flavor = `<strong>Eldritch Shot</strong><br>${flavName} [Custom Spell] (${dos})<div class="tags">${ttags}</div><hr>`; }
       if (spc.isSave) {
         let basic = false;
