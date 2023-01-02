@@ -31,7 +31,7 @@ async function Spellsling()
            for (const spa of sp.active) {
             const index = i++
             if(spa === null) { continue; }
-					  if(spa.spell.system.spellType.value !== 'attack') { continue; }
+	    if(spa.spell.system.spellType.value !== 'attack') { continue; }
             if(spa.expended) { continue; }
             if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.system.resources.focus.value === 0){ continue; }
             let level = `lv${sp.level}`
@@ -149,10 +149,9 @@ async function Spellsling()
       if (game.modules.get("autoanimations")?.active) {
         AutomatedAnimations.playAnimation(token, spc.spell, { targets: [Array.from(game.user.targets)[0]], hitTargets: hit ? [Array.from(game.user.targets)[0]] : []})
       }
-      let flavName = `${spc.spell.name} cast at Lv${spc.lvl}`;
-      if (spc.spell.isCantrip) { flavName = `${spc.data.item.name} (Cantrip)`; }
-      let flavor = `<strong>Spellsling</strong><br>@Compendium[pf2e.spells-srd.${spc.spell.name}]{${flavName}} (${dos})<div class="tags">${ttags}</div><hr>`;
-      if (spc.slug === null) { flavor = `<strong>Spellsling</strong><br>${flavName} [Custom Spell] (${dos})<div class="tags">${ttags}</div><hr>`; }
+      let flavName = ` cast at Lv${spc.lvl}`;
+      if (spc.spell.isCantrip) { flavName = ` (Cantrip)`; }
+      let flavor = `<strong>Spellsling</strong><br>${spc.spell.link}${flavName} (${dos})<div class="tags">${ttags}</div><hr>`;
       if (spc.isSave) {
         let basic = false;
         if (spc.spell.system.save.basic === "basic") { basic = true }
