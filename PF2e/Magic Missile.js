@@ -41,7 +41,7 @@ for (const e of mmE) {
 			let level = `lv${sp.level}`
 			const name = spa.spell.name;
 			const sname = `${name} ${level} (${e.name})`;
-			mm.push({ name: sname, entryId: spellData.id, level: sp.level, spId: spa.spell.id, slug: spa.spell.slug, spell: spa.spell, index: index });
+			mm.push({ name: sname, entryId: spellData.id, level: sp.level, spId: spa.spell.id, slug: spa.spell.slug, spell: spa.spell, index: index, link:spa.spell.link });
 		};
 	};
 };
@@ -50,22 +50,22 @@ for (const s of token.actor.itemTypes.consumable) {
 	if (!s.system.traits.value.includes("wand") && !s.system.traits.value.includes("scroll")) { continue; }
 	if (s.system.spell?.system?.slug === 'magic-missile') {
 		if (s.system.traits.value.includes("wand") && s.system.charges.value > 0) {
-			mm.push({ name: `${s.name}`, level: parseInt(s.slug.substr(11, 1)), prepared: false, entryId: s.id, wand: true, scroll: false, spont: false, })
+			mm.push({ name: `${s.name}`, level: s.system.spell.system.location.heightenedLevel, prepared: false, entryId: s.id, wand: true, scroll: false, spont: false, link: s.link})
 		}
 		if (s.system.traits.value.includes("scroll")) {
-			mm.push({ name: `${s.name}`, level: s.system.spell.heightenedLevel, prepared: false, entryId: s.id, wand: false, scroll: true, spont: false })
+			mm.push({ name: `${s.name}`, level: s.system.spell.system.location.heightenedLevel, prepared: false, entryId: s.id, wand: false, scroll: true, spont: false, link: s.link })
 		}
 	}
 };
 for (const s of token.actor.itemTypes.equipment) {
 	if (mani.includes(s.slug)) {
-		mm.push({ name: `${s.name}`, level: parseInt(s.slug.substr(26, 1)), prepared: false, entryId: s.slug, wand: true, scroll: false, spont: false });
+		mm.push({ name: `${s.name}`, level: parseInt(s.slug.substr(26, 1)), prepared: false, entryId: s.slug, wand: true, scroll: false, spont: false, link: s.link });
 	}
 };
 
 if (token.actor.itemTypes.effect.some(e => e.slug === "maniEF")) {
 	const effect = token.actor.itemTypes.effect.find(e => e.slug === "maniEF");
-	mm.push({ name: `${effect.name}`, level: effect.system.level.value, prepared: false, entryId: null, wand: false, scroll: false, spont: false });
+	mm.push({ name: `${effect.name}`, level: effect.system.level.value, prepared: false, entryId: null, wand: false, scroll: false, spont: false, link: effect.link });
 }
 
 if (mm.length === 0) { return ui.notifications.warn("You currently have no available means of casting Magic Missile"); }
@@ -85,7 +85,7 @@ if (mmdiag[2] === true) {
 }
 
 const mmch = mm.find(n => n.name === mmdiag[0]);
-
+console.log(mmch);
 if (mmch.entryId === null) { mmdiag[1] = 1 }
 
 const multi = parseInt(mmdiag[1]) * Math.floor((1 + mmch.level) / 2);
@@ -124,7 +124,7 @@ for (const a of fmm) {
 	const droll = new DamageRoll(dam);
 	droll.toMessage(
 		{
-			flavor: `<strong>${a.num} Magic Missile(s) targeting ${a.name}</strong><br><a class="entity-link content-link" data-pack="pf2e.spells-srd" data-id="gKKqvLohtrSJj3BM"><strong>Magic Missile</strong></a>`,
+			flavor: `<strong>${a.num} Magic Missile(s) targeting ${a.name}</strong><br>${mmch.link}`,
 			speaker: ChatMessage.getSpeaker(),
 			flags: {
 				"pf2e-target-damage": {
