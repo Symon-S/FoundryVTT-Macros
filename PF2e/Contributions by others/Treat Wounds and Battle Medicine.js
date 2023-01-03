@@ -72,6 +72,7 @@ const getRollOptions = ({ isRiskySurgery } = {}) => [
 
 /* Get DamageRoll */
 const DamageRoll = CONFIG.Dice.rolls.find(((R) => R.name === "DamageRoll"));
+const CheckRoll = CONFIG.Dice.rolls.find(((R) => R.name === "CheckRoll"));
 
 /**
 * Get the formula for healing and the success label
@@ -168,7 +169,7 @@ const rollTreatWounds = async ({
  const immunityMessage = `${target.name} is now immune to ${immunityEffect.name} for ${immunityEffect.system.duration.value} ${immunityEffect.system.duration.unit}.<br>${immunityMacroLink}`;
 
  if (assurance) {
-   const aroll = await new DamageRoll(
+   const aroll = await new CheckRoll(
      `10 + ${med.modifiers.find((m) => m.type === 'proficiency').modifier}`
    ).roll({ async: true });
    ChatMessage.create({
