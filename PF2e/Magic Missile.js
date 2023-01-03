@@ -85,7 +85,6 @@ if (mmdiag[2] === true) {
 }
 
 const mmch = mm.find(n => n.name === mmdiag[0]);
-console.log(mmch);
 if (mmch.entryId === null) { mmdiag[1] = 1 }
 
 const multi = parseInt(mmdiag[1]) * Math.floor((1 + mmch.level) / 2);
@@ -226,7 +225,6 @@ if (mmch.wand) {
 	}
 	else {
 		const w = token.actor.itemTypes.consumable.find(id => id.id === mmch.entryId);
-		console.log(w);
 		const wData = duplicate(w);
 		wData.system.charges.value--;
 		await actor.updateEmbeddedDocuments('Item', [wData]);
