@@ -22,6 +22,7 @@ async function Spellstrike()
     return ui.notifications.warn('Does not have Spellstrike.');
     }
 
+    const DamageRoll = CONFIG.Dice.rolls.find(((R) => R.name === "DamageRoll"));
     let entries = token.actor.itemTypes.spellcastingEntry.filter(r => !r.isRitual);
 
     /*Standby Spells*/
@@ -273,7 +274,7 @@ async function Spellstrike()
     }
     if(spc.slug === 'searing-light' || spc.slug === 'moonlight-ray'){
       if (game.user.targets.first().actor.traits.has('undead') || game.user.targets.first().actor.traits.has('fiend')) {
-        flavor += `[[/r ${(spc.lvl-3)*2 + 5}d6[good]]]`
+        spc.roll = await new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],(${(spc.lvl-3)*2 + 5}d6)[good]}`);
       }
     }
 
@@ -285,15 +286,71 @@ async function Spellstrike()
       if (critt === 'success') { await strike.damage({ event }); }
       if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
     }
-    if (critt === 'success' || critt === 'criticalSuccess') {
-      if (spc.roll === undefined) {
-        return await s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: true});
-      }
-      if (critt === 'criticalSuccess') {  ui.notifications.info('Spell damage will need to be doubled when applied'); }
-      if ( spc.roll !== undefined) {
-        await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
+
+    /* Chromatic Ray */
+    if(spc.slug === 'chromatic-ray' && (critt === 'success' || critt === 'criticalSuccess')) {
+      flavor = `<strong>Spellstrike</strong><br>${spc.spell.link}${flavName} (${dos})<div class="tags">${ttags}`;
+      let ds = '';
+      let dsc = '';
+      if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery')) { 
+        ds = ` + ${spc.lvl}`; 
+        dsc = ` + ${spc.lvl * 2}`
+    }
+    const chroma = [
+        {d:`{30${ds}}[fire]`,f:`<span class="tag tag_alt" data-trait="fire" data-description="PF2E.TraitDescriptionFire">Fire</span></div><hr><p class='compact-text'>1.<strong>Red</strong> (fire) The ray deals 30 fire damage to the target. Double on a Critical.</p>`,dd:`(60${dsc})[fire]`},
+        {d:`{40${ds}}[acid]`,f:`<span class="tag tag_alt" data-trait="acid" data-description="PF2E.TraitDescriptionAcid">Acid</span></div><hr><p class='compact-text'>2.<strong>Orange</strong> (acid) The ray deals 40 acid damage to the target. Double on a Critical.</p>`,dd:`(80${dsc})[acid]`},
+        {d:`(50${ds})[electricity]`,f:`<span class="tag tag_alt" data-trait="electricity" data-description="PF2E.TraitDescriptionElectricity">Electricity</span></div><hr><p class='compact-text'>3.<strong>Yellow</strong> <br>(electricity) The ray deals 50 electricity damage to the target. Double on a Critical.</p>`,dd:`(100${dsc})[electricity]`},
+        {d:`(25${ds})[poison]`,f:`<span class="tag tag_alt" data-trait="poison" data-description="PF2E.TraitDescriptionPoison">Poison</span></div><hr><p class='compact-text'>4.<strong>Green</strong> (poison) The ray deals 25 poison damage to the target, double on a Critical, and the target must succeed at a @Check[type:fortitude|dc:${spc.DC}|traits:arcane,attack,evocation,light,poison] or be @Compendium[pf2e.conditionitems.Enfeebled]{Enfeebled 1} for 1 minute (@Compendium[pf2e.conditionitems.Enfeebled]{Enfeebled 2} on a critical failure).</p>`,dd:`(50${dsc})[poison]`},
+        {f:`</div><hr><p class='compact-text'>5.<strong>Blue</strong> The ray has the effect of the @Compendium[pf2e.spells-srd.Flesh to Stone]{Flesh to Stone} spell. On a critical hit, the target is @Compendium[pf2e.conditionitems.Clumsy]{Clumsy 1} as long as it’s slowed by the flesh to stone effect.<br>@Check[type:fortitude|dc:${spc.DC}|traits:arcane,attack,evocation,light]</p>`},
+        {f:`<span class="tag tag_alt" data-trait="emotion" data-description="PF2E.TraitDescriptionEmotion">Emotion</span><span class="tag tag_alt" data-trait="incapacitation" data-description="PF2E.TraitDescriptionIncapacitation">Incapacitation</span><span class="tag tag_alt" data-trait="mental" data-description="PF2E.TraitDescriptionMental">Mental</span></div><hr><p class='compact-text'>6.<strong>Indigo</strong> (emotion, incapacitation, mental) The ray has the effect of the @Compendium[pf2e.spells-srd.Confusion]{Confusion} spell. On a critical hit, it has the effect of @Compendium[pf2e.spells-srd.Warp Mind]{Warp Mind} instead.<br>@Check[type:will|dc:${spc.DC}|traits:arcane,attack,evocation,light,emotion,incapacitation,mental]</p>`},
+        {f:`</div><hr><p class='compact-text'>7.<strong>Violet</strong> <br>The target is @Compendium[pf2e.conditionitems.Slowed]{Slowed} for 1 minute. It must also succeed at a @Check[type:will|dc:${spc.DC}|traits:arcane,attack,evocation,light] or be teleported 120 feet directly away from you (if there isn’t room for it to appear there, it appears in the nearest open space); this is a teleportation effect.</p>`},
+        {f:`</div><hr><p class='compact-text'>8.<strong>Intense Color</strong> The target is @Compendium[pf2e.conditionitems.Dazzled]{Dazzled} until the end of your next turn, or @Compendium[pf2e.conditionitems.Blinded]{Blinded} if your attack roll was a critical hit. Roll again and add the effects of another color (rerolling results of 8).</p>`},
+      ];
+    let chromaD = '1d4';
+    if (spc.lvl > 5) { 
+      chromaD = '1d8';
+      chroma[0].d = `(40${ds})[fire]`;
+      chroma[0].dd = `(80${dsc})[fire]`;
+      chroma[0].f = chroma[0].f.replace('30','40');
+      chroma[1].d = `(50${ds})[acid]`;
+      chroma[1].dd = `(100${dsc})[acid]`;
+      chroma[1].f = chroma[1].f.replace('40','50');
+      chroma[2].d = `(60${ds})[electricity]`;
+      chroma[2].dd = `(120${dsc})[electricity]`;
+      chroma[2].f = chroma[2].f.replace('50','60');
+      chroma[3].d = `(35${ds})[poison]`;
+      chroma[3].dd = `(70${dsc})[poison]`;
+      chroma[3].f = chroma[3].f.replace('25','35');
+    }
+    const chromaR = new Roll(chromaD).evaluate({async:false}).total;
+    if (chromaR < 5) { ddice = chroma[chromaR-1].dd; 
+      flavor = flavor + chroma[chromaR-1].f; 
+      spc.roll = await new DamageRoll(chroma[chromaR-1].d);
+      if (critt === "criticalSuccess") {
+        spc.roll = await new DamageRoll(chroma[chromaR-1].dd);
       }
     }
+    if (chromaR > 4 && chromaR <= 7) { flavor = flavor + chroma[chromaR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor});}
+    if (chromaR === 8) {
+      const flavor2 = flavor + chroma[chromaR-1].f;
+      await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor2});
+      if (critt === 'criticalSuccess') {
+        const chromaRR = new Roll('1d7').evaluate({async:false}).total;
+        if (chromaRR < 5) { flavor = flavor + chroma[chromaRR-1].f; spc.roll = await new DamageRoll(chroma[chromaRR-1].dd); }
+        if (chromaRR > 4) { flavor = flavor + chroma[chromaRR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor});}
+	    }
+    }
+  }
+
+      if (critt === 'success' || critt === 'criticalSuccess') {
+        if (spc.slug !== "chromatic-ray" && spc.roll === undefined) {
+          return await s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: true});
+        }
+        if (critt === 'criticalSuccess' && spc.slug !== "chromatic-ray") {  ui.notifications.info('Spell damage will need to be doubled when applied'); }
+        if ( spc.roll !== undefined) {
+          await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
+        }
+      }
 
     if ( critt === 'failure' && !spc.isAttack) { 
       return s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: true}); 
