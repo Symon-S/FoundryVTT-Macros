@@ -119,7 +119,7 @@ let expend = true;
 let targetNum = 0;
 for (const a of fmm) {
 	if (a.num === 0 || a.num === undefined) { continue; }
-	let dam = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? `(${a.num}d6 + ${a.num} + ${mmch.level})[force]` : `(${a.num}d6 + ${a.num})[force]`;
+	let dam = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? `(${a.num}d + ${a.num} + ${mmch.level})[force]` : `(${a.num}d4 + ${a.num})[force]`;
 	const droll = new DamageRoll(dam);
 	droll.toMessage(
 		{
