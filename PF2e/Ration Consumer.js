@@ -7,6 +7,7 @@ It will also fire warnings to the GM when PCs have no more rations
 
 if (!game.user.isGM) { return ui.notifications.warn("This Macro can only be used by the GM");}
 const uIds = game.users.filter(x => !x.isGM && x.active).map(i => i.id);
+if (uIds.length < 1) { return ui.notifications.warn("This Macro requires players to be logged into the game to work.") }
 const days = await Dialog.wait({
     title: "Ration Consumer",
     content: `<table><tr><th>How many days worth?</th> <th><input id ="days" type="number" autofocus onfocus="this.select()" value="1"></th></tr></table>`,
