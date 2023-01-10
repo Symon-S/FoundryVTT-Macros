@@ -2,13 +2,13 @@ if (canvas.tokens.controlled.length !== 1) { return ui.notifications.info("Pleas
 
 if ( !token.actor.itemTypes.feat.some(f => f.slug === "double-slice") ) { return ui.notifications.warn(`${token.name} does not have the Double Slice feat!`) }
 
-if ( token.actor.itemTypes.weapon.filter( h => h.isMelee && h.isHeld && h.hands === "1" && h.handsHeld === 1 ).length > 2 ) { return ui.notifications.info("To use the double slice macro, only 2 one-handed melee weapons can be equipped at a time.") }
+if ( token.actor.itemTypes.weapon.filter( h => h.isMelee && h.isHeld && h.hands === "1" && h.handsHeld === 1 && !h.system.traits.value.includes("unarmed") ).length > 2 ) { return ui.notifications.info("To use the double slice macro, only 2 one-handed melee weapons can be equipped at a time.") }
 
-if ( token.actor.itemTypes.weapon.filter( h => h.isMelee && h.isHeld && h.hands === "1" && h.handsHeld === 1  ).length < 2 ) { return ui.notifications.info("Please equip/draw 2 one-handed melee weapons.") }
+if ( token.actor.itemTypes.weapon.filter( h => h.isMelee && h.isHeld && h.hands === "1" && h.handsHeld === 1 && !h.system.traits.value.includes("unarmed") ).length < 2 ) { return ui.notifications.info("Please equip/draw 2 one-handed melee weapons.") }
 
 const DamageRoll = CONFIG.Dice.rolls.find(((R) => R.name === "DamageRoll"));
 
-let weapons = token.actor.system.actions.filter( h => h.item?.isMelee && h.item?.isHeld && h.item?.hands === "1" && h.item?.handsHeld === 1 );
+let weapons = token.actor.system.actions.filter( h => h.item?.isMelee && h.item?.isHeld && h.item?.hands === "1" && h.item?.handsHeld === 1 && !h.item?.system?.traits?.value?.includes("unarmed") );
 
 let options = ["double-slice-second"];
 let primary = weapons[0];
@@ -17,6 +17,31 @@ if ( weapons.filter( a => a.item.system.traits.value.includes("agile") ).length 
     primary = weapons.find( a => !a.item.system.traits.value.includes("agile") );
     secondary = weapons.find( a => a.item.system.traits.value.includes("agile") );
 }
+
+let map = await Dialog.wait({
+    title:"Current Multiple Attack Penalty",
+    content: `
+        <select>
+            <option value=0>${primary.variants[0].label}</option>
+            <option value=1>${primary.variants[1].label}</option>
+            <option value=2>${primary.variants[2].label}</option>
+        </select>
+    `,
+    buttons: {
+            ok: {
+                label: "Double Slice",
+                icon: "<i class='fa-solid fa-swords'></i>",
+                callback: (html) => { return html[0].querySelector("select").value }
+            },
+            cancel: {
+                label: "Cancel",
+                icon: "<i class='fa-solid fa-ban'></i>",
+            }
+    }
+},{width:250});
+
+if ( map === "cancel" ) { return; }
+map = parseInt(map);
 
 let pdos;
 function PDOS(cm) {
@@ -45,10 +70,10 @@ Hooks.on('renderChatMessage', PD);
 Hooks.on('renderChatMessage', SD);
 
 Hooks.once('renderChatMessage', PDOS);
-await primary.attack({event});
+await primary.variants[map].roll({event});
 
 Hooks.once('renderChatMessage', SDOS);
-await secondary.attack({options, event});
+await secondary.variants[map].roll({options, event});
 
 if ( (!game.modules.has('xdy-pf2e-workbench') || !game.modules.get('xdy-pf2e-workbench')?.active ) || ( game.modules.get('xdy-pf2e-workbench')?.active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) ) {
     if ( pdos === "failure" || pdos === "criticalFailure" ) {
