@@ -10,6 +10,7 @@ const DamageRoll = CONFIG.Dice.rolls.find(((R) => R.name === "DamageRoll"));
 
 let weapons = token.actor.system.actions.filter( h => h.item?.isMelee && h.item?.isHeld && h.item?.hands === "1" && h.item?.handsHeld === 1 );
 
+let options = ["double-slice-second"];
 let primary = weapons[0];
 let secondary = weapons[1];
 if ( weapons.filter( a => a.item.system.traits.value.includes("agile") ).length === 1 ) {
@@ -47,7 +48,7 @@ Hooks.once('renderChatMessage', PDOS);
 await primary.attack({event});
 
 Hooks.once('renderChatMessage', SDOS);
-await secondary.attack({event});
+await secondary.attack({options, event});
 
 if ( (!game.modules.has('xdy-pf2e-workbench') || !game.modules.get('xdy-pf2e-workbench')?.active ) || ( game.modules.get('xdy-pf2e-workbench')?.active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) ) {
     if ( pdos === "failure" || pdos === "criticalFailure" ) {
