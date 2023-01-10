@@ -19,7 +19,7 @@ if ( weapons.filter( a => a.item.system.traits.value.includes("agile") ).length 
 }
 
 let map = await Dialog.wait({
-    title:"Current Multiple Attack Penalty",
+    title:"Current MAP",
     content: `
         <select>
             <option value=0>${primary.variants[0].label}</option>
