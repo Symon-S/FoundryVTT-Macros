@@ -1,6 +1,6 @@
 if (canvas.tokens.controlled.length !== 1) { return ui.notifications.info("Please select 1 token") }
 
-if ( !token.actor.itemTypes.action.some(f => f.slug === "flurry-of-blows" || f.slug === "") ) { return ui.notifications.warn(`${token.name} does not have Flurry of Blows!`) }
+if ( !token.actor.itemTypes.action.some( f => f.slug === "flurry-of-blows" ) ) { return ui.notifications.warn(`${token.name} does not have Flurry of Blows!`) }
 
 const DamageRoll = CONFIG.Dice.rolls.find( r => r.name === "DamageRoll" );
 
