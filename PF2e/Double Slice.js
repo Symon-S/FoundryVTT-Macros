@@ -223,7 +223,6 @@ for ( const t of terms ) {
     i++;
 }
 
-let pI = 1;
 for ( p of preCombinedDamage ) {    
     if ( p.persistent ) {
     combinedDamage += `,${p.terms.join(",")}`;
