@@ -1,10 +1,10 @@
 if (canvas.tokens.controlled.length !== 1) { return ui.notifications.info("Please select 1 token") }
 
-if ( !token.actor.itemTypes.action.some( f => f.slug === "flurry-of-blows" ) ) { return ui.notifications.warn(`${token.name} does not have Flurry of Blows!`) }
+if ( !token.actor.itemTypes.action.some(f => f.slug === "flurry-of-blows" || f.slug === "") ) { return ui.notifications.warn(`${token.name} does not have Flurry of Blows!`) }
 
 const DamageRoll = CONFIG.Dice.rolls.find( r => r.name === "DamageRoll" );
 
-let weapons = token.actor.system.actions.filter( h => h.item?.isMelee && h.item?.system?.traits?.value?.includes("unarmed") );
+let weapons = token.actor.system.actions.filter( h => h.visible && h.item?.isMelee && h.item?.system?.traits?.value?.includes("unarmed") );
 
 if ( token.actor.itemTypes.effect.some( s => s.slug === "stance-monastic-archer-stance" ) && token.actor.system.actions.some( h => h.item?.isHeld && h.item?.group === "bow" )) { weapons.unshift(token.actor.system.actions.find( h => h.item?.isHeld && h.item?.group === "bow" )) }
 
