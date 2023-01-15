@@ -128,6 +128,7 @@ async function Spellstrike()
     const es_data = [
       { label : `Choose a Spell:`, type : `select`, options : spells.map(p=> p.name) },
       { label : `Weapon:`, type : `select`, options : map_weap },
+      { label : `MAP`, type: `select`, options:[0,1,2]}
     ];
         	 
     /* Run dialog and alot data */
@@ -203,7 +204,7 @@ async function Spellstrike()
 
     Hooks.once('renderChatMessage', SSDOS);
 
-    await strike.attack({ event });
+    await strike.variants[spell_choice[2]].roll({ event });
 
     const { actionTraits, spellTraits} = await spc.spell.getChatData();
     let ttags = '';
