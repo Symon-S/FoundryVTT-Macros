@@ -233,7 +233,7 @@ const rollTreatWounds = async ({
            user: game.user.id,
            type: CONST.CHAT_MESSAGE_TYPES.ROLL,
            flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
-           roll: await new DamaageRoll('1d8[slashing]').roll({ async: true }),
+           roll: await new DamageRoll('1d8[slashing]').roll({ async: true }),
            speaker: ChatMessage.getSpeaker(),
          });
        }
