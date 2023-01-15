@@ -107,7 +107,7 @@ async function Spellstrike()
     /* Get them weapons baby */
     let weapons = [];
     if (token.actor.itemTypes.feat.some(f => f.slug === 'starlit-span')) { 
-      weapons = actor.system.actions.filter(i => i.type === "strike" && i.item.isEquipped);
+      weapons = actor.system.actions.filter(i => i.visible && i.type === "strike" && i.item.isEquipped);
       weapons.forEach( (w,index) => {
         if ( w.label.includes("Thrown") || w.item.isRanged) { return; }
         if (w.item.system.traits.value.some(v => v.includes("thrown"))) {
@@ -120,7 +120,7 @@ async function Spellstrike()
       });
     }
     else { 
-      weapons = token.actor.system.actions.filter(i => i.type === "strike" && !i.item.isRanged && i.item.isEquipped && !i.item.system.traits.value.includes("ranged"));
+      weapons = token.actor.system.actions.filter(i => i.visible && i.type === "strike" && !i.item.isRanged && i.item.isEquipped && !i.item.system.traits.value.includes("ranged"));
     }
     const map_weap = weapons.map(p => p.label);
     
