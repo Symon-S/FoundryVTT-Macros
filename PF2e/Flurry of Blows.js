@@ -14,18 +14,18 @@ for ( const w of weapons ) {
 }
 
 let cWeapon = await Dialog.wait({
-    title:"Flurry Attack",
+    title:"Flurry of Blows",
     content: `
         <select id="fob1">
             ${wtcf}
         </select><br>
         <select id="fob2">
             ${wtcf}
-        </select>
+        </select><hr>
     `,
     buttons: {
             ok: {
-                label: "Flurry of Blows",
+                label: "FoB",
                 icon: "<i class='fa-solid fa-hand-fist'></i>",
                 callback: (html) => { return [html[0].querySelector("#fob1").value,html[0].querySelector("#fob2").value] }
             },
@@ -47,7 +47,7 @@ let options = [""];
 const map = await Dialog.wait({
     title:"Current MAP",
     content: `
-        <select>
+        <select autofocus>
             <option value=0>No MAP</option>
             <option value=1>MAP 1</option>
             <option value=2>MAP 2</option>
@@ -141,7 +141,7 @@ else {
             const trp = await Dialog.wait({
                 title:"Precision to remove",
                 content: `
-                    <select>
+                    <select autofocus>
                         <option value=1>${instances[1].dice.find( f => f.options.flavor === "precision" ).formula} ${p1.type}</option>
                         <option value=0>${instances[0].dice.find( f => f.options.flavor === "precision" ).formula} ${p0.type}</option>
                     </select>
