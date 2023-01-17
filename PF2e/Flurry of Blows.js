@@ -96,11 +96,14 @@ function PD(cm) {
 
 Hooks.on('renderChatMessage', PD);
 
+let map2 = map + 1;
+if( map === 2 ) { map2 = map }
+
 Hooks.once('renderChatMessage', PDOS);
 await primary.variants[map].roll({skipDialog:true, event });
 
 Hooks.once('renderChatMessage', SDOS);
-await secondary.variants[map].roll({skipDialog:true, options, event});
+await secondary.variants[map2].roll({skipDialog:true, options, event});
 
 if ( (!game.modules.has('xdy-pf2e-workbench') || !game.modules.get('xdy-pf2e-workbench')?.active ) || ( game.modules.get('xdy-pf2e-workbench')?.active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) ) {
     if ( pdos === "failure" || pdos === "criticalFailure" ) {
