@@ -199,7 +199,7 @@ else {
     let ncCombinedDamage = ""
     let flavor = `<strong>Double Slice Total Damage</strong>`
     flavor += `<hr>${cM[0].flavor}<hr>${cM[1].flavor}`
-    if ( pdos === "criticalSuccess" || sdos === "criticalSuccess" ) {
+    if ( pdos === 3 || sdos === 3 ) {
         flavor += `<hr><strong>TOP DAMAGE USED FOR CREATURES IMMUNE TO CRITICALS`
         rolls.unshift(ncCombinedDamage = await new DamageRoll(combinedDamage.replaceAll("2 * ", "")).evaluate({ async: true }));
     }
