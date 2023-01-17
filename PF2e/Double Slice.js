@@ -30,7 +30,7 @@ const map = await Dialog.wait({
     buttons: {
             ok: {
                 label: "Double Slice",
-                icon: "<i class='fa-solid fa-plus-minus'></i>",
+                icon: "<i class='fa-solid fa-swords'></i>",
                 callback: (html) => { return parseInt(html[0].querySelector("select").value) }
             },
             cancel: {
