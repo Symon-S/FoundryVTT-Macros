@@ -198,13 +198,18 @@ else {
     const rolls = [await new DamageRoll(combinedDamage).evaluate({ async: true })]
     let ncCombinedDamage = ""
     let flavor = `<strong>Double Slice Total Damage</strong>`
-    flavor += `<hr>${cM[0].flavor}<hr>${cM[1].flavor}`
+    if ( cM.length === 1 ) { flavor += `<hr>${cM[0].flavor}<hr>${cM[0].flavor}` }
+    else { flavor += `<hr>${cM[0].flavor}<hr>${cM[1].flavor}` }
     if ( pdos === 3 || sdos === 3 ) {
         flavor += `<hr><strong>TOP DAMAGE USED FOR CREATURES IMMUNE TO CRITICALS`
         rolls.unshift(ncCombinedDamage = await new DamageRoll(combinedDamage.replaceAll("2 * ", "")).evaluate({ async: true }));
     }
 
-    options = [...new Set(cM[0].flags.pf2e.context.options.concat(cM[1].flags.pf2e.context.options))];
+    if ( cM.length === 1) {
+        options = cM[0].flags.pf2e.context.options;
+    }
+    else { options = [...new Set(cM[0].flags.pf2e.context.options.concat(cM[1].flags.pf2e.context.options))]; }
+
     await ChatMessage.create({
         flags: { 
             pf2e: {
