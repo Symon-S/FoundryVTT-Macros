@@ -6,7 +6,7 @@ const DamageRoll = CONFIG.Dice.rolls.find( r => r.name === "DamageRoll" );
 
 let weapons = token.actor.system.actions.filter( h => h.visible && h.item?.isMelee && h.item?.system?.traits?.value?.includes("unarmed") );
 
-if ( token.actor.itemTypes.effect.some( s => s.slug === "stance-monastic-archer-stance" ) && token.actor.system.actions.some( h => h.item?.isHeld && h.item?.group === "bow" )) { weapons.unshift(token.actor.system.actions.find( h => h.item?.isHeld && h.item?.group === "bow" )) }
+if ( token.actor.itemTypes.effect.some( s => s.slug === "stance-monastic-archer-stance" ) && token.actor.system.actions.some( h => h.item?.isHeld && h.item?.group === "bow" && h.item?.reload === "0" )) { weapons.unshift(token.actor.system.actions.find( h => h.item?.isHeld && h.item?.group === "bow" && h.item?.reload === "0" )) }
 
 let wtcf = '';
 for ( const w of weapons ) {
@@ -228,13 +228,17 @@ else {
     const rolls = [await new DamageRoll(combinedDamage).evaluate({ async: true })]
     let ncCombinedDamage = ""
     let flavor = `<strong>Flurry of Blows Total Damage</strong>`
-    flavor += `<hr>${cM[0].flavor}<hr>${cM[1].flavor}`
+    if ( cM.length === 1 ) { flavor += `<hr>${cM[0].flavor}<hr>${cM[0].flavor}` }
+    else { flavor += `<hr>${cM[0].flavor}<hr>${cM[1].flavor}` }
     if ( pdos === 3 || sdos === 3 ) {
         flavor += `<hr><strong>TOP DAMAGE USED FOR CREATURES IMMUNE TO CRITICALS`
         rolls.unshift(ncCombinedDamage = await new DamageRoll(combinedDamage.replaceAll("2 * ", "")).evaluate({ async: true }));
     }
-    
-    options = [...new Set(cM[0].flags.pf2e.context.options.concat(cM[1].flags.pf2e.context.options))];
+    if ( cM.length === 1) {
+        options = cM[0].flags.pf2e.context.options;
+    }
+    else { options = [...new Set(cM[0].flags.pf2e.context.options.concat(cM[1].flags.pf2e.context.options))]; }
+
     await ChatMessage.create({
         flags: { 
             pf2e: {
