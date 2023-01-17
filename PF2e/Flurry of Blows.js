@@ -16,7 +16,7 @@ for ( const w of weapons ) {
 let cWeapon = await Dialog.wait({
     title:"Flurry of Blows",
     content: `
-        <select id="fob1">
+        <select id="fob1" autofocus>
             ${wtcf}
         </select><br>
         <select id="fob2">
