@@ -55,7 +55,7 @@ const map = await Dialog.wait({
     `,
     buttons: {
             ok: {
-                label: "Map",
+                label: "MAP",
                 icon: "<i class='fa-solid fa-plus-minus'></i>",
                 callback: (html) => { return parseInt(html[0].querySelector("select").value) }
             },
