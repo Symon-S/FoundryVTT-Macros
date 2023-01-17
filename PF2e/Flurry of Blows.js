@@ -1,6 +1,6 @@
 if (canvas.tokens.controlled.length !== 1) { return ui.notifications.info("Please select 1 token") }
 
-if ( !token.actor.itemTypes.action.some(f => f.slug === "flurry-of-blows") ) { return ui.notifications.warn(`${token.name} does not have Flurry of Blows action!`) }
+if ( !token.actor.itemTypes.action.some(f => f.slug === "flurry-of-blows") && !token.actor.itemTypes.feat.some(f => f.slug === "flurry-of-blows") ) { return ui.notifications.warn(`${token.name} does not have Flurry of Blows!`) }
 
 const DamageRoll = CONFIG.Dice.rolls.find( r => r.name === "DamageRoll" );
 
@@ -81,8 +81,7 @@ function PD(cm) {
 
 Hooks.on('preCreateChatMessage', PD);
 
-let map2 = map + 1;
-if( map === 2 ) { map2 = map }
+const map2 = map === 2 ? map : map + 1;
 
 const pdos = (await primary.variants[map].roll({skipDialog:true, event })).degreeOfSuccess;
 
