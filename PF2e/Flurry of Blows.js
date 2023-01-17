@@ -51,7 +51,7 @@ const map = await Dialog.wait({
             <option value=0>No MAP</option>
             <option value=1>MAP 1</option>
             <option value=2>MAP 2</option>
-        </select>
+        </select><hr>
     `,
     buttons: {
             ok: {
@@ -144,7 +144,7 @@ else {
                     <select autofocus>
                         <option value=1>${instances[1].dice.find( f => f.options.flavor === "precision" ).formula} ${p1.type}</option>
                         <option value=0>${instances[0].dice.find( f => f.options.flavor === "precision" ).formula} ${p0.type}</option>
-                    </select>
+                    </select><hr>
                 `,
                 buttons: {
                     ok: {
