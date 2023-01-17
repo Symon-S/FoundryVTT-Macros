@@ -97,6 +97,8 @@ if (canvas.tokens.controlled.length !== 1){
                     }
                 }
             }
+            // remove duplicate skills
+            primaryskills = [...new Set(primaryskills)];
 
             if(level>20) {
                 dc = level * 2;
