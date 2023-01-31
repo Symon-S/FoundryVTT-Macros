@@ -11,6 +11,8 @@ Further modified by MrVauxs to be usable with and without animations.
 And again by MrVauxs to include PF2e Target Damage compatibility.
 */
 
+if (!token) { return ui.notifications.warn("You must have a token selected") }
+
 const mani = ["wand-of-manifold-missiles-1st-level-spell", "wand-of-manifold-missiles-3rd-level-spell", "wand-of-manifold-missiles-5th-level-spell", "wand-of-manifold-missiles-7th-level-spell"]
 if (!token.actor.itemTypes.spell.some(s => s.slug === 'magic-missile') && !token.actor.itemTypes.consumable.some(s => s.system.spell?.system?.slug === 'magic-missile') && !token.actor.itemTypes.equipment.some(s => mani.includes(s.slug))) { 
 	return ui.notifications.error('You do not have Magic Missile') 
@@ -18,7 +20,7 @@ if (!token.actor.itemTypes.spell.some(s => s.slug === 'magic-missile') && !token
 if (game.user.targets.ids === undefined || game.user.targets.ids.length === 0) { return ui.notifications.error('At least 1 target is required'); }
 
 const DamageRoll = CONFIG.Dice.rolls.find(((R) => R.name === "DamageRoll"));
-const mmE = token.actor.itemTypes.spellcastingEntry.filter(m => m.spells.some(x => x.slug === 'magic-missile') === true);
+const mmE = token.actor.itemTypes.spellcastingEntry.filter(m => m.spells?.some(x => x.slug === 'magic-missile'));
 
 const mmIds = [];
 for (const id of token.actor.itemTypes.spell) {
