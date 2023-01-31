@@ -123,14 +123,8 @@ async function Spellsling()
       }
 
       let pers;
-      let critt;
-      function SSDOS(cm) {
-        if (cm.user.id === game.userId && cm.isCheckRoll) { critt = cm.flags.pf2e.context.outcome; }
-      }
 
-      Hooks.once('renderChatMessage', SSDOS);
-
-      await strike.attack({ event });
+      const critt = (await strike.attack({ event })).degreeOfSuccess;
 
       const { actionTraits, spellTraits} = await spc.spell.getChatData();
       let ttags = '';
@@ -145,8 +139,8 @@ async function Spellsling()
       let dos;
       let hit = false
 
-      if (critt === 'success') { dos = 'Success'; hit = true }
-      if (critt === 'criticalSuccess') { dos = 'Critical Success'; hit = true}
+      if (critt === 2) { dos = 'Success'; hit = true }
+      if (critt === 3) { dos = 'Critical Success'; hit = true}
       
       // Automated Animations insertion by MrVauxs
       if (game.modules.get("autoanimations")?.active) {
@@ -186,15 +180,15 @@ async function Spellsling()
           splash = `4`
         }     
         flavor += `[[/r ${splash}[splash,acid]]] splash`
-        if (critt === 'criticalSuccess'){
+        if (critt === 3){
           flavor += `<br>[[/r ${pers}[persistent,acid]]]`
         }
       }
-      if(spc.slug === 'produce-flame' && critt === 'criticalSuccess') {
+      if(spc.slug === 'produce-flame' && critt === 3) {
         pers = Math.ceil(actor.level / 2) + "d4";
         flavor += `[[/r ${pers}[persistent,fire]]]`
       }
-      if(spc.slug === 'gouging-claw' && critt === 'criticalSuccess') {
+      if(spc.slug === 'gouging-claw' && critt === 3) {
         pers = Math.ceil(actor.level / 2) + "d4";
         flavor += `[[/r ${pers}[persistent,bleed]]]`
       }
@@ -204,16 +198,16 @@ async function Spellsling()
         }
       }
       if (game.modules.get('xdy-pf2e-workbench')?.active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
-        if (critt === 'success') { await strike.damage({ event }); }
-        if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
+        if (critt === 2) { await strike.damage({ event }); }
+        if (critt === 3){ await strike.critical({ event }); }
        }
       if(!game.modules.has('xdy-pf2e-workbench') || !game.modules.get('xdy-pf2e-workbench')?.active) { 
-        if (critt === 'success') { await strike.damage({ event }); }
-        if (critt === 'criticalSuccess'){ await strike.critical({ event }); }
+        if (critt === 2) { await strike.damage({ event }); }
+        if (critt === 3){ await strike.critical({ event }); }
       }
 
       /* Chromatic Ray */
-      if(spc.slug === 'chromatic-ray' && (critt === 'success' || critt === 'criticalSuccess')) {
+      if(spc.slug === 'chromatic-ray' && critt >= 2) {
       flavor = `<strong>Spellsling</strong><br>${spc.spell.link}${flavName} (${dos})<div class="tags">${ttags}`;
       let ds = '';
       let dsc = '';
@@ -251,7 +245,7 @@ async function Spellsling()
       if (chromaR < 5) { ddice = chroma[chromaR-1].dd; 
         flavor = flavor + chroma[chromaR-1].f; 
         spc.roll = await new DamageRoll(chroma[chromaR-1].d);
-        if (critt === "criticalSuccess") {
+        if (critt === 3) {
             spc.roll = await new DamageRoll(chroma[chromaR-1].dd);
         }
       }
@@ -259,7 +253,7 @@ async function Spellsling()
       if (chromaR === 8) {
         const flavor2 = flavor + chroma[chromaR-1].f;
         await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor2});
-        if (critt === 'criticalSuccess') {
+        if (critt === 3) {
           const chromaRR = new Roll('1d7').evaluate({async:false}).total;
           if (chromaRR < 5) { flavor = flavor + chroma[chromaRR-1].f; spc.roll = await new DamageRoll(chroma[chromaRR-1].dd); }
           if (chromaRR > 4) { flavor = flavor + chroma[chromaRR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor});}
@@ -267,11 +261,11 @@ async function Spellsling()
       }
     }
 
-      if (critt === 'success' || critt === 'criticalSuccess') {
+      if (critt >= 2) {
         if (spc.slug !== "chromatic-ray" && spc.roll === undefined) {
           return await s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: true});
         }
-        if (critt === 'criticalSuccess' && spc.slug !== "chromatic-ray") {  ui.notifications.info('Spell damage will need to be doubled when applied'); }
+        if (critt === 3 && spc.slug !== "chromatic-ray") {  ui.notifications.info('Spell damage will need to be doubled when applied'); }
         if ( spc.roll !== undefined) {
           await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
         }
