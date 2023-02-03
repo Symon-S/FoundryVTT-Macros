@@ -8,7 +8,7 @@ let weapons = token.actor.system.actions.filter( h => h.visible && h.item?.isMel
 
 if ( token.actor.itemTypes.effect.some( s => s.slug === "stance-monastic-archer-stance" ) && token.actor.system.actions.some( h => h.item?.isHeld && h.item?.group === "bow" && h.item?.reload === "0" ) ) { weapons.unshift( token.actor.system.actions.find( h => h.item?.isHeld && h.item?.group === "bow" && h.item?.reload === "0" ) ) }
 
-if ( token.actor.itemTypes.feat.some( s => s.slug === "monastic-weaponry" ) && token.actor.system.actions.some( h => h.item?.isHeld && h.item?.system?.traits?.value.includes("monk") ) ) { weapons = weapons.concat( token.actor.system.actions.filter( h => h.item?.isHeld && h.ready && h.item?.system?.traits?.value.includes("monk") ) ) }
+if ( token.actor.itemTypes.feat.some( s => s.slug === "monastic-weaponry" ) && token.actor.system.actions.some( h => h.item?.isHeld && h.item?.system?.traits?.value.includes("monk") ) ) { weapons = token.actor.system.actions.filter( h => h.item?.isHeld && h.ready && h.item?.system?.traits?.value.includes("monk") ).concat(weapons) }
 
 let wtcf = '';
 for ( const w of weapons ) {
