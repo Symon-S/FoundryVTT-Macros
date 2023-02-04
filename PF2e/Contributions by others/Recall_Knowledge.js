@@ -1,6 +1,6 @@
 /*
-Based on the macro by bipedalshark and WesBelmont.
-updated by darkim
+Based on the macro by bipedalshark and WesBelmont and darkim.
+updated by Allalinor
 
 Recall Knowledge
 This macro will roll several knowledge checks if no target is selected.
@@ -11,6 +11,18 @@ Limitations:
 * Does not handle assurance.
 * Does not handle things like bardic knowledge.
 */
+
+/**
+* Global d20 roll used for all skills.
+*/
+let globalroll = await new Roll("1d20").roll({ async: true }); 
+
+   
+            const rollColor = {
+                20: "green",
+                1: "red"
+            }[globalroll.terms[0].results[0].result] ?? "black";
+
 
 /**
 * Get lore skills from current actor
@@ -49,24 +61,34 @@ if (canvas.tokens.controlled.length !== 1){
         var my_string = ``
         for (primaryskill of SKILL_OPTIONS) {
             const coreSkill = token.actor.system.skills[primaryskill];
-            const coreRoll = await new Roll(
-                `1d20 + ${coreSkill.totalModifier}`
-            ).roll({ async: true });
-            const rollColor = {
-                20: "green",
-                1: "red"
-            }[coreRoll.terms[0].results[0].result] ?? "black";
+            const coreRoll = Number(globalroll.total) + Number(coreSkill.totalModifier);
 
-            my_string += `<br>${
-                coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)
-                }+${coreSkill.totalModifier} <span style="color: ${rollColor}">[[${coreRoll.total}]]</span>`
+            const rankColor = {
+                untrained: "#443730",
+                trained: "#171f69",
+                expert: "#3c005e",
+                master: "#5e4000",
+                legendary: "#5e0000",
+            }[coreSkill._modifiers[1].label.toLowerCase()];
+
+            my_string += `<tr><th>${coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)}</th>
+                          <th class="tags"><div class="tag" style="background-color: ${rankColor}; white-space:nowrap">${coreSkill._modifiers[1].label}</th>
+                          <th>${coreSkill.totalModifier}</th>
+                          <th><span style="color: ${rollColor}">[[${coreRoll}]]</span></th></tr>`
         } 
     }
 
     await ChatMessage.create({
         user: game.userId,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-        content: `<strong>Recall Knowledge Roll:</strong>
+        content: `<strong>Recall Knowledge</strong>
+        <br><strong>Roll: </strong><span style="color: ${rollColor}">[[${globalroll.total}]]</span>
+        <table>
+        <tr>
+        <th>Skill</th>
+        <th>Prof</th>
+        <th>Mod</th>
+        <th>Result</th>
         ${my_string}`,
         whisper: game.users.contents.flatMap((user) => (user.isGM ? user.id : [])),
         visible: false,
@@ -80,6 +102,7 @@ if (canvas.tokens.controlled.length !== 1){
     for (const token of canvas.tokens.controlled) {
         const LORE_SKILL_SLUGS = getLoreSkillsSlugs(token);
         let my_string = ``;
+        let my_string2 =``;
  
         for(let target of game.user.targets){
             let targetActor = target.actor;
@@ -126,6 +149,7 @@ if (canvas.tokens.controlled.length !== 1){
             my_string += `<br><strong>vs. ${targetActor.name}</strong><table>
                 <tr>
                     <td>DCs</td>
+                    <td>Total</td>
                     <td>1st: <strong>${dcs[0]}</strong></td>
                     <td>2nd: <strong>${dcs[1]}</strong></td>
                     <td>3rd: <strong>${dcs[2]}</strong></td>
@@ -133,23 +157,32 @@ if (canvas.tokens.controlled.length !== 1){
                 </tr>`;
             for (primaryskill of primaryskills) {
                 const coreSkill = token.actor.system.skills[primaryskill];
-                const coreRoll = await new Roll(
-                    `1d20 + ${coreSkill.totalModifier}`
-                ).roll({ async: true });
+                const coreRoll = Number(globalroll.total) + Number(coreSkill.totalModifier);
 
-                const rollColor = {
-                    20: "green",
-                    1: "red"
-                }[coreRoll.terms[0].results[0].result] ?? "black";
+                const rankColor = {
+                    untrained: "#443730",
+                    trained: "#171f69",
+                    expert: "#3c005e",
+                    master: "#5e4000",
+                    legendary: "#5e0000",
+                }[coreSkill._modifiers[1].label.toLowerCase()];
 
                 my_string += `<tr>
-                <td>${coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1,5)
-                    }+${coreSkill.totalModifier} <span style="color: ${rollColor}">[[${coreRoll.total}]]</span></td>`
+                    <td><label title="${coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)} (${coreSkill._modifiers[1].label}) Roll: ${globalroll.total} + ${coreSkill.totalModifier}">${coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1,5)}</label></td>
+                <th><span style="color: ${rollColor}">[[${coreRoll}]]</span></th> 
+                `;
+
+                my_string2 += `<tr>
+                <th>${coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)}</th>
+                <th class="tags"><div class="tag" style="background-color: ${rankColor}; white-space:nowrap">${coreSkill._modifiers[1].label}</th>
+                <th>${coreSkill.totalModifier}</th> 
+                <th><span style="color: ${rollColor}">[[${coreRoll}]]</span></th></tr>`;
+
                 for (realDc of dcs) {
                     if (!isNaN(realDc)) {
-                        const atot = coreRoll.total - realDc;
+                        const atot = coreRoll - realDc;
                         let success = atot >= 10 ? 3 : atot >= 0 ? 2 : atot <= -10 ? 0 : 1;
-                        success += (coreRoll.terms[0].results[0].result === 1) ? -1 : (coreRoll.terms[0].results[0].result === 20) ? 1 : 0;
+                        success += (globalroll.total === 1) ? -1 : (globalroll.total === 20) ? 1 : 0;
                         success = Math.min(Math.max(success, 0), 3)
 
                         const outcome = {
@@ -206,7 +239,7 @@ if (canvas.tokens.controlled.length !== 1){
             // my_string += `<br><strong>Lore Skills</strong><br><strong>Unspecific:</strong> 1st: DC ${lore_dcs[1]}; 2nd: DC ${lore_dcs[2]}; 3rd: DC ${lore_dcs[3]}; 4th: DC ${lore_dcs[4]}; 5th: DC ${lore_dcs[5]}`;
             my_string += `<table>
                 <tr>
-                    <th>Lore Skills DCs</th>
+                    <th>Lore Skill DCs</th>
                     <th>1st</th>
                     <th>2nd</th>
                     <th>3rd</th>
@@ -233,25 +266,40 @@ if (canvas.tokens.controlled.length !== 1){
                     <td>${lore_dcs[5]}</td>
                 </tr>
             </table>`;
+
             for (loreSKillSlug of LORE_SKILL_SLUGS) {
                 const loreSkill = token.actor.system.skills[loreSKillSlug];
-                const loreRoll = await new Roll(
-                    `1d20 + ${loreSkill.totalModifier}`
-                ).roll({ async: true });
+                const loreRoll = Number(globalroll.total) + Number(loreSkill.totalModifier);
 
-                const rollColor = {
-                    20: "green",
-                    1: "red"
-                }[loreRoll.terms[0].results[0].result] ?? "black";                
-                my_string += `${loreSkill.label}+${loreSkill.totalModifier} <span style="color: ${rollColor}">[[${loreRoll.total}]]</span><br>`;
+                const rankColor = {
+                    untrained: "#443730",
+                    trained: "#171f69",
+                    expert: "#3c005e",
+                    master: "#5e4000",
+                    legendary: "#5e0000",
+                }[loreSkill._modifiers[1].label.toLowerCase()];
+
+                my_string += `<table>
+                <tr>
+                <th>Skill</th>
+                <th>Prof</th>
+                <th>Mod</th>
+                <th>Result</th>`
+
+                my_string += `<tr><td>${loreSkill.label}</td>
+                               <td class="tags"><div class="tag" style="background-color: ${rankColor}; white-space:nowrap">${loreSkill._modifiers[1].label}</td>
+                               <td>${loreSkill.totalModifier}</td>
+                               <td><span style="color: ${rollColor}">[[${loreRoll}]]</span></td>`;    
             }
+            my_string += `</table>`
         }
 
         await ChatMessage.create({
             user: game.userId,
             type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-            content: `<strong>Recall Knowledge Roll:</strong>
-            ${my_string}`,
+            content: `<strong>Recall Knowledge Roll: </strong><span style="color: ${rollColor}">[[${globalroll.total}]]</span>
+            ${my_string}
+            `,
             visible: false,
             whisper: game.users.contents.flatMap((user) => (user.isGM ? user.id : [])),
             blind: true,
