@@ -18,58 +18,38 @@ const showIcons = true;
 if (!token) {
     ui.notifications.error("No token selected!");
 } else {
-    treatWoundsEffect();
+    main();
 }
 
 function CheckFeat(slug, healer) {
     return healer.itemTypes.feat.some((i) => i.slug === slug);
 }
 
-function treatWoundsEffect() {
-    let playersNames = canvas.tokens.placeables.filter(pc => pc.actor?.hasPlayerOwner && pc.actor.type === "character" && (pc.actor.data.data.skills['med'].rank > 0 || pc.actor.itemTypes.feat.some(x => x.slug === 'natural-medicine'))).map(pc => pc.actor.data.name);
-    let playerNameList = '';
-    let immunityConferer = game.messages.contents.filter(m => m.data.flavor?.includes("immune to Treat Wounds")).pop().actor?.data.name;
-    playersNames.map((el) => {
-        playerNameList += `<option value="${el}"${immunityConferer===el?` selected`:``}>${el}</option>`;
-    });
+async function main() {
+    const message = game.messages.contents.reverse().find( m => m.flags.treat_wounds_battle_medicine?.id === token.id);
+    if (message === undefined) {
+        ui.notifications.info("Wrong token selected!");
+    } else {
+        const twEffect = (await fromUuid(tw_UUID)).toObject();
+        twEffect.data.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
+        twEffect.flags.core ??= {};
+        twEffect.flags.core.sourceId = tw_UUID;
 
-    let template = `
-  <p>Character performing Treat Wounds: <select id="playerName">${playerNameList}</select></p> 
-  `;
+        const applicator = game.actors.get(message.flags.treat_wounds_battle_medicine.healerId);
 
-    new Dialog({
-        title: "Treat Wounds Tracking",
-        content: template,
-        buttons: {
-            ok: {
-                label: "Apply",
-                callback: (html) => {
-                    main(html);
-                },
-            },
-            cancel: {
-                label: "Cancel",
-            },
-        },
-    }).render(true);
-}
+        twEffect.name = "Treat Wounds";
+        const useContinualRecovery = CheckFeat('continual-recovery', applicator);
 
-async function main(html) {
+        if (useContinualRecovery) {
+            twEffect.data.duration.unit = "minutes";
+            twEffect.data.duration.value = 10;
+        }
 
-    const twEffect = (await fromUuid(tw_UUID)).toObject();
-    twEffect.data.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
-    twEffect.flags.core ??= {};
-    twEffect.flags.core.sourceId = tw_UUID;
+        if ( message.flags.treat_wounds_battle_medicine.dos >= 2 && token.actor.hasCondition("wounded") ) { 
+            await token.actor.toggleCondition("wounded")
+        }
 
-    const applicator = game.actors.getName(html.find("#playerName")[0].value);
-    twEffect.name = "Treat Wounds";
-    const useContinualRecovery = CheckFeat('continual-recovery', applicator);
-
-    if (useContinualRecovery) {
-        twEffect.data.duration.unit = "minutes";
-        twEffect.data.duration.value = 10;
+        await token.actor.createEmbeddedDocuments("Item", [twEffect]);
+        ui.notifications.info(token.actor.name + " is now immune to Treat Wounds for " + twEffect.data.duration.value + " " + twEffect.data.duration.unit + ".");
     }
-
-    await token.actor.createEmbeddedDocuments("Item", [twEffect]);
-    ui.notifications.info(token.actor.name + " is now immune to Treat Wounds for " + twEffect.data.duration.value + " " + twEffect.data.duration.unit + ".");
 }
