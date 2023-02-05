@@ -21,59 +21,35 @@ const showIcons = true;
 if (!token) {
     ui.notifications.error("No token selected!");
 } else {
-    battlemedicineEffect();
+    main();
 }
 
 function CheckFeat(slug, healer) {
     return healer.itemTypes.feat.some((i) => i.slug === slug);
 }
 
-function battlemedicineEffect() {
-    let playersNames = canvas.tokens.placeables.filter(pc => pc.actor?.hasPlayerOwner && pc.actor.type === "character" && pc.actor.itemTypes.feat.some(x => x.slug === 'battle-medicine')).map(pc => pc.actor.name);
-    let playerNameList = '';
-    let immunityConferer = game.messages.contents.filter(m => m.flavor?.includes("immune to Battle Medicine")).pop().actor?.name;
-    playersNames.map((el) => {
-        playerNameList += `<option value="${el}"${immunityConferer===el?` selected`:``}>${el}</option>`;
-    });
-
-    let template = `
-  <p>Character performing Battle Medicine: <select id="playerName">${playerNameList}</select></p> 
-  `;
-
-    new Dialog({
-        title: "Battle Medicine Tracking",
-        content: template,
-        buttons: {
-            ok: {
-                label: "Apply",
-                callback: (html) => {
-                    main(html);
-                },
-            },
-            cancel: {
-                label: "Cancel",
-            },
-        },
-    }).render(true);
-}
-
 async function main(html) {
+    const message = game.messages.contents.reverse().find( m => m.flags.treat_wounds_battle_medicine?.id === token.id);
+    if (message === undefined) {
+        ui.notifications.info("Wrong token selected!");
+    } else {
+        const bmEffect = (await fromUuid(bm_UUID)).toObject();
+        bmEffect.system.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
+        bmEffect.flags.core ??= {};
+        bmEffect.flags.core.sourceId = bm_UUID;
 
-    const bmEffect = (await fromUuid(bm_UUID)).toObject();
-    bmEffect.system.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
-    bmEffect.flags.core ??= {};
-    bmEffect.flags.core.sourceId = bm_UUID;
+        const applicator = game.actors.get(message.flags.treat_wounds_battle_medicine.healerId);
 
-    const applicator = game.actors.getName(html.find("#playerName")[0].value);
-    bmEffect.name = "Battle Medicine by " + applicator.name;
-    bmEffect.img = applicator.img;
-    const isgodless = CheckFeat('godless-healing', token.actor); //godless healing affects the patient, not the healer
-    const isForensic = CheckFeat('forensic-medicine-methodology', applicator);
+        bmEffect.name = "Battle Medicine by " + applicator.name;
+        bmEffect.img = applicator.img;
+        const isgodless = CheckFeat('godless-healing', token.actor); //godless healing affects the patient, not the healer
+        const isForensic = CheckFeat('forensic-medicine-methodology', applicator);
 
-    if (isForensic || isgodless) {
-        bmEffect.system.duration.unit = "hours";
+        if (isForensic || isgodless) {
+            bmEffect.system.duration.unit = "hours";
+        }
+
+        await token.actor.createEmbeddedDocuments("Item", [bmEffect]);
+        ui.notifications.info(token.actor.name + " is now immune to Battle Medicine by " + applicator.name);
     }
-
-    await token.actor.createEmbeddedDocuments("Item", [bmEffect]);
-    ui.notifications.info(token.actor.name + " is now immune to Battle Medicine by " + applicator.name);
 }

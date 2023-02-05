@@ -166,7 +166,7 @@ const rollTreatWounds = async ({
    };
  }
  const bonusString = bonus > 0 ? ` + ${bonus}` : '';
- const immunityMessage = `${target.name} is now immune to ${immunityEffect.name} for ${immunityEffect.system.duration.value} ${immunityEffect.system.duration.unit}.<br>${immunityMacroLink}`;
+ const immunityMessage = `<strong>${target.name}</strong> is now immune to ${immunityEffect.name} for ${immunityEffect.system.duration.value} ${immunityEffect.system.duration.unit}.<br>${immunityMacroLink}`;
 
  if (assurance) {
    const aroll = await new CheckRoll(
@@ -177,10 +177,11 @@ const rollTreatWounds = async ({
      type: CONST.CHAT_MESSAGE_TYPES.ROLL,
      flavor: `<strong>Assurance Roll: ${
        med.label[0].toUpperCase() + med.label.substring(1)
-     }</strong> vs DC ${DC}<br><small>Do not apply any other bonuses, penalties, or modifiers</small><br>${immunityMessage}`,
+     }</strong> vs DC ${DC}<br><small>Do not apply any other bonuses, penalties, or modifiers</small><br>`,
      roll: aroll,
      speaker: ChatMessage.getSpeaker(),
    });
+
    const atot = aroll.total - DC;
 
    const success = atot >= 10 ? 3 : atot >= 0 ? 2 : atot <= -10 ? 0 : 1;
@@ -215,6 +216,22 @@ const rollTreatWounds = async ({
        speaker: ChatMessage.getSpeaker(),
      });
    }
+   ChatMessage.create({
+        user: game.user.id,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+        flavor: `${immunityMessage}`,
+        whisper: ChatMessage.getWhisperRecipients(`${target.name}`),
+        visible: false,
+        blind: true,
+        speaker: ChatMessage.getSpeaker(),
+        flags: {
+          "treat_wounds_battle_medicine": {
+            id: target.id,
+            dos: success,
+            healerId: token.actor.id
+          }
+        }
+    });
  } else {
    med.check.roll({
      dc: dc,
@@ -251,10 +268,20 @@ const rollTreatWounds = async ({
          });
        }
        ChatMessage.create({
-         user: game.user.id,
-         type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-         flavor: `${immunityMessage}`,
-         speaker: ChatMessage.getSpeaker(),
+        user: game.user.id,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+        flavor: `${immunityMessage}`,
+        whisper: ChatMessage.getWhisperRecipients(`${target.name}`),
+        visible: false,
+        blind: true,
+        speaker: ChatMessage.getSpeaker(),
+        flags: {
+          "treat_wounds_battle_medicine": {
+            id: target.id,
+            dos: roll.options.degreeOfSuccess,
+            healerId: token.actor.id
+          }
+        }
        });
      },
    });
