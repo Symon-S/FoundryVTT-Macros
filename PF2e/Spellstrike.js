@@ -80,8 +80,9 @@ async function Spellstrike()
           if(spellData.isFocusPool && !spa.spell.isCantrip && token.actor.system.resources.focus.value === 0){ continue; }
           let level = `lv${sp.level}`
           const name = spa.spell.name;
-          const spRD = spa.spell.getRollData({castLevel: spa.spell.isCantrip ? Math.ceil(actor.level/2) : sp.level});
-          const roll = spRD.item.damage?.roll;
+          const spRD = await spa.spell.getRollData({castLevel: spa.spell.isCantrip ? Math.ceil(actor.level/2) : sp.level});
+          const damage = await spRD.item.getDamage() ?? false;
+          const roll = damage ? damage.template.damage.roll : undefined;
           if(sp.isCantrip) { level = `[Cantrip]`}
 	        const sname = `${name} ${level} (${e.name})`;
           let isAttack = false;
@@ -149,7 +150,8 @@ async function Spellstrike()
       if ( sbsp.lvl > spc.lvl ) { return ui.notifications.warn(`The chosen spell level is below the base level of your standby spell ${sbsp.name}, please try again.`); }
       sbsp.lvl = spc.lvl;
       sbsp.data = sbsp.spell.getRollData({castLevel: sbsp.lvl});
-      sbsp.roll = sbsp.data.item.damage?.roll;
+      const damage = await sbsp.data.item.getDamage() ?? false;
+      sbsp.roll = damage ? damage.template.damage.roll : undefined;
       sbsp.sEId = spc.sEId;
       sbsp.index = spc.index;
       spc = sbsp;
@@ -190,8 +192,8 @@ async function Spellstrike()
       let variant = spc.spell.loadVariant({castLevel:spc.lvl, overlayIds:[vrId]});
       spc.spell = variant;
       // Re-calculate the damage formula for the spell.
-      let spRD = await variant.getRollData({castLevel:spc.lvl});
-      const roll = spRD.item.damage?.roll;
+      const damage = await variant.getDamage() ?? false;
+      const roll = damage ? damage.template.damage.roll : undefined;
       // Overwrite the chosen spell's damage formula
       spc.roll = roll;
     }  
@@ -199,7 +201,6 @@ async function Spellstrike()
     let pers;
    
     const critt = (await strike.variants[spell_choice[2]].roll({ event })).degreeOfSuccess;
-    console.log(critt);
 
     const { actionTraits, spellTraits} = await spc.spell.getChatData();
     let ttags = '';
@@ -234,7 +235,7 @@ async function Spellstrike()
     /* Acid Splash */
     if(spc.slug === 'acid-splash') {
       let pers = 0;
-      spc.roll = spc.spell.loadVariant({castLevel:Math.ceil(actor.level / 2)}).damage.roll;
+      spc.roll = (await (await spc.spell.loadVariant({castLevel:Math.ceil(actor.level / 2)})).getDamage()).template.damage.roll;
       if (actor.level < 5) {
         pers = 1;
         splash = '1'
@@ -339,7 +340,7 @@ async function Spellstrike()
   }
 
       if (critt >= 2 ) {
-        if (spc.slug !== "chromatic-ray" && spc.roll === undefined) {
+        if (spc.slug !== "chromatic-ray" && ( spc.roll === undefined || !spc.isAttack ) ) {
           return await s_entry.cast(spc.spell,{slot: spc.index,level: spc.lvl,message: true});
         }
         if (critt === 3 && spc.slug !== "chromatic-ray") {  ui.notifications.info('Spell damage will need to be doubled when applied'); }
