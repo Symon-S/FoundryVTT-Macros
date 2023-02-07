@@ -117,7 +117,8 @@ async function Spellsling()
         let variant = spc.spell.loadVariant({castLevel:spc.lvl, overlayIds:[vrId]});
         spc.spell = variant;
         // Re-calculate the damage formula for the spell.
-        const roll = (await variant.getDamage()).template.damage.roll ?? undefined;
+        const damage = await variant.getDamage() ?? false;
+        const roll = damage ? damage.template.damage.roll : undefined;
         // Overwrite the chosen spell's damage formula
         spc.roll = roll;
       }
