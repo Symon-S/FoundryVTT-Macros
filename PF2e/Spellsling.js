@@ -40,7 +40,8 @@ async function Spellsling()
             let level = `lv${sp.level}`
             const name = spa.spell.name;
             const spRD = spa.spell.getRollData({castLevel: spa.spell.isCantrip ? Math.ceil(actor.level/2) : sp.level});
-            const roll = spRD.item.damage?.roll;
+            const damage = await spRD.item.getDamage() ?? false;
+            const roll = damage ? damage.template.damage.roll : undefined;
             if(sp.isCantrip) { level = `[Cantrip]`}
 	    const sname = `${name} ${level} (${e.name})`;
             let isAttack = false;
@@ -116,8 +117,7 @@ async function Spellsling()
         let variant = spc.spell.loadVariant({castLevel:spc.lvl, overlayIds:[vrId]});
         spc.spell = variant;
         // Re-calculate the damage formula for the spell.
-        let spRD = await variant.getRollData({castLevel:spc.lvl});
-        const roll = spRD.item.damage?.roll;
+        const roll = (await variant.getDamage()).template.damage.roll ?? undefined;
         // Overwrite the chosen spell's damage formula
         spc.roll = roll;
       }
@@ -158,7 +158,7 @@ async function Spellsling()
       /* Acid Splash */
       if(spc.slug === 'acid-splash') {
         let pers = 0;
-        spc.roll = spc.spell.loadVariant({castLevel:Math.ceil(actor.level / 2)}).damage.roll;
+        spc.roll = (await (await spc.spell.loadVariant({castLevel:Math.ceil(actor.level / 2)})).getDamage()).template.damage.roll;
         if (actor.level < 5) {
           pers = 1;
           splash = '1'
