@@ -160,7 +160,6 @@ async function Eldritch_shot()
       if(spc.slug === 'acid-splash') {
         let pers = 0;
         spc.roll = (await (await spc.spell.loadVariant({castLevel:Math.ceil(actor.level / 2)})).getDamage()).template.damage.roll;
-        console.log(spc.roll);
         if (actor.level < 5) {
           pers = 1;
           splash = '1'
