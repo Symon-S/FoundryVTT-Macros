@@ -17,7 +17,7 @@ for ( const w of weapons ) {
     wtcf += `<option value=${w.item.id}>${w.item.name}</option>`
 }
 
-let cWeapon = await Dialog.wait({
+const { cWeapon, bypass } = await Dialog.wait({
     title:"Flurry of Blows",
     content: `
         <select id="fob1" autofocus>
@@ -25,13 +25,18 @@ let cWeapon = await Dialog.wait({
         </select><br>
         <select id="fob2">
             ${wtcf}
-        </select><hr>
+        </select>
+        <hr>
+        <div>
+        <label><input type="checkbox" id="cb1" style="width: 15px;vertical-align: center">Bypass strikes? (rerolled a strike with a Hero Point)</label>
+        </div>
+        <hr>
     `,
     buttons: {
             ok: {
                 label: "FoB",
                 icon: "<i class='fa-solid fa-hand-fist'></i>",
-                callback: (html) => { return [html[0].querySelector("#fob1").value,html[0].querySelector("#fob2").value] }
+                callback: (html) => { return { cWeapon: [html[0].querySelector("#fob1").value,html[0].querySelector("#fob2").value], bypass: html[0].querySelector("#cb1").checked } }
             },
             cancel: {
                 label: "Cancel",
@@ -41,14 +46,46 @@ let cWeapon = await Dialog.wait({
     default: "ok"
 },{width:"auto"});
 
-if ( cWeapon === "cancel" ) { return; }
+if ( cWeapon === undefined ) { return; }
 
-let primary = weapons.find( w => w.item.id === cWeapon[0] );
-let secondary = weapons.find( w => w.item.id === cWeapon[1] );
+const primary = weapons.find( w => w.item.id === cWeapon[0] );
+const secondary = weapons.find( w => w.item.id === cWeapon[1] );
 
 let options = token.actor.itemTypes.feat.some(s => s.slug === "stunning-fist") ? ["stunning-fist"] : [];
 
-const map = await Dialog.wait({
+const map = bypass ? await Dialog.wait({
+    title:"Degree of Success",
+    content: `
+        <label>
+        <select id="dos1" autofocus>
+            <option value=2>Success</option>
+            <option value=3>Critical Success</option>
+            <option value=1>Failure</option>
+            <option value=0>Critical Failure</option>
+        </select><hr>
+        
+        <select id="dos2" autofocus>
+            <option value=2>Success</option>
+            <option value=3>Critical Success</option>
+            <option value=1>Failure</option>
+            <option value=0>Critical Failure</option>
+        </select><hr>
+    `,
+    buttons: {
+            ok: {
+                label: "Reroll",
+                icon: "<i class='fa-solid fa-dice'></i>",
+                callback: (html) => { return [parseInt(html[0].querySelector("#dos1").value), parseInt(html[0].querySelector("#dos2").value) ] }
+            },
+            cancel: {
+                label: "Cancel",
+                icon: "<i class='fa-solid fa-ban'></i>",
+            }
+    },
+    default: 'ok'
+},{width:250}) : 
+
+await Dialog.wait({
     title:"Current MAP",
     content: `
         <select autofocus>
@@ -87,9 +124,9 @@ Hooks.on('preCreateChatMessage', PD);
 
 const map2 = map === 2 ? map : map + 1;
 
-const pdos = (await primary.variants[map].roll({skipDialog:true, event })).degreeOfSuccess;
+const pdos = bypass ? map[0] : (await primary.variants[map].roll({skipDialog:true, event })).degreeOfSuccess;
 
-const sdos = (await secondary.variants[map2].roll({skipDialog:true, event})).degreeOfSuccess;
+const sdos = bypass ? map[1] : (await secondary.variants[map2].roll({skipDialog:true, event})).degreeOfSuccess;
 
 let pd,sd;
 if ( pdos === 2 ) { pd = await primary.damage({event}); }
