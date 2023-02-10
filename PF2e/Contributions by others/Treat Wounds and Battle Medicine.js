@@ -216,11 +216,12 @@ const rollTreatWounds = async ({
        speaker: ChatMessage.getSpeaker(),
      });
    }
+   const whisper_ids = game.users.filter(user => target.actor.testUserPermission(user, "OWNER")).map(u => u.id);
    ChatMessage.create({
         user: game.user.id,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER,
         flavor: `${immunityMessage}`,
-        whisper: ChatMessage.getWhisperRecipients(`${target.name}`),
+        whisper: whisper_ids,
         visible: false,
         blind: true,
         speaker: ChatMessage.getSpeaker(),
@@ -267,11 +268,12 @@ const rollTreatWounds = async ({
            speaker: ChatMessage.getSpeaker(),
          });
        }
+       const whisper_ids = game.users.filter(user => target.actor.testUserPermission(user, "OWNER")).map(u => u.id);
        ChatMessage.create({
         user: game.user.id,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER,
         flavor: `${immunityMessage}`,
-        whisper: ChatMessage.getWhisperRecipients(`${target.name}`),
+        whisper: whisper_ids,
         visible: false,
         blind: true,
         speaker: ChatMessage.getSpeaker(),
