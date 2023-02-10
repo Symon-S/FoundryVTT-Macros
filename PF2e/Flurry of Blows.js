@@ -1,14 +1,16 @@
-if (canvas.tokens.controlled.length !== 1) { return ui.notifications.info("Please select 1 token") }
+if ( canvas.tokens.controlled.length !== 1 ) { return ui.notifications.info("Please select 1 token") }
+if ( game.user.targets.size !== 1 ) { return ui.notifications.info("Please select 1 target for Flurry of Blows") }
 
 if ( !token.actor.itemTypes.action.some( f => f.slug === "flurry-of-blows") && !token.actor.itemTypes.feat.some(f => f.slug === "flurry-of-blows" ) ) { return ui.notifications.warn(`${token.name} does not have Flurry of Blows!`) }
 
 const DamageRoll = CONFIG.Dice.rolls.find( r => r.name === "DamageRoll" );
+const critRule = game.settings.get("pf2e", "critRule");
 
 let weapons = token.actor.system.actions.filter( h => h.visible && h.item?.isMelee && h.item?.system?.traits?.value?.includes("unarmed") );
 
-if ( token.actor.itemTypes.effect.some( s => s.slug === "stance-monastic-archer-stance" ) && token.actor.system.actions.some( h => h.item?.isHeld && h.item?.group === "bow" && h.item?.reload === "0" ) ) { weapons.unshift( token.actor.system.actions.find( h => h.item?.isHeld && h.item?.group === "bow" && h.item?.reload === "0" ) ) }
-
 if ( token.actor.itemTypes.feat.some( s => s.slug === "monastic-weaponry" ) && token.actor.system.actions.some( h => h.item?.isHeld && h.item?.system?.traits?.value.includes("monk") ) ) { weapons = token.actor.system.actions.filter( h => h.item?.isHeld && h.ready && h.item?.system?.traits?.value.includes("monk") ).concat(weapons) }
+
+if ( token.actor.itemTypes.effect.some( s => s.slug === "stance-monastic-archer-stance" ) && token.actor.system.actions.some( h => h.item?.isHeld && h.item?.group === "bow" && h.item?.reload === "0" ) ) { weapons.unshift( token.actor.system.actions.find( h => h.item?.isHeld && h.item?.group === "bow" && h.item?.reload === "0" ) ) }
 
 let wtcf = '';
 for ( const w of weapons ) {
@@ -37,14 +39,14 @@ let cWeapon = await Dialog.wait({
             }
     },
     default: "ok"
-},{width:250});
+},{width:"auto"});
 
 if ( cWeapon === "cancel" ) { return; }
 
 let primary = weapons.find( w => w.item.id === cWeapon[0] );
 let secondary = weapons.find( w => w.item.id === cWeapon[1] );
 
-let options = [""];
+let options = token.actor.itemTypes.feat.some(s => s.slug === "stunning-fist") ? ["stunning-fist"] : [];
 
 const map = await Dialog.wait({
     title:"Current MAP",
@@ -87,7 +89,7 @@ const map2 = map === 2 ? map : map + 1;
 
 const pdos = (await primary.variants[map].roll({skipDialog:true, event })).degreeOfSuccess;
 
-const sdos = (await secondary.variants[map2].roll({skipDialog:true, options, event})).degreeOfSuccess;
+const sdos = (await secondary.variants[map2].roll({skipDialog:true, event})).degreeOfSuccess;
 
 let pd,sd;
 if ( pdos === 2 ) { pd = await primary.damage({event}); }
@@ -99,98 +101,38 @@ Hooks.off('preCreateChatMessage', PD);
 
 if ( sdos <= 1 ) { 
     if ( pdos === 2) {
-        await primary.damage({event});
+        await primary.damage({event,options});
         return;
     }
     if ( pdos === 3 ) {
-        await primary.critical({event});
+        await primary.critical({event,options});
         return;
     } 
 }
 
 if ( pdos <= 1 ) { 
     if ( sdos === 2) {
-        await secondary.damage({event});
+        await secondary.damage({event,options});
         return;
     }
     if ( sdos === 3 ) {
-        await secondary.critical({event});
+        await secondary.critical({event,options});
         return;
     } 
 }
 
 if ( pdos <=0 && sdos <= 1 ) { return }
 
-else {
-
-    const instances = pd.terms.concat(sd.terms);
-    
+else {    
     const terms = pd.terms[0].terms.concat(sd.terms[0].terms);
     const type = pd.terms[0].rolls.map(t => t.type).concat(sd.terms[0].rolls.map(t => t.type));
     const persistent = pd.terms[0].rolls.map(t => t.persistent).concat(sd.terms[0].rolls.map(t => t.persistent));
-    
-    if ( instances.filter( i => i.dice.some( o => o.options?.flavor === "precision" ) ).length === 2 ) {
-        const p0 = instances[0].rolls.find( o => o.dice.some( f => f.options.flavor === "precision" ) );
-        const p1 = instances[1].rolls.find( o => o.dice.some( f => f.options.flavor === "precision" ) );
-        
-        if ( p0.type === p1.type && instances[0].dice.find( f => f.options?.flavor === "precision" ).formula === instances[1].dice.find( f => f.options.flavor === "precision" ).formula ) {
-            const formula = instances[1].dice.find( f => f.options?.flavor === "precision" ).formula;
-            terms.filter( f => f.includes(formula) )[1].replace(formula,'');
-        }
-        
-        else {
-            const trp = await Dialog.wait({
-                title:"Precision to remove",
-                content: `
-                    <select autofocus>
-                        <option value=1>${instances[1].dice.find( f => f.options.flavor === "precision" ).formula} ${p1.type}</option>
-                        <option value=0>${instances[0].dice.find( f => f.options.flavor === "precision" ).formula} ${p0.type}</option>
-                    </select><hr>
-                `,
-                buttons: {
-                    ok: {
-                        label: "Remove",
-                        icon: "<i class='fa-solid fa-eraser'></i>",
-                        callback: (html) => { return parseInt(html[0].querySelector("select").value) }
-                    },
-                    cancel: {
-                    label: "Cancel",
-                    icon: "<i class='fa-solid fa-ban'></i>",
-                    },
-                },
-                default: "ok"
-            },{width:250});
-            if ( trp === "cancel" ) { return; }
-            const formula = ` + ${instances[trp].dice.find( f => f.options.flavor === "precision" ).formula}`;
-            let index = 0;
-            if ( trp === 1 ) {
-                terms.reverse();
-                for ( const t of terms ) {
-                     const i = index++;
-                    if ( t.includes(formula) ) {
-                        terms[i] = terms[i].replace(formula,'');
-                        terms.reverse();
-                        break;
-                    }
-                }
-            }
-            else {
-                for ( const t of terms ) {
-                    if ( t.includes(formula) ) {
-                        const i = index++;
-                        terms[i] = terms[i].replace(formula,'');
-                        break;
-                    }
-                }
-            }
-        }
-    }
     
     let preCombinedDamage = []
     let combinedDamage = '{'
     let i = 0;
     for ( const t of terms ) {
-        if ( persistent[i] ) {
+        if ( persistent[i] && !preCombinedDamage.find( p => p.persistent && p.terms.includes(t) ) ) {
             preCombinedDamage.push({ terms: [t], type: type[i], persistent: persistent[i] });
         }
         if ( !preCombinedDamage.some(pre => pre.type === type[i]) && !persistent[i] ) {
@@ -204,10 +146,10 @@ else {
     
     for ( p of preCombinedDamage ) {    
         if ( p.persistent ) {
-        combinedDamage += `,${p.terms.join(",")}`;
+        combinedDamage += `, ${p.terms.join(",")}`;
         }
         else{
-            if ( combinedDamage === '{' ) {
+            if ( combinedDamage === "{" ) {
                 if ( p.terms.length > 1 ){
                     combinedDamage += `(${p.terms.join(" + ")})[${p.type}]`;
                 
@@ -217,23 +159,64 @@ else {
                 }
             }
             else if ( p.terms.length === 1 ) {
-                combinedDamage += `,${p.terms[0]}`
+                combinedDamage += `, ${p.terms[0]}`
             }
             else {
-                combinedDamage += `,(${p.terms.join(" + ")})[${p.type}]`;
+                combinedDamage += `, (${p.terms.join(" + ")})[${p.type}]`;
             }
         }
     }
     
     combinedDamage += "}";
+    
     const rolls = [await new DamageRoll(combinedDamage).evaluate({ async: true })]
-    let ncCombinedDamage = ""
     let flavor = `<strong>Flurry of Blows Total Damage</strong>`
-    if ( cM.length === 1 ) { flavor += `<hr>${cM[0].flavor}<hr>${cM[0].flavor}` }
+    if ( cM.length === 1 ) { flavor += `<hr>${cM[0].flavor}` }
     else { flavor += `<hr>${cM[0].flavor}<hr>${cM[1].flavor}` }
+    if ( options.includes("stunning-fist") ) {
+       flavor += `<br><strong>Stunning Fist</strong>    ${game.i18n.localize("PF2E.SpecificRule.Monk.StunningFist.Note")}`
+    }
     if ( pdos === 3 || sdos === 3 ) {
         flavor += `<hr><strong>TOP DAMAGE USED FOR CREATURES IMMUNE TO CRITICALS`
-        rolls.unshift(ncCombinedDamage = await new DamageRoll(combinedDamage.replaceAll("2 * ", "")).evaluate({ async: true }));
+        if ( critRule === "doubledamage" ) {
+            rolls.unshift(await new DamageRoll(combinedDamage.replaceAll("2 * ", "")).evaluate({ async: true }));
+        }
+        else if ( critRule === "doubledice" ) {
+            const splitValues = combinedDamage.replaceAll("2 * ", "").replaceAll(/([\{\}])/g,"").split(" ");
+            const toJoinVAlues = [];
+            for ( const sv of splitValues ) {
+                if ( sv.includes("[doubled])") ) {
+                    const sV = sv.replaceAll("[doubled])","");
+                    if ( !sV.includes("d") ) {
+                            toJoinVAlues.push("sV");
+                            continue;
+                    }
+                    else {
+                        const n = sV.split(/(d\d)/g);
+                        if ( n[0].charAt(1) !== "(") {
+                            n[0] = `${parseInt(n[0].charAt(1) / 2)}`;
+                            toJoinVAlues.push(n.join(""))
+                            continue;
+                        }
+                        else if ( n[0].charAt(2) !== "(") { 
+                            n[0] = `(${parseInt(n[0].charAt(2)) / 2}`
+                            toJoinVAlues.push(n.join(""))
+                            continue;
+                        }
+                        else { 
+                            n[0] = `((${parseInt(n[0].charAt(3)) / 2}`
+                            toJoinVAlues.push(n.join(""))
+                            continue;
+                        }
+                    }
+                }
+                else {
+                toJoinVAlues.push(sv);
+                continue;
+                }
+            }
+            rolls.unshift(await new DamageRoll(`{${toJoinVAlues.join(" ")}}`).evaluate( {async: true} ));
+        }
     }
     if ( cM.length === 1) {
         options = cM[0].flags.pf2e.context.options;
