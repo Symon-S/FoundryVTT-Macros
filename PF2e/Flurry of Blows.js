@@ -8,6 +8,10 @@ const critRule = game.settings.get("pf2e", "critRule");
 
 let weapons = token.actor.system.actions.filter( h => h.visible && h.item?.isMelee && h.item?.system?.traits?.value?.includes("unarmed") );
 
+if ( token.actor.system.actions.some( e => e.visible && e.origin?.type === "effect" && e.origin?.slug.includes("stance") ) ) {
+    weapons = token.actor.system.actions.filter( e => e.origin?.type === "effect" && e.origin?.slug.includes("stance") ).concat(token.actor.system.actions.filter( h => h.visible && h.item?.isMelee && h.item?.system?.traits?.value?.includes("unarmed") && h.origin?.type !== "effect" ));
+}
+
 if ( token.actor.itemTypes.feat.some( s => s.slug === "monastic-weaponry" ) && token.actor.system.actions.some( h => h.item?.isHeld && h.item?.system?.traits?.value.includes("monk") ) ) { weapons = token.actor.system.actions.filter( h => h.item?.isHeld && h.ready && h.item?.system?.traits?.value.includes("monk") ).concat(weapons) }
 
 if ( token.actor.itemTypes.effect.some( s => s.slug === "stance-monastic-archer-stance" ) && token.actor.system.actions.some( h => h.item?.isHeld && h.item?.group === "bow" && h.item?.reload === "0" ) ) { weapons.unshift( token.actor.system.actions.find( h => h.item?.isHeld && h.item?.group === "bow" && h.item?.reload === "0" ) ) }
@@ -116,10 +120,10 @@ const pdos = bypass ? dos[0] : (await primary.variants[map].roll({skipDialog:tru
 const sdos = bypass ? dos[1] : (await secondary.variants[map2].roll({skipDialog:true, event})).degreeOfSuccess;
 
 let pd,sd;
-if ( pdos === 2 ) { pd = await primary.damage({event}); }
-if ( pdos === 3 ) { pd = await primary.critical({event}); }
-if ( sdos === 2 ) { sd = await secondary.damage({event}); }
-if ( sdos === 3 ) { sd = await secondary.critical({event}); }
+if ( pdos === 2 ) { pd = await primary.damage({event,options}); }
+if ( pdos === 3 ) { pd = await primary.critical({event,options}); }
+if ( sdos === 2 ) { sd = await secondary.damage({event,options}); }
+if ( sdos === 3 ) { sd = await secondary.critical({event,options}); }
 
 Hooks.off('preCreateChatMessage', PD);
 
@@ -202,9 +206,6 @@ else {
     const color = pdos === 2 ? `<span style="color:rgb(0, 0, 255)">Success</span>` : `<span style="color:rgb(0, 128, 0)">Critical Success</span>`
     if ( cM.length === 1 ) { flavor += `<p>Same Weapon (${color})<hr>${cM[0].flavor}</p><hr>`; }
     else { flavor += `<hr>${cM[0].flavor}<hr>${cM[1].flavor}`; }
-    if ( options.includes("stunning-fist") ) {
-       flavor += `<br><strong>Stunning Fist</strong> ${game.i18n.localize("PF2E.SpecificRule.Monk.StunningFist.Note")}`;
-    }
     if ( pdos === 3 || sdos === 3 ) {
         flavor += `<hr><strong>TOP DAMAGE USED FOR CREATURES IMMUNE TO CRITICALS`;
         if ( critRule === "doubledamage" ) {
