@@ -41,6 +41,10 @@ function countdownEffect() {
     <input type="checkbox" id="cooldown"/>
     Cooldown (adds 1 to duration)
   </p>
+  <p>
+    <input type="checkbox" id="visible"/>
+    Only Visible to GM
+  </p>
   `;
 
   new Dialog({
@@ -65,6 +69,7 @@ async function main(html) {
     const unit = html.find("#countdownunits")[0].value;  
     const isCooldown = html.find("#cooldown")[0].checked; 
     effect.name = html.find("#countdownname")[0].value;
+    effect.system.unidentified = html.find("#visible")[0].checked;
     let countdownNumber = "";
     if (duration.includes("d")) {
         countdownNumber = new Roll(duration).roll({ async : false }).total;
