@@ -132,11 +132,8 @@ for (const a of fmm) {
 					targets: [targets[targetNum]].map((target) => {
 						return {
 							id: target.id,
-							name: target.name,
-							uuid: target.document.uuid,
-							img: target.document.texture.src,
-							hasPlayerOwner: target.document.hasPlayerOwner,
-							playersCanSeeName: target.document.playersCanSeeName,
+							tokenUuid: target.document.uuid,
+							actorUuid: target.actor.uuid,
 						}
 					})
 				}
