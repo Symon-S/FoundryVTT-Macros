@@ -203,7 +203,7 @@ else {
     
     const rolls = [await new DamageRoll(combinedDamage).evaluate({ async: true })]
     let flavor = `<strong>Flurry of Blows Total Damage</strong>`;
-    const color = pdos === 2 ? `<span style="color:rgb(0, 0, 255)">Success</span>` : `<span style="color:rgb(0, 128, 0)">Critical Success</span>`
+    const color = (pdos || sdos) === 2 ? `<span style="color:rgb(0, 0, 255)">Success</span>` : `<span style="color:rgb(0, 128, 0)">Critical Success</span>`
     if ( cM.length === 1 ) { flavor += `<p>Same Weapon (${color})<hr>${cM[0].flavor}</p><hr>`; }
     else { flavor += `<hr>${cM[0].flavor}<hr>${cM[1].flavor}`; }
     if ( pdos === 3 || sdos === 3 ) {
