@@ -185,7 +185,16 @@ else {
                 preCombinedDamage[0].terms[0] = preCombinedDamage[0].terms[0].replace(/ \+ ...\[precision\]/, "" );
             }
             else {
-                const { pD, doubled } = await Dialog.wait( {
+                const doubled = pOc[0].includes("doubled");
+                if ( doubled ) {
+                    pOc[0] = pOc[0].match(/\(...\[doubled\]\)\[precision\]\)\[\w+/)[0] + "]";
+                    pOc[1] = pOc[1].match(/\(...\[doubled\]\)\[precision\]\)\[\w+/)[0] + "]";
+                }
+                else { 
+                    pOc[0] = pOc[0].match(/...\[precision\]\)\[\w+/)[0] + "]";
+                    pOc[1] = pOc[1].match(/...\[precision\]\)\[\w+/)[0] + "]";
+                }
+                const pD = await Dialog.wait( {
                     title: "Precision Damage to Remove",
                     content: `
                         <select>
@@ -198,8 +207,7 @@ else {
                             label: "Remove",
                             icon: `<i class="fa-solid fa-eraser"></i>`,
                             callback: (html) => { 
-                                const doubled = pOc[0].includes("doubled");
-                                return { pD: parseInt(html[0].querySelector("select").value), doubled }
+                                return parseInt(html[0].querySelector("select").value);
                             },
                         },
                     },
