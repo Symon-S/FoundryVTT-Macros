@@ -163,7 +163,7 @@ else {
 
     const pOc = preCombinedDamage.filter( t => t.terms?.some( p => p.includes("[precision]") ) ).map( t => t.terms ).flat();
     if ( pOc.length > 1 ) {
-        if ( pOc[0] === pOc[1] ) {
+        if ( pOc[0] === pOc[1] && critRule === "doubledice" ) {
             if ( pOc[1].includes("doubled") && pOc[0].includes("doubled") ) {
                 preCombinedDamage[0].terms[1] = preCombinedDamage[0].terms[1].replace(/ \+ \(...\[doubled\]\)\[precision\]/, "" );
             }
@@ -173,7 +173,7 @@ else {
             if ( !pOc[0].includes("doubled") && pOc[1].includes("doubled") ) {
                 preCombinedDamage[0].terms[0] = preCombinedDamage[0].terms[0].replace(/ \+ ...\[precision\]/, "" );
             }
-            else { 
+            else {
                 preCombinedDamage[0].terms[1] = preCombinedDamage[0].terms[1].replace(/ \+ ...\[precision\]/, "" );
             }
         }
@@ -187,12 +187,24 @@ else {
             else {
                 const doubled = pOc[0].includes("doubled");
                 if ( doubled ) {
-                    pOc[0] = pOc[0].match(/\(...\[doubled\]\)\[precision\]\)\[\w+/)[0] + "]";
-                    pOc[1] = pOc[1].match(/\(...\[doubled\]\)\[precision\]\)\[\w+/)[0] + "]";
+                    pOc[0] = pOc[0].match(/\(...\[doubled\]\)\[precision\]\)\[\w+/)[0] + "]" + `(Critical Success)`;
+                    pOc[1] = pOc[1].match(/\(...\[doubled\]\)\[precision\]\)\[\w+/)[0] + "]" + `(Critical Success)`;
+                }
+                else if ( critRule === "doubledamage" && pdos === 3 && sdos === 3 ) {
+                    pOc[0] = (pOc[0].match(/...\[precision\]\)\)\[\w+/)[0] + "]").replaceAll(")","") + `(Critical Success)`;
+                    pOc[1] = (pOc[1].match(/...\[precision\]\)\)\[\w+/)[0] + "]").replaceAll(")","") + `(Critical Success)`;;
+                }
+                else if ( critRule === "doubledamage" && pdos === 3 && sdos === 2 ) {
+                    pOc[0] = (pOc[0].match(/...\[precision\]\)\)\[\w+/)[0] + "]").replaceAll(")","") + `(Critical Success)`;
+                    pOc[1] = (pOc[1].match(/...\[precision\]\)\[\w+/)[0] + "]").replaceAll(")","") + `(Success)`;
+                }
+                else if ( critRule === "doubledamage" && sdos === 3 && pdos === 2 ) {
+                    pOc[0] = (pOc[0].match(/...\[precision\]\)\[\w+/)[0] + "]").replaceAll(")","") + `(Success)`;
+                    pOc[1] = (pOc[1].match(/...\[precision\]\)\)\[\w+/)[0] + "]").replaceAll(")","") + `(Critical Success)`;; 
                 }
                 else { 
-                    pOc[0] = pOc[0].match(/...\[precision\]\)\[\w+/)[0] + "]";
-                    pOc[1] = pOc[1].match(/...\[precision\]\)\[\w+/)[0] + "]";
+                    pOc[0] = (pOc[0].match(/...\[precision\]\)\[\w+/)[0] + "]").replaceAll(")","") + `(Success)`;
+                    pOc[1] = (pOc[1].match(/...\[precision\]\)\[\w+/)[0] + "]").replaceAll(")","") + `(Success)`;
                 }
                 const pD = await Dialog.wait( {
                     title: "Precision Damage to Remove",
