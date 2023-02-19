@@ -7,6 +7,7 @@ if ( token.actor.itemTypes.weapon.filter( h => h.isMelee && h.isHeld && h.hands 
 if ( token.actor.itemTypes.weapon.filter( h => h.isMelee && h.isHeld && h.hands === "1" && h.handsHeld === 1 && !h.system.traits.value.includes("unarmed") ).length < 2 ) { return ui.notifications.info("Please equip/draw 2 one-handed melee weapons.") }
 
 const DamageRoll = CONFIG.Dice.rolls.find( r => r.name === "DamageRoll" );
+const critRule = game.settings.get("pf2e", "critRule");
 
 let weapons = token.actor.system.actions.filter( h => h.item?.isMelee && h.item?.isHeld && h.item?.hands === "1" && h.item?.handsHeld === 1 && !h.item?.system?.traits?.value?.includes("unarmed") );
 
@@ -18,10 +19,10 @@ if ( weapons.filter( a => a.item.system.traits.value.includes("agile") ).length 
     secondary = weapons.find( a => a.item.system.traits.value.includes("agile") );
 }
 
-const map = await Dialog.wait({
+const { map, bypass, dos } = await Dialog.wait({
     title:"Current MAP",
     content: `
-        <select autofocus>
+        <select id="map" autofocus>
             <option value=0>No MAP</option>
             <option value=1>MAP 1</option>
             <option value=2>MAP 2</option>
@@ -31,16 +32,60 @@ const map = await Dialog.wait({
             ok: {
                 label: "Double Slice",
                 icon: "<i class='fa-solid fa-swords'></i>",
-                callback: (html) => { return parseInt(html[0].querySelector("select").value) }
+                callback: (html) => { return { map: parseInt(html[0].querySelector("#map").value), bypass: false }  }
+            },
+            bypass: {
+                label:"Bypass",
+                icon: "<i class='fa-solid fa-forward'></i>",
+                callback: async (html) => {
+                    const map = parseInt(html[0].querySelector("#map").value);
+                    const dos = await Dialog.wait({
+                        title:"Degree of Success",
+                        content: `
+                            <table>
+                                <tr>
+                                    <td>${primary.label} (1st)</td>
+                                    <td><select id="dos1" autofocus>
+                                    <option value=2>Success</option>
+                                    <option value=3>Critical Success</option>
+                                    <option value=1>Failure</option>
+                                    <option value=0>Critical Failure</option>
+                                    </select></td></tr>
+                                <tr>
+                                    <td>${secondary.label} (2nd)</td>
+                                    <td><select id="dos2">
+                                        <option value=2>Success</option>
+                                        <option value=3>Critical Success</option>
+                                        <option value=1>Failure</option>
+                                        <option value=0>Critical Failure</option>
+                                    </select></td></tr>
+                            </table><hr>
+                        `,
+                        buttons: {
+                            ok: {
+                                label: "Reroll",
+                                icon: "<i class='fa-solid fa-dice'></i>",
+                                callback: (html) => { return [parseInt(html[0].querySelector("#dos1").value), parseInt(html[0].querySelector("#dos2").value) ] }
+                            },
+                                                      cancel: {
+                                label: "Cancel",
+                                icon: "<i class='fa-solid fa-ban'></i>",
+                            }
+                        },
+                        default: 'ok'
+                    },{width:"auto"});
+                    return { map, bypass: true, dos }
+                },
             },
             cancel: {
                 label: "Cancel",
                 icon: "<i class='fa-solid fa-ban'></i>",
             }
-    }
-},{width:250});
+    },
+    default: "ok"
+},{width:"auto"});
 
-if ( map === "cancel" ) { return; }
+if ( map === undefined ) { return; }
 
 const cM = [];
 function PD(cm) {
@@ -54,9 +99,10 @@ function PD(cm) {
 
 Hooks.on('preCreateChatMessage', PD);
 
-const pdos = (await primary.variants[map].roll({skipDialog:true, event })).degreeOfSuccess;
 
-const sdos = (await secondary.variants[map].roll({skipDialog:true, options, event})).degreeOfSuccess;
+const pdos = bypass ? dos[0] : (await primary.variants[map].roll({skipDialog:true, event })).degreeOfSuccess;
+
+const sdos = bypass ? dos[1] : (await secondary.variants[map].roll({skipDialog:true, event, options})).degreeOfSuccess;
 
 let pd,sd;
 if ( pdos === 2 ) { pd = await primary.damage({event}); }
@@ -88,78 +134,22 @@ if ( pdos <= 1 ) {
     } 
 }
 
+await new Promise( (resolve) => {
+    setTimeout(resolve,0);
+});
+
 if ( pdos <=0 && sdos <= 1 ) { return }
 
-else {
-
-    const instances = pd.terms.concat(sd.terms);
-
+else {    
     const terms = pd.terms[0].terms.concat(sd.terms[0].terms);
     const type = pd.terms[0].rolls.map(t => t.type).concat(sd.terms[0].rolls.map(t => t.type));
     const persistent = pd.terms[0].rolls.map(t => t.persistent).concat(sd.terms[0].rolls.map(t => t.persistent));
-
-    if ( instances.filter( i => i.dice.some( o => o.options?.flavor === "precision" ) ).length === 2 ) {
-        const p0 = instances[0].rolls.find( o => o.dice.some( f => f.options.flavor === "precision" ) );
-        const p1 = instances[1].rolls.find( o => o.dice.some( f => f.options.flavor === "precision" ) );
-        
-        if ( p0.type === p1.type && instances[0].dice.find( f => f.options?.flavor === "precision" ).formula === instances[1].dice.find( f => f.options.flavor === "precision" ).formula ) {
-            const formula = instances[1].dice.find( f => f.options?.flavor === "precision" ).formula;
-            terms.filter( f => f.includes(formula) )[1].replace(formula,'');
-        }
-        
-        else {
-            const trp = await Dialog.wait({
-                title:"Precision to remove",
-                content: `
-                    <select autofocus>
-                        <option value=1>${instances[1].dice.find( f => f.options.flavor === "precision" ).formula} ${p1.type}</option>
-                        <option value=0>${instances[0].dice.find( f => f.options.flavor === "precision" ).formula} ${p0.type}</option>
-                    </select><hr>
-                `,
-                buttons: {
-                    ok: {
-                        label: "Remove",
-                        icon: "<i class='fa-solid fa-eraser'></i>",
-                        callback: (html) => { return parseInt(html[0].querySelector("select").value) }
-                    },
-                    cancel: {
-                    label: "Cancel",
-                    icon: "<i class='fa-solid fa-ban'></i>",
-                    },
-                },
-                default: "ok"
-            },{width:250});
-            if ( trp === "cancel" ) { return; }
-            const formula = ` + ${instances[trp].dice.find( f => f.options.flavor === "precision" ).formula}`;
-            let index = 0;
-            if ( trp === 1 ) {
-                terms.reverse();
-                for ( const t of terms ) {
-                    const i = index++;
-                    if ( t.includes(formula) ) {
-                        terms[i] = terms[i].replace(formula,'');
-                        terms.reverse();
-                        break;
-                    }
-                }
-            }
-            else {
-                for ( const t of terms ) {
-                    if ( t.includes(formula) ) {
-                        const i = index++;
-                        terms[i] = terms[i].replace(formula,'');
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    let preCombinedDamage = []
-    let combinedDamage = '{'
+    
+    let preCombinedDamage = [];
+    let combinedDamage = '{';
     let i = 0;
     for ( const t of terms ) {
-        if ( persistent[i] ) {
+        if ( persistent[i] && !preCombinedDamage.find( p => p.persistent && p.terms.includes(t) ) ) {
             preCombinedDamage.push({ terms: [t], type: type[i], persistent: persistent[i] });
         }
         if ( !preCombinedDamage.some(pre => pre.type === type[i]) && !persistent[i] ) {
@@ -171,12 +161,74 @@ else {
         i++;
     }
 
+    const pOc = preCombinedDamage.filter( t => t.terms?.some( p => p.includes("[precision]") ) ).map( t => t.terms ).flat();
+    if ( pOc.length > 1 ) {
+        if ( pOc[0] === pOc[1] ) {
+            if ( pOc[1].includes("doubled") && pOc[0].includes("doubled") ) {
+                preCombinedDamage[0].terms[1] = preCombinedDamage[0].terms[1].replace(/ \+ \(...\[doubled\]\)\[precision\]/, "" );
+            }
+            if ( pOc[0].includes("doubled") && !pOc[1].includes("doubled") ) {
+                preCombinedDamage[0].terms[1] = preCombinedDamage[0].terms[1].replace(/ \+ ...\[precision\]/, "" );
+            }
+            if ( !pOc[0].includes("doubled") && pOc[1].includes("doubled") ) {
+                preCombinedDamage[0].terms[0] = preCombinedDamage[0].terms[0].replace(/ \+ ...\[precision\]/, "" );
+            }
+            else { 
+                preCombinedDamage[0].terms[1] = preCombinedDamage[0].terms[1].replace(/ \+ ...\[precision\]/, "" );
+            }
+        }
+        else {
+            if ( pOc[0].includes("doubled") && !pOc[1].includes("doubled") ) {
+                preCombinedDamage[1].terms[0] = preCombinedDamage[1].terms[0].replace(/ \+ ...\[precision\]/, "" );
+            }
+            else if ( !pOc[0].includes("doubled") && pOc[1].includes("doubled") ) {
+                preCombinedDamage[0].terms[0] = preCombinedDamage[0].terms[0].replace(/ \+ ...\[precision\]/, "" );
+            }
+            else {
+                const { pD, doubled } = await Dialog.wait( {
+                    title: "Precision Damage to Remove",
+                    content: `
+                        <select>
+                            <option value=0>${pOc[0]}</option>
+                            <option value=1>${pOc[1]}</option>
+                        </select>
+                    `,
+                    buttons: {
+                        ok: {
+                            label: "Remove",
+                            icon: `<i class="fa-solid fa-eraser"></i>`,
+                            callback: (html) => { 
+                                const doubled = pOc[0].includes("doubled");
+                                return { pD: parseInt(html[0].querySelector("select").value), doubled }
+                            },
+                        },
+                    },
+                    default: "ok",
+                },{width:"auto"});
+
+                if ( pD === undefined ) { return ui.notifications.warn("You have not selected a precision damage to remove, rerun macro in bypass, set previously rolled degrees of success, and chose damage to remove") }
+                if ( pD === 0 && doubled ) {
+                    preCombinedDamage[0].terms[0] = preCombinedDamage[0].terms[0].replace(/ \+ \(...\[doubled\]\)\[precision\]/, "" );
+                }
+                if ( pD === 1 && doubled ) {
+                    preCombinedDamage[1].terms[0] = preCombinedDamage[1].terms[0].replace(/ \+ \(...\[doubled\]\)\[precision\]/, "" );
+                }
+                if ( pD === 0 && !doubled ) {
+                    preCombinedDamage[0].terms[0] = preCombinedDamage[0].terms[0].replace(/ \+ ...\[precision\]/, "" );
+                }
+                if ( pD === 1 && !doubled ) {
+                    preCombinedDamage[1].terms[0] = preCombinedDamage[1].terms[0].replace(/ \+ ...\[precision\]/, "" );
+                }
+            }
+        }
+    }
+
     for ( p of preCombinedDamage ) {    
         if ( p.persistent ) {
-        combinedDamage += `,${p.terms.join(",")}`;
+        combinedDamage += `, ${p.terms.join(",")}`;
         }
         else{
-            if ( combinedDamage === '{' ) {
+            if ( combinedDamage === "{" ) {
                 if ( p.terms.length > 1 ){
                     combinedDamage += `(${p.terms.join(" + ")})[${p.type}]`;
                 
@@ -186,25 +238,63 @@ else {
                 }
             }
             else if ( p.terms.length === 1 ) {
-                combinedDamage += `,${p.terms[0]}`
+                combinedDamage += `, ${p.terms[0]}`;
             }
             else {
-                combinedDamage += `,(${p.terms.join(" + ")})[${p.type}]`;
+                combinedDamage += `, (${p.terms.join(" + ")})[${p.type}]`;
             }
         }
     }
-
+    
     combinedDamage += "}";
+   
     const rolls = [await new DamageRoll(combinedDamage).evaluate({ async: true })]
-    let ncCombinedDamage = ""
-    let flavor = `<strong>Double Slice Total Damage</strong>`
-    if ( cM.length === 1 ) { flavor += `<hr>${cM[0].flavor}<hr>${cM[0].flavor}` }
-    else { flavor += `<hr>${cM[0].flavor}<hr>${cM[1].flavor}` }
+    let flavor = `<strong>Double Slice Total Damage</strong>`;
+    const color = (pdos || sdos) === 2 ? `<span style="color:rgb(0, 0, 255)">Success</span>` : `<span style="color:rgb(0, 128, 0)">Critical Success</span>`
+    if ( cM.length === 1 ) { flavor += `<p>Same Weapon (${color})<hr>${cM[0].flavor}</p><hr>`; }
+    else { flavor += `<hr>${cM[0].flavor}<hr>${cM[1].flavor}`; }
     if ( pdos === 3 || sdos === 3 ) {
-        flavor += `<hr><strong>TOP DAMAGE USED FOR CREATURES IMMUNE TO CRITICALS`
-        rolls.unshift(ncCombinedDamage = await new DamageRoll(combinedDamage.replaceAll("2 * ", "")).evaluate({ async: true }));
+        flavor += `<hr><strong>TOP DAMAGE USED FOR CREATURES IMMUNE TO CRITICALS`;
+        if ( critRule === "doubledamage" ) {
+            rolls.unshift(await new DamageRoll(combinedDamage.replaceAll("2 * ", "")).evaluate({ async: true }));
+        }
+        else if ( critRule === "doubledice" ) {
+            const splitValues = combinedDamage.replaceAll("2 * ", "").replaceAll(/([\{\}])/g,"").split(" ");
+            const toJoinVAlues = [];
+            for ( const sv of splitValues ) {
+                if ( sv.includes("[doubled])") ) {
+                    const sV = sv.replaceAll("[doubled])","");
+                    if ( !sV.includes("d") ) {
+                            toJoinVAlues.push("sV");
+                            continue;
+                    }
+                    else {
+                        const n = sV.split(/(d\d)/g);
+                        if ( n[0].charAt(1) !== "(") {
+                            n[0] = `${parseInt(n[0].charAt(1) / 2)}`;
+                            toJoinVAlues.push(n.join(""));
+                            continue;
+                        }
+                        else if ( n[0].charAt(2) !== "(") { 
+                            n[0] = `(${parseInt(n[0].charAt(2)) / 2}`;
+                            toJoinVAlues.push(n.join(""));
+                            continue;
+                        }
+                        else { 
+                            n[0] = `((${parseInt(n[0].charAt(3)) / 2}`;
+                            toJoinVAlues.push(n.join(""));
+                            continue;
+                        }
+                    }
+                }
+                else {
+                toJoinVAlues.push(sv);
+                continue;
+                }
+            }
+            rolls.unshift(await new DamageRoll(`{${toJoinVAlues.join(" ")}}`).evaluate( {async: true} ));
+        }
     }
-
     if ( cM.length === 1) {
         options = cM[0].flags.pf2e.context.options;
     }
