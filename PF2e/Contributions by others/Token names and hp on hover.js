@@ -10,7 +10,7 @@ await Actor.updateDocuments(actorUpdate);
 ui.notifications.info("PROTOTYPE TOKENS UPDATED");
 // Sets scene tokens to show name and HP on hover
 let scene = game.scenes.active;
-let tokenUpdates = scene.data.tokens.map(e => ({
+let tokenUpdates = scene.tokens.map(e => ({
     _id: e.id,
     displayBars: CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER,
     displayName: CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER,
