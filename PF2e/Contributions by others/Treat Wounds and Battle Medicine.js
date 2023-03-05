@@ -209,34 +209,37 @@ const rollTreatWounds = async ({
      healRoll = await new DamageRoll(`${healFormula}[${rollType}]`).roll({
        async: true,
      });
-     my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})<br>${healFormula}[${rollType}] = <strong>${healRoll._total}</strong>`;
+     my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`;
 
-    //  ChatMessage.create({
-    //    user: game.user.id,
-    //    type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-    //    flavor: `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`,
-    //    roll: healRoll,
-    //    speaker: ChatMessage.getSpeaker(),
-    //  });
-   }
-   const whisper_ids = game.users.filter(user => target.actor.testUserPermission(user, "OWNER")).map(u => u.id);
-   ChatMessage.create({
-        user: game.user.id,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-        flavor: `${my_message}<br>${immunityMessage}`,
-        whisper: whisper_ids,
-        visible: false,
-        blind: true,
-        speaker: ChatMessage.getSpeaker(),
-        flags: {
-          "treat_wounds_battle_medicine": {
-            id: target.id,
-            dos: success,
-            healerId: token.actor.id,
-            healing: healRoll._total
-          }
+     healRoll.toMessage({
+      flavor: `${my_message}<br>${immunityMessage}`,
+       speaker: ChatMessage.getSpeaker(),
+       flags: {
+         "treat_wounds_battle_medicine": {
+           id: target.id,
+           dos: success,
+           healerId: token.actor.id,
+           healing: healRoll._total
+         }
+       }
+     });
+   } else {
+    ChatMessage.create({
+      user: game.user.id,
+      type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+      flavor: `No healing done.<br>${immunityMessage}`,
+      speaker: ChatMessage.getSpeaker(),
+      flags: {
+        "treat_wounds_battle_medicine": {
+          id: target.id,
+          dos: success,
+          healerId: token.actor.id,
+          healing: healRoll._total
         }
+      }
     });
+   }
+
  } else {
    med.check.roll({
      dc: dc,
@@ -266,33 +269,37 @@ const rollTreatWounds = async ({
          healRoll = await new DamageRoll(`${healFormula}[${rollType}]`).roll(
            { async: true }
          );
-         my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})<br>${healFormula}[${rollType}] = <strong>${healRoll._total}</strong>`;
-        //  ChatMessage.create({
-        //    user: game.user.id,
-        //    type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-        //    flavor: `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`,
-        //    roll: healRoll,
-        //    speaker: ChatMessage.getSpeaker(),
-        //  });
-       }
-       const whisper_ids = game.users.filter(user => target.actor.testUserPermission(user, "OWNER")).map(u => u.id);
-       ChatMessage.create({
-        user: game.user.id,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-        flavor: `${my_message}<br>${immunityMessage}`,
-        whisper: whisper_ids,
-        visible: false,
-        blind: true,
-        speaker: ChatMessage.getSpeaker(),
-        flags: {
-          "treat_wounds_battle_medicine": {
-            id: target.id,
-            dos: roll.options.degreeOfSuccess,
-            healerId: token.actor.id,
-            healing: healRoll._total
+
+         my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`;
+
+         healRoll.toMessage({
+           flavor: `${my_message}<br>${immunityMessage}`,
+            speaker: ChatMessage.getSpeaker(),
+            flags: {
+              "treat_wounds_battle_medicine": {
+                id: target.id,
+                dos: roll.options.degreeOfSuccess,
+                healerId: token.actor.id,
+                healing: healRoll._total
+              }
+            }
+          });
+       } else {
+        ChatMessage.create({
+          user: game.user.id,
+          type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+          flavor: `No healing done.<br>${immunityMessage}`,
+          speaker: ChatMessage.getSpeaker(),
+          flags: {
+            "treat_wounds_battle_medicine": {
+              id: target.id,
+              dos: roll.options.degreeOfSuccess,
+              healerId: token.actor.id,
+              healing: healRoll._total
+            }
           }
-        }
-       });
+         });
+       }
      },
    });
  }
@@ -354,7 +361,7 @@ async function applyChanges($html) {
      // Extract the Macro ID from the asynomous benefactor macro compendium.
      const macroName = useBattleMedicine ? `BM Immunity CD`: `TW Immunity CD`;
      const macroId = (await game.packs.get('xdy-pf2e-workbench.asymonous-benefactor-macros')).index.find(n => n.name === macroName)?._id;
-     immunityMacroLink = `@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Heal and apply ${bmtw} Immunity}`
+     immunityMacroLink = `@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Apply ${bmtw} Immunity}`
    } else {
      ui.notifications.warn(`Workbench Module not active! Linking Immunity effect Macro not possible.`);
    }
