@@ -49,24 +49,6 @@ async function main(html) {
             bmEffect.system.duration.unit = "hours";
         }
 
-        let healMessage = '';
-        if ( message.flags.treat_wounds_battle_medicine.dos >= 2 ) {
-            healMessage = `<i>${token.actor.name} is healed for ${Math.min(message.flags.treat_wounds_battle_medicine.healing, token.actor.system.attributes.hp.max - token.actor.system.attributes.hp.value)} damage.</i>`;
-            await token.actor.update({system: { attributes: { hp: { value: token.actor.system.attributes.hp.value + message.flags.treat_wounds_battle_medicine.healing} } } });
-
-        } else if (message.flags.treat_wounds_battle_medicine.dos == 0) {
-            healMessage = `<i>${token.actor.name} takes ${Math.min(message.flags.treat_wounds_battle_medicine.healing, token.actor.system.attributes.hp.value)} damage.</i>`;
-            await token.actor.update({system: { attributes: { hp: { value: token.actor.system.attributes.hp.value - message.flags.treat_wounds_battle_medicine.healing} } } });
-        }
-        if (healMessage != '') {
-            ChatMessage.create({
-                user: game.user.id,
-                type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                flavor: `${healMessage}`,
-                speaker: ChatMessage.getSpeaker()
-            });
-        }
-
         await token.actor.createEmbeddedDocuments("Item", [bmEffect]);
         ui.notifications.info(token.actor.name + " is now immune to Battle Medicine by " + applicator.name);
     }
