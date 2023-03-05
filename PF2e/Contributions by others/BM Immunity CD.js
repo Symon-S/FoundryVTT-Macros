@@ -41,7 +41,7 @@ async function main(html) {
         const applicator = game.actors.get(message.flags.treat_wounds_battle_medicine.healerId);
 
         bmEffect.name = "Battle Medicine by " + applicator.name;
-        bmEffect.img = applicator.img;
+        bmEffect.img = applicator.prototypeToken.texture.src;
         const isgodless = CheckFeat('godless-healing', token.actor); //godless healing affects the patient, not the healer
         const isForensic = CheckFeat('forensic-medicine-methodology', applicator);
 
