@@ -1,6 +1,6 @@
 /*
-Based on the macro by bipedalshark and WesBelmont and darkim.
-updated by Allalinor
+Based on the macro by bipedalshark and WesBelmont and Allalinor.
+updated by darkim
 
 Recall Knowledge
 This macro will roll several knowledge checks if no target is selected.
@@ -17,11 +17,10 @@ Limitations:
 */
 let globalroll = await new Roll("1d20").roll({ async: true }); 
 
-   
-            const rollColor = {
-                20: "green",
-                1: "red"
-            }[globalroll.terms[0].results[0].result] ?? "black";
+const rollColor = {
+      20: "green",
+      1: "red"
+    }[globalroll.terms[0].results[0].result] ?? "black";
 
 
 /**
@@ -71,13 +70,20 @@ if (canvas.tokens.controlled.length !== 1){
                 legendary: "#5e0000",
             }[coreSkill._modifiers[1].label.toLowerCase()];
 
-            my_string += `<tr><th>${coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)}</th>
+            my_string += `<tr><th>${coreSkill.label == undefined ? coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1) : coreSkill.label} </th>
                           <th class="tags"><div class="tag" style="background-color: ${rankColor}; white-space:nowrap">${coreSkill._modifiers[1].label}</th>
                           <th>${coreSkill.totalModifier}</th>
-                          <th><span style="color: ${rollColor}">[[${coreRoll}]]</span></th></tr>`
-        } 
+                          <th><span style="color: ${rollColor}">[[${coreRoll}]]</span></th></tr>`;
+        }
     }
-
+    await ChatMessage.create({
+        user: game.userId,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+        content: `${token.name} tries to remember if they've heard something related to this.`,       
+        visible: true,       
+        speaker: ChatMessage.getSpeaker(),
+        flags: {pf2e: { recall: true } },
+    });
     await ChatMessage.create({
         user: game.userId,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER,
@@ -96,13 +102,11 @@ if (canvas.tokens.controlled.length !== 1){
         speaker: ChatMessage.getSpeaker(),
         flags: {pf2e: { recall: true } },
     });
-    ui.notifications.info(`${token.name} tries to remember if they've heard something related to this.`)
   } else {
     // do the correct check(s)
     for (const token of canvas.tokens.controlled) {
         const LORE_SKILL_SLUGS = getLoreSkillsSlugs(token);
         let my_string = ``;
-        let my_string2 =``;
  
         for(let target of game.user.targets){
             let targetActor = target.actor;
@@ -172,12 +176,6 @@ if (canvas.tokens.controlled.length !== 1){
                 <th><span style="color: ${rollColor}">[[${coreRoll}]]</span></th> 
                 `;
 
-                my_string2 += `<tr>
-                <th>${coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)}</th>
-                <th class="tags"><div class="tag" style="background-color: ${rankColor}; white-space:nowrap">${coreSkill._modifiers[1].label}</th>
-                <th>${coreSkill.totalModifier}</th> 
-                <th><span style="color: ${rollColor}">[[${coreRoll}]]</span></th></tr>`;
-
                 for (realDc of dcs) {
                     if (!isNaN(realDc)) {
                         const atot = coreRoll - realDc;
@@ -201,7 +199,6 @@ if (canvas.tokens.controlled.length !== 1){
                     }
                 }
                 my_string += ` </tr>`;
-               
             }
 
             my_string += `</table>`;
@@ -236,7 +233,6 @@ if (canvas.tokens.controlled.length !== 1){
                 default:  
                     break; 
             }
-            // my_string += `<br><strong>Lore Skills</strong><br><strong>Unspecific:</strong> 1st: DC ${lore_dcs[1]}; 2nd: DC ${lore_dcs[2]}; 3rd: DC ${lore_dcs[3]}; 4th: DC ${lore_dcs[4]}; 5th: DC ${lore_dcs[5]}`;
             my_string += `<table>
                 <tr>
                     <th>Lore Skill DCs</th>
@@ -293,7 +289,14 @@ if (canvas.tokens.controlled.length !== 1){
             }
             my_string += `</table>`
         }
-
+        await ChatMessage.create({
+            user: game.userId,
+            type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+            content: `${token.name} tries to remember if they've heard something related to this.`,       
+            visible: true,       
+            speaker: ChatMessage.getSpeaker(),
+            flags: {pf2e: { recall: true } },
+        });
         await ChatMessage.create({
             user: game.userId,
             type: CONST.CHAT_MESSAGE_TYPES.OTHER,
@@ -306,6 +309,5 @@ if (canvas.tokens.controlled.length !== 1){
             speaker: await ChatMessage.getSpeaker(),
             flags: {pf2e: { recall: true } },
         });
-        ui.notifications.info(`${token.name} tries to remember if they've heard something related to this.`)
     }
   }
