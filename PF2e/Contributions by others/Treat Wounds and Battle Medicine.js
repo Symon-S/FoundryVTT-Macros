@@ -62,7 +62,6 @@ token.actor.itemTypes.equipment.some(
 */
 const getRollOptions = ({ isRiskySurgery } = {}) => [
  ...token.actor.getRollOptions(['all', 'skill-check', 'medicine']),
- 'treat wounds',
  'action:treat-wounds',
  // This conditionally adds some elements to the available options
  // If there are more cases like this, it might be good to rewrite this with
@@ -244,7 +243,7 @@ const rollTreatWounds = async ({
    med.check.roll({
      dc: dc,
      event: event,
-     options: getRollOptions({ isRiskySurgery: isRiskySurgery }),
+     extraRollOptions: getRollOptions({ isRiskySurgery: isRiskySurgery }),
      callback: async (roll) => {
        const { healFormula, successLabel } = getHealSuccess({
          success: roll.options.degreeOfSuccess,
