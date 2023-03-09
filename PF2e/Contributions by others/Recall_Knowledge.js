@@ -76,14 +76,7 @@ if (canvas.tokens.controlled.length !== 1){
                           <th><span style="color: ${rollColor}">[[${coreRoll}]]</span></th></tr>`;
         }
     }
-    await ChatMessage.create({
-        user: game.userId,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-        content: `${token.name} tries to remember if they've heard something related to this.`,       
-        visible: true,       
-        speaker: ChatMessage.getSpeaker(),
-        flags: {pf2e: { recall: true } },
-    });
+    ui.notifications.info(`${token.name} tries to remember if they've heard something related to this.`)
     await ChatMessage.create({
         user: game.userId,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER,
@@ -289,14 +282,7 @@ if (canvas.tokens.controlled.length !== 1){
             }
             my_string += `</table>`
         }
-        await ChatMessage.create({
-            user: game.userId,
-            type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-            content: `${token.name} tries to remember if they've heard something related to this.`,       
-            visible: true,       
-            speaker: ChatMessage.getSpeaker(),
-            flags: {pf2e: { recall: true } },
-        });
+        ui.notifications.info(`${token.name} tries to remember if they've heard something related to this.`)
         await ChatMessage.create({
             user: game.userId,
             type: CONST.CHAT_MESSAGE_TYPES.OTHER,
