@@ -30,7 +30,7 @@ for (const id of token.actor.itemTypes.spell) {
 const mm = [];
 
 for (const e of mmE) {
-	const spellData = await e.getSpellData();
+	const spellData = await e.getSheetData();
 	for (const sp of spellData.levels) {
 		if (sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { continue; }
 		let i = 0;
