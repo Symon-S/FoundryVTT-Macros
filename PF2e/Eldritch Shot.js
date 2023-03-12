@@ -28,7 +28,7 @@ async function Eldritch_shot()
       for (const e of token.actor.itemTypes.spellcastingEntry) {
         if (e.isRitual) { continue; }
         if (e.system.prepared.value === "items") { continue }
-			  const spellData = await e.getSpellData();
+			  const spellData = await e.getSheetData();
          for(const sp of spellData.levels) {
            if(sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { continue; }
            let i = 0;
