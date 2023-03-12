@@ -63,7 +63,7 @@ async function Spellstrike()
 
     let spells = [];
     for (const e of entries) {
-			const spellData = await e.getSpellData();
+			const spellData = await e.getSheetData();
 			for (const sp of spellData.levels) {
         if (standby && sp.level < token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell === true).baseLevel) { continue; }
         if(sp.isCantrip && standby) { continue; }
