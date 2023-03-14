@@ -270,9 +270,26 @@ const rollTreatWounds = async ({
          );
 
          my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`;
-
-         healRoll.toMessage({
-           flavor: `${my_message}<br>${immunityMessage}`,
+         // is there a faster alternative to check for DSN and activate the hook instead of this whole if else with double the code inside?
+         if (game.modules.get("dice-so-nice")?.active) {
+          Hooks.once('diceSoNiceRollComplete', (rollid) => { 
+            healRoll.toMessage({
+              flavor: `${my_message}<br>${immunityMessage}`,
+              speaker: ChatMessage.getSpeaker(),
+              flags: {
+                "treat_wounds_battle_medicine": {
+                  id: target.id,
+                  dos: roll.options.degreeOfSuccess,
+                  healerId: token.actor.id,
+                  healing: healRoll._total
+                }
+              }
+            });
+            rollid = aroll.id;
+          });
+        } else {
+          healRoll.toMessage({
+            flavor: `${my_message}<br>${immunityMessage}`,
             speaker: ChatMessage.getSpeaker(),
             flags: {
               "treat_wounds_battle_medicine": {
@@ -283,21 +300,42 @@ const rollTreatWounds = async ({
               }
             }
           });
+        }
        } else {
-        ChatMessage.create({
-          user: game.user.id,
-          type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-          flavor: `No healing done.<br>${immunityMessage}`,
-          speaker: ChatMessage.getSpeaker(),
-          flags: {
-            "treat_wounds_battle_medicine": {
-              id: target.id,
-              dos: roll.options.degreeOfSuccess,
-              healerId: token.actor.id,
-              healing: healRoll._total
+        if (game.modules.get("dice-so-nice")?.active) {
+          Hooks.once('diceSoNiceRollComplete', (rollid) => {
+            ChatMessage.create({
+              user: game.user.id,
+              type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+              flavor: `No healing done.<br>${immunityMessage}`,
+              speaker: ChatMessage.getSpeaker(),
+              flags: {
+                "treat_wounds_battle_medicine": {
+                  id: target.id,
+                  dos: roll.options.degreeOfSuccess,
+                  healerId: token.actor.id,
+                  healing: healRoll._total
+                }
+              }
+            });
+            rollid = aroll.id;
+          });
+        } else {
+          ChatMessage.create({
+            user: game.user.id,
+            type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+            flavor: `No healing done.<br>${immunityMessage}`,
+            speaker: ChatMessage.getSpeaker(),
+            flags: {
+              "treat_wounds_battle_medicine": {
+                id: target.id,
+                dos: roll.options.degreeOfSuccess,
+                healerId: token.actor.id,
+                healing: healRoll._total
+              }
             }
-          }
-         });
+          });
+        }
        }
      },
    });
