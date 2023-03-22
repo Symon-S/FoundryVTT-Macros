@@ -285,7 +285,7 @@ const rollTreatWounds = async ({
                 }
               }
             });
-            rollid = aroll.id;
+            rollid = roll.id;
           });
         } else {
           healRoll.toMessage({
@@ -318,7 +318,7 @@ const rollTreatWounds = async ({
                 }
               }
             });
-            rollid = aroll.id;
+            rollid = roll.id;
           });
         } else {
           ChatMessage.create({
