@@ -188,7 +188,7 @@ if (roll.options.degreeOfSuccess === 2) {
 	}
 }
 await token.actor.createEmbeddedDocuments("Item",[aura]);
-if (roll.options.degreeOfSuccess !== 1) { 
+if (roll.options.degreeOfSuccess > 1) { 
   const currentpoints = actor.system.resources.focus.value-1;
   await actor.update({"system.resources.focus.value":currentpoints});
 }
