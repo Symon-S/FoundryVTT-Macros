@@ -154,6 +154,7 @@ const rollTreatWounds = async ({
  target,
  immunityEffect,
  immunityMacroLink,
+ usedBattleMedicsBaton,
 }) => {
  const dc = {
    value: DC,
@@ -218,7 +219,8 @@ const rollTreatWounds = async ({
            id: target.id,
            dos: success,
            healerId: token.actor.id,
-           healing: healRoll._total
+           healing: healRoll._total,
+           bmBatonUsed: usedBattleMedicsBaton,
          }
        }
      });
@@ -233,7 +235,8 @@ const rollTreatWounds = async ({
           id: target.id,
           dos: success,
           healerId: token.actor.id,
-          healing: healRoll._total
+          healing: healRoll._total,
+          bmBatonUsed: usedBattleMedicsBaton,
         }
       }
     });
@@ -281,7 +284,8 @@ const rollTreatWounds = async ({
                   id: target.id,
                   dos: roll.options.degreeOfSuccess,
                   healerId: token.actor.id,
-                  healing: healRoll._total
+                  healing: healRoll._total,
+                  bmBatonUsed: usedBattleMedicsBaton,
                 }
               }
             });
@@ -296,7 +300,8 @@ const rollTreatWounds = async ({
                 id: target.id,
                 dos: roll.options.degreeOfSuccess,
                 healerId: token.actor.id,
-                healing: healRoll._total
+                healing: healRoll._total,
+                bmBatonUsed: usedBattleMedicsBaton,
               }
             }
           });
@@ -314,7 +319,8 @@ const rollTreatWounds = async ({
                   id: target.id,
                   dos: roll.options.degreeOfSuccess,
                   healerId: token.actor.id,
-                  healing: healRoll._total
+                  healing: healRoll._total,
+                  bmBatonUsed: usedBattleMedicsBaton,
                 }
               }
             });
@@ -331,7 +337,8 @@ const rollTreatWounds = async ({
                 id: target.id,
                 dos: roll.options.degreeOfSuccess,
                 healerId: token.actor.id,
-                healing: healRoll._total
+                healing: healRoll._total,
+                bmBatonUsed: usedBattleMedicsBaton,
               }
             }
           });
@@ -390,6 +397,8 @@ async function applyChanges($html) {
      checkFeat('magic-hands');
    const useContinualRecovery = !useBattleMedicine &&
      checkFeat('continual-recovery');
+   const usedBattleMedicsBaton = useBattleMedicine && 
+     $html.find('[name="battle_medics_baton_held_bool"]')[0]?.checked;
    const bmUUID = 'Compendium.pf2e.feat-effects.2XEYQNZTCGpdkyR6';
    const twUUID = 'Compendium.pf2e.feat-effects.Lb4q2bBAgxamtix5';
    const immunityEffectUUID = useBattleMedicine ? bmUUID : twUUID;
@@ -493,7 +502,17 @@ async function applyChanges($html) {
        immunityEffect.system.duration.unit = "minutes";
        immunityEffect.system.duration.value = 10;
      }
-     
+     if (usedBattleMedicsBaton) {
+      immunityEffect.system.duration.unit = "minutes";
+      immunityEffect.system.duration.value = 60;
+      const applicatorImmunityEffect = (await fromUuid(immunityEffectUUID)).toObject();
+      applicatorImmunityEffect.system.tokenIcon.show = showIcons; 
+      applicatorImmunityEffect.flags.core ??= {};
+      applicatorImmunityEffect.flags.core.sourceId = immunityEffectUUID;
+      applicatorImmunityEffect.name = "Battle Medic's Baton used";
+      await token.actor.createEmbeddedDocuments("Item", [applicatorImmunityEffect]);
+      ui.notifications.info(token.name + ` has now used their Battle Medic's Baton to apply ${bmtw} to ` + targetActor.name);
+    }
      // does only work if both tokens have the same owner.
      // await targetActor.createEmbeddedDocuments("Item", [immunityEffect]);
      // ui.notifications.info(targetActor.name + ` is now immune to ${bmtw} by ` + token.name);
@@ -518,6 +537,7 @@ async function applyChanges($html) {
            target,
            immunityEffect,
            immunityMacroLink,
+           usedBattleMedicsBaton,
          });
          break;
        case 2:
@@ -533,6 +553,7 @@ async function applyChanges($html) {
            target,
            immunityEffect,  
            immunityMacroLink,
+           usedBattleMedicsBaton,
          });
          break;
        case 3:
@@ -548,6 +569,7 @@ async function applyChanges($html) {
            target,
            immunityEffect,
            immunityMacroLink,
+           usedBattleMedicsBaton,
          });
          break;
        case 4:
@@ -563,6 +585,7 @@ async function applyChanges($html) {
            target,
            immunityEffect,
            immunityMacroLink,
+           usedBattleMedicsBaton,
          });
          break;
        default:
@@ -593,6 +616,8 @@ const renderDialogContent = ({
  totalAssurance,
  hasHealersTools,
  hasHealersToolsHeld,
+ batonUsed,
+ hasBattleMedicsBatonHeld,
 }) => `
  <div>
    Attempt to heal the target by 2d8 hp.<br>You have to hold healer's tools, or you are wearing them and have a hand free!<br>
@@ -732,6 +757,17 @@ const renderDialogContent = ({
      : ``
  }
  ${
+  !batonUsed &&
+  hasBattleMedicsBatonHeld 
+    ? `<form>
+        <div class="form-group">
+          <label title="(Battle Medicine only) Target creature will only be immune for one hour instead of 24 hours to your Battle Medicine.">Use Battle Medic's Baton:</label>
+          <input type="checkbox" id="battle_medics_baton_held_bool" name="battle_medics_baton_held_bool"></input>
+        </div>
+      </form>`
+    : ``
+ }
+ ${
    !hasHealersToolsHeld
      ? `<b>Note: To gain the bonus of Healer's Tools (if any), you have to set the Healer's Tools to be held with both hands, due to how the item is implemented in the pf2e core system.</b>`
      : ``
@@ -775,6 +811,10 @@ if (canvas.tokens.controlled.length !== 1){
    const hasHealersToolsHeld = !hasHealersTools || checkItemPresent('healer-s-tools', 2) || checkItemPresent('healers-tools', 2)
                            || checkItemPresent('healers-tools-expanded', 2) || checkItemPresent('violet-ray', 2)
                            || checkItemPresent('marvelous-medicines', 2) || checkItemPresent('marvelous-medicines-greater', 2);
+   const hasBattleMedicsBatonHeld = checkItemPresent('battle-medic-s-baton', 1) || checkItemPresent('battle-medics-baton', 1);
+   const batonUsed = token.actor.itemTypes.effect.find(obj => {
+      return obj.name === `Battle Medic's Baton used`
+   })
    const level = token.actor.system.details.level.value;
    const totalAssurance = 10 + (bmtw_skill.rank * 2 + level);
    const dialog = new Dialog({
@@ -787,6 +827,8 @@ if (canvas.tokens.controlled.length !== 1){
        totalAssurance,
        hasHealersTools,
        hasHealersToolsHeld,
+       batonUsed,
+       hasBattleMedicsBatonHeld,
      }),
      buttons: {
        yes: {

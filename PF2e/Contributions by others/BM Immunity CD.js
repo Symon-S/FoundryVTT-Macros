@@ -39,13 +39,14 @@ async function main(html) {
         bmEffect.flags.core.sourceId = bm_UUID;
 
         const applicator = game.actors.get(message.flags.treat_wounds_battle_medicine.healerId);
+        const bmbatonused = game.actors.get(message.flags.treat_wounds_battle_medicine.bmBatonUsed);
 
         bmEffect.name = "Battle Medicine by " + applicator.name;
         bmEffect.img = applicator.prototypeToken.texture.src;
         const isgodless = CheckFeat('godless-healing', token.actor); //godless healing affects the patient, not the healer
         const isForensic = CheckFeat('forensic-medicine-methodology', applicator);
 
-        if (isForensic || isgodless) {
+        if (isForensic || isgodless || bmbatonused) {
             bmEffect.system.duration.unit = "hours";
         }
 
