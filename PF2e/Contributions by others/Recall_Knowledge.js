@@ -12,10 +12,23 @@ Limitations:
 * Does not handle things like bardic knowledge.
 */
 
+
+/**
+* Get the available roll options
+*
+* @param {Object} options
+* @returns {string[]} All available roll options
+*/
+const getRollOptions = ({} = {}) => [
+    ...token.actor.getRollOptions(['all', 'skill-check']),
+    'action:recall-knowledge',
+   ];
+   
+
 /**
 * Global d20 roll used for all skills.
 */
-let globalroll = await new Roll("1d20").roll({ async: true }); 
+let globalroll = await new Roll("1d20").roll({extraRollOptions: getRollOptions({}), async: true }); 
 
 const rollColor = {
       20: "green",
@@ -70,7 +83,7 @@ if (canvas.tokens.controlled.length !== 1){
                 legendary: "#5e0000",
             }[coreSkill._modifiers[1].label.toLowerCase()];
 
-            my_string += `<tr><th>${coreSkill.label == undefined ? coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1) : coreSkill.label} </th>
+            my_string += `<tr><th>${coreSkill.slug.indexOf('-') > -1 ? coreSkill.label : coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)} </th>
                           <th class="tags"><div class="tag" style="background-color: ${rankColor}; white-space:nowrap">${coreSkill._modifiers[1].label}</th>
                           <th>${coreSkill.totalModifier}</th>
                           <th><span style="color: ${rollColor}">[[${coreRoll}]]</span></th></tr>`;
