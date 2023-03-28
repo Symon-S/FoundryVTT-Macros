@@ -205,7 +205,7 @@ const defaultIcon = "systems/pf2e/icons/spells/time-beacon.webp";
 
 const defaultPresets = [
   {slug: "battle_medicine", name: "Battle Medicine", duration: "24", units: "hours", icon: "icons/magic/symbols/question-stone-yellow.webp", cooldown: false},
-  {slug: "treat_wounds", name: "Treat Wounds", duration: "50", units: "minutes", icon: "systems/pf2e/icons/conditions/wounded.webp", cooldown: false},
+  {slug: "treat_wounds", name: "Treat Wounds", duration: "50", units: "minutes", icon: "systems/pf2e/icons/features/feats/treat-wounds.webp", cooldown: false},
 ];
 
 const defaultUnits = [
