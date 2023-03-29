@@ -6,12 +6,17 @@ Recall Knowledge
 This macro will roll several knowledge checks if no target is selected.
 If one ore more targets are selected it will only roll the relevant knowledge skills and compare the result to the DC.
 Handles lore skills (as far as possible)
+Handles Cognitive Mutagen and other Bonus effects
+
 
 Limitations:
 * Does not handle assurance.
 * Does not handle things like bardic knowledge.
 */
 
+if (canvas.tokens.controlled.length !== 1){
+    ui.notifications.warn('You need to select exactly one token to perform Recall Knowledge.');
+} else {
 
 /**
 * Get the available roll options
@@ -62,9 +67,7 @@ if (!game.modules.get("actually-private-rolls")?.active) { Hooks.on('renderChatM
 const SKILL_OPTIONS = ["arc", "cra", "med", "nat", "occ", "rel", "soc"];
 const IDENTIFY_SKILLS = {aberration: "occ",astral: "occ",animal: "nat",beast: ["arc", "nat"] ,celestial: "rel",construct: ["arc", "cra"],dragon: "arc",elemental: ["arc", "nat"],ethereal: "occ",fey: "nat",fiend: "rel",fungus: "nat",giant: "soc",humanoid: "soc",monitor: "rel",ooze: "occ",plant: "nat",spirit: "occ",undead: "rel"};
 
-if (canvas.tokens.controlled.length !== 1){
-    ui.notifications.warn('You need to select exactly one token to perform Recall Knowledge.');
-  } else if (game.user.targets.size < 1){
+if (game.user.targets.size < 1){
     // do all checks
     for (const token of canvas.tokens.controlled) {
         const LORE_SKILL_SLUGS = getLoreSkillsSlugs(token);
@@ -73,7 +76,13 @@ if (canvas.tokens.controlled.length !== 1){
         var my_string = ``
         for (primaryskill of SKILL_OPTIONS) {
             const coreSkill = token.actor.system.skills[primaryskill];
-            const coreRoll = Number(globalroll.total) + Number(coreSkill.totalModifier);
+            let validModifiers = Number(coreSkill.totalModifier);
+            for (mod of coreSkill._modifiers) {
+                if (mod.predicate[0] === 'action:recall-knowledge') {
+                    validModifiers += mod.modifier;
+                }
+            }
+            const coreRoll = Number(globalroll.total) + Number(validModifiers);
 
             const rankColor = {
                 untrained: "#443730",
@@ -85,7 +94,7 @@ if (canvas.tokens.controlled.length !== 1){
 
             my_string += `<tr><th>${coreSkill.slug.indexOf('-') > -1 ? coreSkill.label : coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)} </th>
                           <th class="tags"><div class="tag" style="background-color: ${rankColor}; white-space:nowrap">${coreSkill._modifiers[1].label}</th>
-                          <th>${coreSkill.totalModifier}</th>
+                          <th>${validModifiers}</th>
                           <th><span style="color: ${rollColor}">[[${coreRoll}]]</span></th></tr>`;
         }
     }
@@ -94,14 +103,14 @@ if (canvas.tokens.controlled.length !== 1){
         user: game.userId,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER,
         content: `<strong>Recall Knowledge</strong>
-        <br><strong>Roll: </strong><span style="color: ${rollColor}">[[${globalroll.total}]]</span>
-        <table>
-        <tr>
-        <th>Skill</th>
-        <th>Prof</th>
-        <th>Mod</th>
-        <th>Result</th>
-        ${my_string}`,
+                  <br><strong>Roll: </strong><span style="color: ${rollColor}">[[${globalroll.total}]]</span>
+                  <table>
+                  <tr>
+                  <th>Skill</th>
+                  <th>Prof</th>
+                  <th>Mod</th>
+                  <th>Result</th>
+                  ${my_string}`,
         whisper: game.users.contents.flatMap((user) => (user.isGM ? user.id : [])),
         visible: false,
         blind: true,
@@ -167,7 +176,13 @@ if (canvas.tokens.controlled.length !== 1){
                 </tr>`;
             for (primaryskill of primaryskills) {
                 const coreSkill = token.actor.system.skills[primaryskill];
-                const coreRoll = Number(globalroll.total) + Number(coreSkill.totalModifier);
+                let validModifiers = Number(coreSkill.totalModifier);
+                for (mod of coreSkill._modifiers) {
+                    if (mod.predicate[0] === 'action:recall-knowledge') {
+                        validModifiers += mod.modifier;
+                    }
+                }
+                const coreRoll = Number(globalroll.total) + Number(validModifiers);
 
                 const rankColor = {
                     untrained: "#443730",
@@ -178,7 +193,7 @@ if (canvas.tokens.controlled.length !== 1){
                 }[coreSkill._modifiers[1].label.toLowerCase()];
 
                 my_string += `<tr>
-                    <td><label title="${coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)} (${coreSkill._modifiers[1].label}) Roll: ${globalroll.total} + ${coreSkill.totalModifier}">${coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1,5)}</label></td>
+                    <td><label title="${coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)} (${coreSkill._modifiers[1].label}) Roll: ${globalroll.total} + ${validModifiers}">${coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1,5)}</label></td>
                 <th><span style="color: ${rollColor}">[[${coreRoll}]]</span></th> 
                 `;
 
@@ -271,7 +286,13 @@ if (canvas.tokens.controlled.length !== 1){
 
             for (loreSKillSlug of LORE_SKILL_SLUGS) {
                 const loreSkill = token.actor.system.skills[loreSKillSlug];
-                const loreRoll = Number(globalroll.total) + Number(loreSkill.totalModifier);
+                let validModifiers = Number(loreSkill.totalModifier);
+                for (mod of loreSkill._modifiers) {
+                    if (mod.predicate[0] === 'action:recall-knowledge') {
+                        validModifiers += mod.modifier;
+                    }
+                }
+                const loreRoll = Number(globalroll.total) + Number(validModifiers);
 
                 const rankColor = {
                     untrained: "#443730",
@@ -290,7 +311,7 @@ if (canvas.tokens.controlled.length !== 1){
 
                 my_string += `<tr><td>${loreSkill.label}</td>
                                <td class="tags"><div class="tag" style="background-color: ${rankColor}; white-space:nowrap">${loreSkill._modifiers[1].label}</td>
-                               <td>${loreSkill.totalModifier}</td>
+                               <td>${validModifiers}</td>
                                <td><span style="color: ${rollColor}">[[${loreRoll}]]</span></td>`;    
             }
             my_string += `</table>`
@@ -310,3 +331,4 @@ if (canvas.tokens.controlled.length !== 1){
         });
     }
   }
+}
