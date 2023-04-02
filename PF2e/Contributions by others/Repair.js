@@ -41,22 +41,18 @@ if (canvas.tokens.controlled.length !== 1){
   } else 
 {
 
-let DCsByLevel = [14, 15, 16, 18, 19, 20, 22, 23, 24, 26, 27, 28, 30, 31, 32, 34, 35, 36, 38, 39, 40, 42, 44, 46, 48, 50]
-let DC = DCsByLevel[token.actor.system.details.level.value + 2]
-
 const hasRepairKit = checkItemPresent('repair-kit') || checkItemPresent('repair-kit-superb');
 // const hasRepairFeat = checkFeat('tinkering-fingers');
 
-const actors = canvas.tokens.controlled.flatMap((token) => token.actor ?? []);
-if (!actors.length && game.user.character) {
-    actors.push(game.user.character);
-}
 const skillName = "Repair";
 const skillKey = "cra";
 const actionSlug = "Repair"
 const actionName = "Repair"
 
 const modifiers = []
+
+let DCsByLevel = [14, 15, 16, 18, 19, 20, 22, 23, 24, 26, 27, 28, 30, 31, 32, 34, 35, 36, 38, 39, 40, 42, 44, 46, 48, 50]
+let DC = DCsByLevel[token.actor.system.details.level.value + 2]
 
 const notes = [...token.actor.system.skills[skillKey].notes]; // add more notes if necessary
 const options = token.actor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
