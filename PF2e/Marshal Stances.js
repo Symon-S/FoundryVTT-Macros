@@ -105,7 +105,7 @@ async function SRoll() {
 
   if (roll.options.degreeOfSuccess === 2) {
     if(choice === 'dms'){
-      const effect = (await fromUuid('Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.IkrhT9FMQDNALa8S')).toObject();
+      const effect = (await fromUuid('Compendium.pf2e.feat-effects.qX62wJzDYtNxDbFv')).toObject();
       effect.img = img;
       effect.system.rules.shift();
       effect.system.rules[0].radius = 10;
@@ -113,7 +113,7 @@ async function SRoll() {
       await token.actor.createEmbeddedDocuments("Item", [effect]);
     }
     if (choice === 'ims'){
-      const effect = (await fromUuid('Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.eGFBzz1oAd6w3GTz')).toObject();
+      const effect = (await fromUuid("Compendium.pf2e.feat-effects.er5tvDNvpbcnlbHQ")).toObject();
       effect.img = img;
       effect.system.rules.shift();
       effect.system.rules[0].radius = 10;
@@ -123,7 +123,7 @@ async function SRoll() {
   }
   if (roll.options.degreeOfSuccess === 3) {
     if(choice === 'dms'){
-      const effect = (await fromUuid('Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.IkrhT9FMQDNALa8S')).toObject();
+      const effect = (await fromUuid('Compendium.pf2e.feat-effects.qX62wJzDYtNxDbFv')).toObject();
       effect.img = img;
       effect.system.rules.shift();
       effect.system.rules[0].radius = 20;
@@ -131,7 +131,7 @@ async function SRoll() {
       await token.actor.createEmbeddedDocuments("Item", [effect]);
     }
     if (choice === 'ims'){
-      const effect = (await fromUuid('Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.eGFBzz1oAd6w3GTz')).toObject();
+      const effect = (await fromUuid('Compendium.pf2e.feat-effects.er5tvDNvpbcnlbHQ')).toObject();
       effect.img = img;
       effect.system.rules.shift();
       effect.system.rules[0].radius = 20;
