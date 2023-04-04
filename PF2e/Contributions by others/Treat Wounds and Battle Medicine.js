@@ -274,8 +274,7 @@ const rollTreatWounds = async ({
 
          my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`;
          // is there a faster alternative to check for DSN and activate the hook instead of this whole if else with double the code inside?
-         if (game.modules.get("dice-so-nice")?.active) {
-          // game.settings.get("module","setting")
+         if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
           Hooks.once('diceSoNiceRollComplete', (rollid) => { 
             healRoll.toMessage({
               flavor: `${my_message}<br>${immunityMessage}`,
@@ -308,7 +307,7 @@ const rollTreatWounds = async ({
           });
         }
        } else {
-        if (game.modules.get("dice-so-nice")?.active) {
+        if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
           Hooks.once('diceSoNiceRollComplete', (rollid) => {
             ChatMessage.create({
               user: game.user.id,

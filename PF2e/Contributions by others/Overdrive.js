@@ -26,8 +26,6 @@ if (canvas.tokens.controlled.length < 1){
         const OD_Succ_ITEM_UUID = 'Compendium.pf2e.feat-effects.MZDh3170EFIfOwTO'; // Effect: Overdrive (Success)
         const OD_CrSu_ITEM_UUID = 'Compendium.pf2e.feat-effects.1XlJ9xLzL19GHoOL'; // Effect: Overdrive (Critical Success)
         // get Main Actor
-        console.log(inventorTokenActor);
-        console.log(token.actor);
 
         const notes = [...inventorTokenActor.system.skills[skillKey].notes]; // add more notes if necessary
         const options = inventorTokenActor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
@@ -65,7 +63,7 @@ if (canvas.tokens.controlled.length < 1){
                             await actor.createEmbeddedDocuments('Item', [source]);
                         }
                     };
-                    if (game.modules.get("dice-so-nice")?.active) {
+                    if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
                         Hooks.once('diceSoNiceRollComplete', (rollid) => {
                             ChatMessage.create({
                                 user: game.user.id,
@@ -98,7 +96,7 @@ if (canvas.tokens.controlled.length < 1){
                             await actor.createEmbeddedDocuments('Item', [source]);
                         }
                     };
-                    if (game.modules.get("dice-so-nice")?.active) {
+                    if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
                         Hooks.once('diceSoNiceRollComplete', (rollid) => {
                             ChatMessage.create({
                                 user: game.user.id,
@@ -121,7 +119,7 @@ if (canvas.tokens.controlled.length < 1){
                         });
                     }
                 } else if (roll.degreeOfSuccess === 1) {
-                    if (game.modules.get("dice-so-nice")?.active) {
+                    if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
                         Hooks.once('diceSoNiceRollComplete', (rollid) => {
                             ChatMessage.create({
                                 user: game.user.id,
@@ -143,7 +141,7 @@ if (canvas.tokens.controlled.length < 1){
                     //crit fail damage
                     let actorLevel = inventorTokenActor.system.details.level.value
                     let DamageRoll = CONFIG.Dice.rolls.find((r) => r.name == "DamageRoll");
-                    if (game.modules.get("dice-so-nice")?.active) {
+                    if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
                         Hooks.once('diceSoNiceRollComplete', (rollid) => {
                             new DamageRoll(actorLevel + "[fire]").toMessage({ 
                                 flavor: "<strong>Overdrive Critical Malfunction 🔥!!</strong><br>Whoops! Something explodes.<br>You take fire damage equal to your level, and you can't use Overdrive again for 1 minute as your gizmos cool down and reset.",
@@ -167,16 +165,9 @@ if (canvas.tokens.controlled.length < 1){
                         }
                     };
                 }
-                console.log(1)
             },
-            console.log(2)
-
         );
-        console.log(3)
-
     }
-    console.log(1)
-
 
 async function applyChanges($html) {
     const inventorTokenActor = actors.filter((actor) => actor.id === $html.find('[name="inventor"]')[0].value)[0];
