@@ -67,44 +67,73 @@ game.pf2e.Check.roll(
     async (roll) => {
         if (roll.degreeOfSuccess === 3) {
             // crit success message
-            Hooks.once('diceSoNiceRollComplete', (rollid) => {
+            if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
+                Hooks.once('diceSoNiceRollComplete', (rollid) => {
+                    new DamageRoll(`10 + ${token.actor.skills.crafting.rank} * 10`).toMessage({ 
+                        flavor: `<strong>Critical Success</strong><br>You restore 10 Hit Points to the item, plus an additional 10 Hit Points per proficiency rank you have in Crafting (a total of 20 HP if you’re trained, 30 HP if you’re an expert, 40 HP if you’re a master, or 50 HP if you’re legendary).`,
+                        speaker: ChatMessage.getSpeaker(),
+                    },);
+                    rollid = roll.id;
+                });
+            } else {
                 new DamageRoll(`10 + ${token.actor.skills.crafting.rank} * 10`).toMessage({ 
                     flavor: `<strong>Critical Success</strong><br>You restore 10 Hit Points to the item, plus an additional 10 Hit Points per proficiency rank you have in Crafting (a total of 20 HP if you’re trained, 30 HP if you’re an expert, 40 HP if you’re a master, or 50 HP if you’re legendary).`,
                     speaker: ChatMessage.getSpeaker(),
                 },);
-                rollid = roll.id;
-            });
+            }
 
         } else if (roll.degreeOfSuccess === 2) {
             // success message
-            Hooks.once('diceSoNiceRollComplete', (rollid) => {
+            if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
+                Hooks.once('diceSoNiceRollComplete', (rollid) => {
+                    new DamageRoll(`5 + ${token.actor.skills.crafting.rank} * 5`).toMessage({ 
+                        flavor: `<strong>Success</strong><br>You restore 5 Hit Points to the item, plus an additional 5 per proficiency rank you have in Crafting (for a total of 10 HP if you are trained, 15 HP if you’re an expert, 20 HP if you’re a master, or 25 HP if you’re legendary).`,
+                        speaker: ChatMessage.getSpeaker(),
+                    },);
+                    rollid = roll.id;
+                });
+            } else {
                 new DamageRoll(`5 + ${token.actor.skills.crafting.rank} * 5`).toMessage({ 
                     flavor: `<strong>Success</strong><br>You restore 5 Hit Points to the item, plus an additional 5 per proficiency rank you have in Crafting (for a total of 10 HP if you are trained, 15 HP if you’re an expert, 20 HP if you’re a master, or 25 HP if you’re legendary).`,
                     speaker: ChatMessage.getSpeaker(),
                 },);
-                  rollid = roll.id;
-            });
-
+            }
         } else if (roll.degreeOfSuccess === 1) {
             // Fail message
-            Hooks.once('diceSoNiceRollComplete', (rollid) => {
-              ChatMessage.create({
-                user: game.user.id,
-                type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                flavor: `<strong>Failure</strong><br>You fail to make the repair and nothing happens.`,
-                speaker: ChatMessage.getSpeaker(),
-              });
-              rollid = roll.id;
-            });
+            if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
+                Hooks.once('diceSoNiceRollComplete', (rollid) => {
+                    ChatMessage.create({
+                        user: game.user.id,
+                        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+                        flavor: `<strong>Failure</strong><br>You fail to make the repair and nothing happens.`,
+                        speaker: ChatMessage.getSpeaker(),
+                    });
+                rollid = roll.id;
+                });
+            } else {
+                ChatMessage.create({
+                    user: game.user.id,
+                    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+                    flavor: `<strong>Failure</strong><br>You fail to make the repair and nothing happens.`,
+                    speaker: ChatMessage.getSpeaker(),
+                });
+            }
         } else if (roll.degreeOfSuccess === 0) {
             // crit fail damage
-            Hooks.once('diceSoNiceRollComplete', (rollid) => {
+            if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
+                Hooks.once('diceSoNiceRollComplete', (rollid) => {
+                    new DamageRoll("2d6").toMessage({ 
+                        flavor: "<strong>Critical Failure</strong><br>You deal 2d6 damage to the item. Apply the item’s Hardness to this damage.",
+                        speaker: ChatMessage.getSpeaker(),
+                    },);
+                    rollid = roll.id;
+                });
+            } else {
                 new DamageRoll("2d6").toMessage({ 
                     flavor: "<strong>Critical Failure</strong><br>You deal 2d6 damage to the item. Apply the item’s Hardness to this damage.",
                     speaker: ChatMessage.getSpeaker(),
                 },);
-                rollid = roll.id;
-             });
+            }
         }
     },
 );
