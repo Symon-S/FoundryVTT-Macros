@@ -54,6 +54,19 @@ token.actor.itemTypes.equipment.some(
 );
 
 /**
+* Wrapper for the DSN Hook. It will only use the hook if the non-buggy setting is not enabled.
+*
+* @param {Object} code code which will be executed
+*/
+function dsnHook(code) {
+  if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
+    Hooks.once('diceSoNiceRollComplete', code);
+  } else {
+    code();
+  }
+}
+
+/**
 * Get the available roll options
 *
 * @param {Object} options
@@ -168,114 +181,110 @@ const rollTreatWounds = async ({
  const bonusString = bonus > 0 ? ` + ${bonus}` : '';
  const immunityMessage = `<strong>${target.name}</strong> is now immune to ${immunityEffect.name} for ${immunityEffect.system.duration.value} ${immunityEffect.system.duration.unit}.<br>${immunityMacroLink}`;
 
- if (assurance) {
-   const aroll = await new CheckRoll(
-     `10 + ${med.modifiers.find((m) => m.type === 'proficiency').modifier}`
-   ).roll({ async: true });
-   ChatMessage.create({
-     user: game.user.id,
-     type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-     flavor: `<strong>Assurance Roll: ${
-       med.label[0].toUpperCase() + med.label.substring(1)
-     }</strong> vs DC ${DC}<br><small>Do not apply any other bonuses, penalties, or modifiers</small><br>`,
-     roll: aroll,
-     speaker: ChatMessage.getSpeaker(),
-   });
-
-   const atot = aroll.total - DC;
-
-   const success = atot >= 10 ? 3 : atot >= 0 ? 2 : atot <= -10 ? 0 : 1;
-
-   const { healFormula, successLabel } = getHealSuccess({
-     success,
-     useMagicHands,
-     useMortalHealing,
-     isRiskySurgery,
-     bonusString,
-   });
-
-   if (isRiskySurgery) {
-     ChatMessage.create({
-       user: game.user.id,
-       type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-       flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
-       roll: await new DamgeRoll('{1d8}[slashing]').roll({ async: true }),
-       speaker: ChatMessage.getSpeaker(),
-     });
-   }
-   let healRoll = 0;
-   if (healFormula !== undefined) {
-     const rollType = success > 1 ? 'Healing' : 'Damage';
-     healRoll = await new DamageRoll(`${healFormula}[${rollType}]`).roll({
-       async: true,
-     });
-     my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`;
-
-     healRoll.toMessage({
-      flavor: `${my_message}<br>${immunityMessage}`,
-       speaker: ChatMessage.getSpeaker(),
-       flags: {
-         "treat_wounds_battle_medicine": {
-           id: target.id,
-           dos: success,
-           healerId: token.actor.id,
-           healing: healRoll._total,
-           bmBatonUsed: usedBattleMedicsBaton,
-         }
-       }
-     });
-   } else {
+  if (assurance) {
+    const aroll = await new CheckRoll(
+      `10 + ${med.modifiers.find((m) => m.type === 'proficiency').modifier}`
+    ).roll({ async: true });
     ChatMessage.create({
       user: game.user.id,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-      flavor: `No healing done.<br>${immunityMessage}`,
+      type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+      flavor: `<strong>Assurance Roll: ${
+        med.label[0].toUpperCase() + med.label.substring(1)
+      }</strong> vs DC ${DC}<br><small>Do not apply any other bonuses, penalties, or modifiers</small><br>`,
+      roll: aroll,
       speaker: ChatMessage.getSpeaker(),
-      flags: {
-        "treat_wounds_battle_medicine": {
-          id: target.id,
-          dos: success,
-          healerId: token.actor.id,
-          healing: healRoll._total,
-          bmBatonUsed: usedBattleMedicsBaton,
-        }
-      }
     });
-   }
 
- } else {
-   med.check.roll({
-     dc: dc,
-     event: event,
-     extraRollOptions: getRollOptions({ isRiskySurgery: isRiskySurgery }),
-     callback: async (roll) => {
-       const { healFormula, successLabel } = getHealSuccess({
-         success: roll.options.degreeOfSuccess,
-         useMagicHands,
-         useMortalHealing,
-         isRiskySurgery,
-         bonusString,
-       });
-       if (isRiskySurgery) {
-         ChatMessage.create({
-           user: game.user.id,
-           type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-           flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
-           roll: await new DamageRoll('1d8[slashing]').roll({ async: true }),
-           speaker: ChatMessage.getSpeaker(),
-         });
-       }
-       let healRoll = 0;
-       let my_message = '';
-       if (healFormula !== undefined) {
-         const rollType = roll.options.degreeOfSuccess > 1 ? 'Healing' : 'Damage';
-         healRoll = await new DamageRoll(`${healFormula}[${rollType}]`).roll(
-           { async: true }
-         );
+    const atot = aroll.total - DC;
 
-         my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`;
-         // is there a faster alternative to check for DSN and activate the hook instead of this whole if else with double the code inside?
-         if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
-          Hooks.once('diceSoNiceRollComplete', (rollid) => { 
+    const success = atot >= 10 ? 3 : atot >= 0 ? 2 : atot <= -10 ? 0 : 1;
+
+    const { healFormula, successLabel } = getHealSuccess({
+      success,
+      useMagicHands,
+      useMortalHealing,
+      isRiskySurgery,
+      bonusString,
+    });
+
+    if (isRiskySurgery) {
+      ChatMessage.create({
+        user: game.user.id,
+        type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+        flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
+        roll: await new DamgeRoll('{1d8}[slashing]').roll({ async: true }),
+        speaker: ChatMessage.getSpeaker(),
+      });
+    }
+    let healRoll = 0;
+    if (healFormula !== undefined) {
+      const rollType = success > 1 ? 'Healing' : 'Damage';
+      healRoll = await new DamageRoll(`${healFormula}[${rollType}]`).roll({
+        async: true,
+      });
+      my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`;
+
+      healRoll.toMessage({
+        flavor: `${my_message}<br>${immunityMessage}`,
+        speaker: ChatMessage.getSpeaker(),
+        flags: {
+          "treat_wounds_battle_medicine": {
+            id: target.id,
+            dos: success,
+            healerId: token.actor.id,
+            healing: healRoll._total,
+            bmBatonUsed: usedBattleMedicsBaton,
+          }
+        }
+      });
+    } else {
+      ChatMessage.create({
+        user: game.user.id,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+        flavor: `No healing done.<br>${immunityMessage}`,
+        speaker: ChatMessage.getSpeaker(),
+        flags: {
+          "treat_wounds_battle_medicine": {
+            id: target.id,
+            dos: success,
+            healerId: token.actor.id,
+            healing: healRoll._total,
+            bmBatonUsed: usedBattleMedicsBaton,
+          }
+        }
+      });
+    }
+  } else {
+    med.check.roll({
+      dc: dc,
+      event: event,
+      extraRollOptions: getRollOptions({ isRiskySurgery: isRiskySurgery }),
+      callback: async (roll) => {
+        const { healFormula, successLabel } = getHealSuccess({
+          success: roll.options.degreeOfSuccess,
+          useMagicHands,
+          useMortalHealing,
+          isRiskySurgery,
+          bonusString,
+        });
+        if (isRiskySurgery) {
+          ChatMessage.create({
+            user: game.user.id,
+            type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+            flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
+            roll: await new DamageRoll('1d8[slashing]').roll({ async: true }),
+            speaker: ChatMessage.getSpeaker(),
+          });
+        }
+        let healRoll = 0;
+        if (healFormula !== undefined) {
+          const rollType = roll.options.degreeOfSuccess > 1 ? 'Healing' : 'Damage';
+          const my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`;
+          healRoll = await new DamageRoll(`${healFormula}[${rollType}]`).roll(
+            { async: true }
+          );
+
+          dsnHook(() => {
             healRoll.toMessage({
               flavor: `${my_message}<br>${immunityMessage}`,
               speaker: ChatMessage.getSpeaker(),
@@ -289,26 +298,9 @@ const rollTreatWounds = async ({
                 }
               }
             });
-            rollid = roll.id;
           });
         } else {
-          healRoll.toMessage({
-            flavor: `${my_message}<br>${immunityMessage}`,
-            speaker: ChatMessage.getSpeaker(),
-            flags: {
-              "treat_wounds_battle_medicine": {
-                id: target.id,
-                dos: roll.options.degreeOfSuccess,
-                healerId: token.actor.id,
-                healing: healRoll._total,
-                bmBatonUsed: usedBattleMedicsBaton,
-              }
-            }
-          });
-        }
-       } else {
-        if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
-          Hooks.once('diceSoNiceRollComplete', (rollid) => {
+          dsnHook(() => {
             ChatMessage.create({
               user: game.user.id,
               type: CONST.CHAT_MESSAGE_TYPES.OTHER,
@@ -324,29 +316,11 @@ const rollTreatWounds = async ({
                 }
               }
             });
-            rollid = roll.id;
-          });
-        } else {
-          ChatMessage.create({
-            user: game.user.id,
-            type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-            flavor: `No healing done.<br>${immunityMessage}`,
-            speaker: ChatMessage.getSpeaker(),
-            flags: {
-              "treat_wounds_battle_medicine": {
-                id: target.id,
-                dos: roll.options.degreeOfSuccess,
-                healerId: token.actor.id,
-                healing: healRoll._total,
-                bmBatonUsed: usedBattleMedicsBaton,
-              }
-            }
           });
         }
-       }
-     },
-   });
- }
+      },
+    });
+  }
 };
 
 async function applyChanges($html) {
