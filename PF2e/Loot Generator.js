@@ -110,8 +110,8 @@ if (picks[0] === "Treasures") {
 if (picks[0] === "Permanents") {
 	if(Noan(picks[1])) { return ui.notifications.error("Level of at least 0 must be entered");}
 
-	const treasure = items.filter(t => t.type === "armor" || t.type === "weapon" || t.type === "equipment" || t.type === "backpack" || t.system.traits.value.includes("wand"));
-	let treasures = treasure.filter( l => l.system.level.value === picks[1] );
+	const treasure = items.filter(t => t.type === "armor" || t.type === "weapon" || t.type === "equipment" || t.type === "backpack" || t.system.traits.value.includes("wand") );
+	let treasures = treasure.filter( l => l.system.level.value === picks[1] && !l.system.traits.value.includes("consumable") );
         if ( picks[4] !== "No filter" ) { treasures = treasures.filter( r => r.system.traits.rarity === picks[4].toLowerCase() || (r.system.slug?.includes("magic-wand") && picks[4] !== "Unique")); }
         if (treasures.length === 0) { return ui.notifications.info(`There are no ${picks[4].toLowerCase()} ${picks[0].toLowerCase()} at level ${picks[1]}`); }
 	itemArray.forEach( r => {
@@ -157,7 +157,7 @@ if (picks[0] === "Permanents") {
 //Consumbales
 if (picks[0] === "Consumables") {
 	if(Noan(picks[1])) { return ui.notifications.error("Level of at least 0 must be entered");}
-	const treasure = items.filter(t => t.type === "consumable" && !t.system.traits.value.includes("wand"));
+	const treasure = items.filter(t => ( t.type === "consumable" || t.system.traits.value.includes("consumable") ) && !t.system.traits.value.includes("wand"));
 	let treasures = treasure.filter( l => l.system.level.value === picks[1] );
         if ( picks[4] !== "No filter" ) { treasures = treasures.filter( r => r.system.traits.rarity === picks[4].toLowerCase() || (r.system.slug?.includes("scroll-of-") && picks[4] !== "Unique")); }
         if (treasures.length === 0) { return ui.notifications.info(`There are no ${picks[4].toLowerCase()} ${picks[0].toLowerCase()} at level ${picks[1]}`); }        
