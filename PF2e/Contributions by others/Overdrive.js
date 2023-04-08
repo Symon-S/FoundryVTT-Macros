@@ -8,7 +8,7 @@ also did a few improvements
 */
 
 function dsnHook(code) {
-    if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
+    if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages") && !game.modules.get("df-manual-rolls")?.active) {
         Hooks.once('diceSoNiceRollComplete', code);
     } else {
         code();
