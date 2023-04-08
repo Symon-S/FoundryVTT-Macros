@@ -30,8 +30,8 @@ token.actor.itemTypes.equipment.some(
 * @param {Object} code code which will be executed
 */
 function dsnHook(code) {
-    if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages")) {
-      Hooks.once('diceSoNiceRollComplete', code);
+    if (game.modules.get("dice-so-nice")?.active && !game.settings.get("dice-so-nice", "immediatelyDisplayChatMessages") && !game.modules.get("df-manual-rolls")?.active) {
+        Hooks.once('diceSoNiceRollComplete', code);
     } else {
       code();
     }
