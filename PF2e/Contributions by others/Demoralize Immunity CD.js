@@ -45,7 +45,7 @@ async function main() {
     } else {
         const applicator = game.actors.get(message.flags.demoralize.demoId);
 
-        demEffect.name = `Demoralize by ${applicator.name}`;
+        demEffect.name = `Demoralize by ${applicator.prototypeToken.name}`;
         demEffect.img = applicator.prototypeToken.texture.src;
 
         if ( message.flags.demoralize.dos == 3 ) {
@@ -65,6 +65,6 @@ async function main() {
         }
 
         await token.actor.createEmbeddedDocuments("Item", [demEffect]);
-        ui.notifications.info(`${token.actor.name} is now immune to Demoralize by ${applicator.name}`);
+        ui.notifications.info(`${token.name} is now immune to Demoralize by ${applicator.prototypeToken.name}`);
     }
 }
