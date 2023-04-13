@@ -124,7 +124,7 @@ if (canvas.tokens.controlled.length !== 1){
                 modifiers.push(langMod);
             }
 
-            immunityEffect.name = `${actionName} by ${token.actor.name}`;
+            immunityEffect.name = `${actionName} by ${token.name}`;
             console.log(immunityEffect.name);
 
             // check if the person being demoralized is currently immune.
@@ -162,7 +162,7 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Critical Success</strong><br> <strong>${targetActor.name}</strong> becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 2}${terrifiedRetreatMessage} and ${immunityMessage}`,
+                                flavor: `<strong>Critical Success</strong><br> <strong>${target.name}</strong> becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 2}${terrifiedRetreatMessage} and ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "demoralize": {
@@ -180,7 +180,7 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Success</strong><br> <strong>${targetActor.name}</strong> becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 1} and ${immunityMessage}`,
+                                flavor: `<strong>Success</strong><br> <strong>${target.name}</strong> becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 1} and ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "demoralize": {
@@ -198,7 +198,7 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Failure</strong><br>You fail to demoralize ${targetActor.name} and nothing happens. <strong>${targetActor.name}</strong> ${immunityMessage}`,
+                                flavor: `<strong>Failure</strong><br>You fail to demoralize ${target.name} and nothing happens. <strong>${target.name}</strong> ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "demoralize": {
@@ -216,7 +216,7 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Critical Failure</strong><br>You fail to demoralize ${targetActor.name} and nothing happens. <strong>${targetActor.name}</strong> ${immunityMessage}`,
+                                flavor: `<strong>Critical Failure</strong><br>You fail to demoralize ${target.name} and nothing happens. <strong>${target.name}</strong> ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "demoralize": {
