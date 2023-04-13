@@ -6,10 +6,13 @@ This Macro works just like the system's Demoralize macro, except for the followi
 * Link the 10 minutes Demoralize immnunity
 * Check if the target is immune
 * Check the 30ft range limit
+* -4 if no Language is shared
+* Intimidating Glare support
+* Terrified Retreat support (Base macro does that also)
 
 Limitations:
 * Does not handle assurance.
-* 
+* Does not handle NOTES
 
 created with the help of chatgpt by darkium
 */
@@ -30,6 +33,8 @@ function dsnHook(code) {
 
 if (canvas.tokens.controlled.length !== 1){
     ui.notifications.warn('You need to select exactly one token to perform Demoralize.');
+} else if (game.user.targets.size < 1){
+    ui.notifications.warn(`You must target at least one token.`);
 } else {
     
     /**
@@ -55,9 +60,6 @@ if (canvas.tokens.controlled.length !== 1){
             .filter((item) => item.type === 'feat')
             .some((item) => item.slug === slug);
   
-    const hasRepairKit = checkItemPresent('repair-kit') || checkItemPresent('repair-kit-superb');
-    // const hasRepairFeat = checkFeat('tinkering-fingers');
-
 
     const skillName = "Intimidation";
     const skillKey = "itm";
@@ -67,7 +69,9 @@ if (canvas.tokens.controlled.length !== 1){
     const modifiers = []
 
     const hasIntimidatingGlare = checkFeat("intimidating-glare");
+    const hasTerrifiedRetreat = checkFeat("terrified-retreat");
 
+    const terrifiedRetreatMessage = hasTerrifiedRetreat ? ", is fleeing for 1 round" : "";
     // notes are not working for the roll currently. 
     // const notes = [...token.actor.system.skills[skillKey].notes]; // add more notes if necessary
     const notes = [];
@@ -86,7 +90,6 @@ if (canvas.tokens.controlled.length !== 1){
 
     const languages = token.actor.system.traits.languages.value;
 
-    // const immunityEffectUUID = 'Compendium.pf2e.feat-effects.2XEYQNZTCGpdkyR6'; // Battle Medicine immunity to be used, since there is no demoralize immunity effect in the system.. 
     const immunityEffect = {
         type: 'effect',
         name: 'Demoralize Immunity',
@@ -105,8 +108,6 @@ if (canvas.tokens.controlled.length !== 1){
         },
       };
     
-    // const immunityEffect = (await fromUuid(immunityEffectUUID)).toObject();
-
     for(let target of game.user.targets){
         let targetActor = target.actor;
         
@@ -117,17 +118,14 @@ if (canvas.tokens.controlled.length !== 1){
             continue;
         } else {
 
-
             const targetLanguages = targetActor.system.traits.languages.value;
             if (!hasIntimidatingGlare && !targetLanguages.some((lang) => languages.includes(lang))) {
                 langMod = new game.pf2e.Modifier({ label: "Language barrier", modifier: -4, type: "circumstance" })
                 modifiers.push(langMod);
             }
 
-
             immunityEffect.name = `${actionName} by ${token.actor.name}`;
             console.log(immunityEffect.name);
-            //   const hasGodlessHealing = targetActor.items.filter((item) => item.type === 'feat').some((item) => item.system.slug === "godless-healing");
 
             // check if the person being demoralized is currently immune.
             var isImmune = targetActor.itemTypes.effect.find(obj => {
@@ -138,18 +136,15 @@ if (canvas.tokens.controlled.length !== 1){
                 continue;
             }
 
-            immunityEffect.system.duration.unit = "minutes";
-            immunityEffect.system.duration.value = 10;
-
             if (game.modules.has('xdy-pf2e-workbench') && game.modules.get('xdy-pf2e-workbench').active) { 
                 // Extract the Macro ID from the asynomous benefactor macro compendium.
                 const macroName = `Demoralize Immunity CD`;
                 const macroId = (await game.packs.get('xdy-pf2e-workbench.asymonous-benefactor-macros')).index.find(n => n.name === macroName)?._id;
-                immunityMacroLink = `@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Apply ${actionName} Immunity}`
+                immunityMacroLink = `@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Click to apply all effects}`
             } else {
                 ui.notifications.warn(`Workbench Module not active! Linking Immunity effect Macro not possible.`);
             }
-            const immunityMessage = `<br><strong>${targetActor.name}</strong> is now immune to ${immunityEffect.name} for ${immunityEffect.system.duration.value} ${immunityEffect.system.duration.unit}.<br>${immunityMacroLink}`;
+            const immunityMessage = `is now immune to ${immunityEffect.name} for ${immunityEffect.system.duration.value} ${immunityEffect.system.duration.unit}.<br>${immunityMacroLink}`;
             const targetWillDC = targetActor.system.saves.will.dc;
             
             // -----------------------
@@ -167,13 +162,14 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Critical Success</strong><br> ${target.name} becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 2}.${immunityMessage}`,
+                                flavor: `<strong>Critical Success</strong><br> <strong>${targetActor.name}</strong> becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 2}${terrifiedRetreatMessage} and ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "demoralize": {
-                                    id: target.id,
-                                    dos: roll.degreeOfSuccess,
-                                    demoId: token.actor.id,
+                                        id: target.id,
+                                        dos: roll.degreeOfSuccess,
+                                        demoId: token.actor.id,
+                                        tr: hasTerrifiedRetreat,
                                     }
                                 }
                             });
@@ -184,13 +180,14 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Success</strong><br> ${target.name} becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 1}.${immunityMessage}`,
+                                flavor: `<strong>Success</strong><br> <strong>${targetActor.name}</strong> becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 1} and ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "demoralize": {
-                                    id: target.id,
-                                    dos: roll.degreeOfSuccess,
-                                    demoId: token.actor.id,
+                                        id: target.id,
+                                        dos: roll.degreeOfSuccess,
+                                        demoId: token.actor.id,
+                                        tr: false,
                                     }
                                 }
                             });
@@ -201,13 +198,14 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Failure</strong><br>You fail to demoralize ${target.name} and nothing happens.${immunityMessage}`,
+                                flavor: `<strong>Failure</strong><br>You fail to demoralize ${targetActor.name} and nothing happens. <strong>${targetActor.name}</strong> ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "demoralize": {
-                                    id: target.id,
-                                    dos: roll.degreeOfSuccess,
-                                    demoId: token.actor.id,
+                                        id: target.id,
+                                        dos: roll.degreeOfSuccess,
+                                        demoId: token.actor.id,
+                                        tr: false,
                                     }
                                 }
                             });
@@ -218,13 +216,14 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Critical Failure</strong><br>You fail to demoralize ${target.name} and nothing happens.${immunityMessage}`,
+                                flavor: `<strong>Critical Failure</strong><br>You fail to demoralize ${targetActor.name} and nothing happens. <strong>${targetActor.name}</strong> ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "demoralize": {
-                                    id: target.id,
-                                    dos: roll.degreeOfSuccess,
-                                    demoId: token.actor.id,
+                                        id: target.id,
+                                        dos: roll.degreeOfSuccess,
+                                        demoId: token.actor.id,
+                                        tr: false,
                                     }
                                 }
                             });
