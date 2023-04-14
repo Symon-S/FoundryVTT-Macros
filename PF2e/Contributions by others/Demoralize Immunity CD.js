@@ -33,10 +33,6 @@ if (!token) {
     main();
 }
 
-function CheckFeat(slug, healer) {
-    return healer.itemTypes.feat.some((i) => i.slug === slug);
-}
-
 async function main() {
     const message = game.messages.contents.reverse().find( m => m.flags.demoralize?.id === token.id);
 
@@ -45,7 +41,7 @@ async function main() {
     } else {
         const applicator = game.actors.get(message.flags.demoralize.demoId);
 
-        demEffect.name = `Demoralize by ${applicator.prototypeToken.name}`;
+        demEffect.name = `Demoralize by ${message.flags.demoralize.demoName}`;
         demEffect.img = applicator.prototypeToken.texture.src;
 
         if ( message.flags.demoralize.dos == 3 ) {
@@ -65,6 +61,6 @@ async function main() {
         }
 
         await token.actor.createEmbeddedDocuments("Item", [demEffect]);
-        ui.notifications.info(`${token.name} is now immune to Demoralize by ${applicator.prototypeToken.name}`);
+        ui.notifications.info(`${token.name} is now immune to Demoralize by ${message.flags.demoralize.demoName}`);
     }
 }

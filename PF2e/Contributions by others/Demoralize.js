@@ -132,7 +132,7 @@ if (canvas.tokens.controlled.length !== 1){
                 return obj.name === immunityEffect.name
             });
             if (isImmune) {
-                ui.notifications.warn(targetActor.name + ` is currently immune to ${actionName} by ` + token.name);
+                ui.notifications.warn(target.name + ` is currently immune to ${actionName} by ` + token.name);
                 continue;
             }
 
@@ -169,6 +169,7 @@ if (canvas.tokens.controlled.length !== 1){
                                         id: target.id,
                                         dos: roll.degreeOfSuccess,
                                         demoId: token.actor.id,
+                                        demoName: token.name,
                                         tr: hasTerrifiedRetreat,
                                     }
                                 }
@@ -187,6 +188,7 @@ if (canvas.tokens.controlled.length !== 1){
                                         id: target.id,
                                         dos: roll.degreeOfSuccess,
                                         demoId: token.actor.id,
+                                        demoName: token.name,
                                         tr: false,
                                     }
                                 }
@@ -205,6 +207,7 @@ if (canvas.tokens.controlled.length !== 1){
                                         id: target.id,
                                         dos: roll.degreeOfSuccess,
                                         demoId: token.actor.id,
+                                        demoName: token.name,
                                         tr: false,
                                     }
                                 }
@@ -223,6 +226,7 @@ if (canvas.tokens.controlled.length !== 1){
                                         id: target.id,
                                         dos: roll.degreeOfSuccess,
                                         demoId: token.actor.id,
+                                        demoName: token.name,
                                         tr: false,
                                     }
                                 }
