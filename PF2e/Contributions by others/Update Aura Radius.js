@@ -125,6 +125,7 @@ new Dialog(
                 icon: '<i class="fas fa-times"></i>',
                 label: "Cancel"
             }
-        }
+        },
+        default:"one",
     }
 ).render(true);
