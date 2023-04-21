@@ -38,7 +38,7 @@ if (combatants.length === 0) {
     let buttonId = 1;
 
     for (let element of tokens) { //selected tokens are avoidingNotice
-        let thisPlayer = combatants.find(c => c.actorId == element.actorId);
+        let thisPlayer = combatants.find(c => c.actorId == element.actor.id);
         if (thisPlayer) { // Eidolons and Animal companions dont appear in the combat tracker.
             thisPlayer.avoidingNotice = true;
         }
