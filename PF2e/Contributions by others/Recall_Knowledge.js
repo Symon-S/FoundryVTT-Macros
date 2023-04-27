@@ -14,6 +14,8 @@ Limitations:
 * Does not handle things like bardic knowledge.
 */
 
+if(!game.modules.get("xdy-pf2e-workbench")?.active) { return ui.notifications.error("This Macro requires PF2e Workbench module") }
+
 if (canvas.tokens.controlled.length !== 1){
     ui.notifications.warn('You need to select exactly one token to perform Recall Knowledge.');
 } else {
@@ -53,16 +55,6 @@ function getLoreSkillsSlugs(token) {
     };
     return loreSkillsSlugs;
 }
-
-function RKChatMessageEvent(cm, jq) {
-	if (game.user.isGM) return;
-	const html = jq[0];
-        //confine hidden messages to only those from this macro
-	if (cm.flags.pf2e.recall) { html.style.display = 'none' };
-}
-
-//Do not enable if the module Actually Private Rolls is enabled to prevent double hooks.
-if (!game.modules.get("actually-private-rolls")?.active) { Hooks.on('renderChatMessage', RKChatMessageEvent); }
 
 const SKILL_OPTIONS = ["arc", "cra", "med", "nat", "occ", "rel", "soc"];
 const IDENTIFY_SKILLS = {aberration: "occ",astral: "occ",animal: "nat",beast: ["arc", "nat"] ,celestial: "rel",construct: ["arc", "cra"],dragon: "arc",elemental: ["arc", "nat"],ethereal: "occ",fey: "nat",fiend: "rel",fungus: "nat",giant: "soc",humanoid: "soc",monitor: "rel",ooze: "occ",plant: "nat",spirit: "occ",undead: "rel"};
@@ -115,7 +107,7 @@ if (game.user.targets.size < 1){
         visible: false,
         blind: true,
         speaker: ChatMessage.getSpeaker(),
-        flags: {pf2e: { recall: true } },
+        flags: { "xdy-pf2e-workbench.minimumUserRole": CONST.USER_ROLES.GAMEMASTER },
     });
   } else {
     // do the correct check(s)
@@ -327,7 +319,7 @@ if (game.user.targets.size < 1){
             whisper: game.users.contents.flatMap((user) => (user.isGM ? user.id : [])),
             blind: true,
             speaker: await ChatMessage.getSpeaker(),
-            flags: {pf2e: { recall: true } },
+            flags: { "xdy-pf2e-workbench.minimumUserRole": CONST.USER_ROLES.GAMEMASTER },
         });
     }
   }
