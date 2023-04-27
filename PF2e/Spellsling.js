@@ -182,20 +182,20 @@ async function Spellsling()
         }     
         flavor += `[[/r ${splash}[splash,acid]]] splash`
         if (critt === 3){
-          flavor += `<br>[[/r ${pers}[persistent,acid]]]`
+          spc.roll = new DamageRoll(spc.roll._formula.replace('}',`,${pers}[persistent,acid]}`));
         }
       }
       if(spc.slug === 'produce-flame' && critt === 3) {
         pers = Math.ceil(actor.level / 2) + "d4";
-        flavor += `[[/r ${pers}[persistent,fire]]]`
+        spc.roll = new DamageRoll(spc.roll._formula.replace('}',`,${pers}[persistent,fire]}`));
       }
       if(spc.slug === 'gouging-claw' && critt === 3) {
         pers = Math.ceil(actor.level / 2) + "d4";
-        flavor += `[[/r ${pers}[persistent,bleed]]]`
+        spc.roll = new DamageRoll(spc.roll._formula.replace('}',`,${pers}[persistent,bleed]}`));
       }
       if(spc.slug === 'searing-light' || spc.slug === 'moonlight-ray'){
         if (game.user.targets.first().actor.traits.has('undead') || game.user.targets.first().actor.traits.has('fiend')) {
-          spc.roll = await new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],(${(spc.lvl-3)*2 + 5}d6)[good]}`);
+          spc.roll = new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],(${(spc.lvl-3)*2 + 5}d6)[good]}`);
         }
       }
       if (game.modules.get('xdy-pf2e-workbench')?.active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
@@ -245,9 +245,9 @@ async function Spellsling()
       const chromaR = new Roll(chromaD).evaluate({async:false}).total;
       if (chromaR < 5) { ddice = chroma[chromaR-1].dd; 
         flavor = flavor + chroma[chromaR-1].f; 
-        spc.roll = await new DamageRoll(chroma[chromaR-1].d);
+        spc.roll = new DamageRoll(chroma[chromaR-1].d);
         if (critt === 3) {
-            spc.roll = await new DamageRoll(chroma[chromaR-1].dd);
+            spc.roll = new DamageRoll(chroma[chromaR-1].dd);
         }
       }
       if (chromaR > 4 && chromaR <= 7) { flavor = flavor + chroma[chromaR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor});}
@@ -256,7 +256,7 @@ async function Spellsling()
         await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor2});
         if (critt === 3) {
           const chromaRR = new Roll('1d7').evaluate({async:false}).total;
-          if (chromaRR < 5) { flavor = flavor + chroma[chromaRR-1].f; spc.roll = await new DamageRoll(chroma[chromaRR-1].dd); }
+          if (chromaRR < 5) { flavor = flavor + chroma[chromaRR-1].f; spc.roll = new DamageRoll(chroma[chromaRR-1].dd); }
           if (chromaRR > 4) { flavor = flavor + chroma[chromaRR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor});}
 	      }
       }
