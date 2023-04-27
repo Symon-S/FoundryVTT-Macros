@@ -86,7 +86,7 @@ if (game.user.targets.size < 1){
 
             my_string += `<tr><th>${coreSkill.slug.indexOf('-') > -1 ? coreSkill.label : coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)} </th>
                           <th class="tags"><div class="tag" style="background-color: ${rankColor}; white-space:nowrap">${coreSkill._modifiers[1].label}</th>
-                          <th>${validModifiers}</th>
+                          <td>${validModifiers}</td>
                           <th><span style="color: ${rollColor}">${coreRoll}</span></th></tr>`;
         }
     }
