@@ -157,7 +157,6 @@ async function Eldritch_shot()
         flavor += `@Check[type:${spc.spell.system.save.value}|dc:${spc.DC}|traits:damaging-effect,${spc.spell.system.traits.value.join()}|basic:${basic}]`;
       }
 
-
       /* Acid Splash */
       if(spc.slug === 'acid-splash') {
         let pers = 0;
@@ -184,20 +183,20 @@ async function Eldritch_shot()
         }     
         flavor += `[[/r ${splash}[splash,acid]]] splash`
         if (critt === 3){
-          spc.roll = new DamageRoll(spc.roll._formula.replace('}',`,${pers}[persistent,acid]}`));
+          flavor += `<br>[[/r ${pers}[persistent,acid]]]`
         }
       }
       if(spc.slug === 'produce-flame' && critt === 3) {
         pers = Math.ceil(actor.level / 2) + "d4";
-        spc.roll = new DamageRoll(spc.roll._formula.replace('}',`,${pers}[persistent,fire]}`));
+        flavor += `[[/r ${pers}[persistent,fire]]]`
       }
       if(spc.slug === 'gouging-claw' && critt === 3) {
         pers = Math.ceil(actor.level / 2) + "d4";
-        spc.roll = new DamageRoll(spc.roll._formula.replace('}',`,${pers}[persistent,bleed]}`));
+        flavor += `[[/r ${pers}[persistent,bleed]]]`
       }
       if(spc.slug === 'searing-light' || spc.slug === 'moonlight-ray'){
         if (game.user.targets.first().actor.traits.has('undead') || game.user.targets.first().actor.traits.has('fiend')) {
-          spc.roll = new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],(${(spc.lvl-3)*2 + 5}d6)[good]}`);
+          spc.roll = await new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],(${(spc.lvl-3)*2 + 5}d6)[good]}`);
         }
       }
 
@@ -248,9 +247,9 @@ async function Eldritch_shot()
       const chromaR = new Roll(chromaD).evaluate({async:false}).total;
       if (chromaR < 5) { ddice = chroma[chromaR-1].dd; 
         flavor = flavor + chroma[chromaR-1].f; 
-        spc.roll = new DamageRoll(chroma[chromaR-1].d);
+        spc.roll = await new DamageRoll(chroma[chromaR-1].d);
         if (critt === 3) {
-            spc.roll = new DamageRoll(chroma[chromaR-1].dd);
+            spc.roll = await new DamageRoll(chroma[chromaR-1].dd);
         }
       }
       if (chromaR > 4 && chromaR <= 7) { flavor = flavor + chroma[chromaR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor});}
@@ -259,7 +258,7 @@ async function Eldritch_shot()
         await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor2});
         if (critt === 3) {
           const chromaRR = new Roll('1d7').evaluate({async:false}).total;
-          if (chromaRR < 5) { flavor = flavor + chroma[chromaRR-1].f; spc.roll = new DamageRoll(chroma[chromaRR-1].dd); }
+          if (chromaRR < 5) { flavor = flavor + chroma[chromaRR-1].f; spc.roll = await new DamageRoll(chroma[chromaRR-1].dd); }
           if (chromaRR > 4) { flavor = flavor + chroma[chromaRR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor});}
 	      }
       }
