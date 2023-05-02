@@ -1,6 +1,6 @@
 /*
 Based on the macro by bipedalshark and WesBelmont and Allalinor.
-updated by darkim
+updated by darkim, Dalvyn, and julie.winchester
 
 Recall Knowledge
 This macro will roll several knowledge checks if no target is selected.
@@ -14,313 +14,256 @@ Limitations:
 * Does not handle things like bardic knowledge.
 */
 
-if(!game.modules.get("xdy-pf2e-workbench")?.active) { return ui.notifications.error("This Macro requires PF2e Workbench module") }
-
-if (canvas.tokens.controlled.length !== 1){
-    ui.notifications.warn('You need to select exactly one token to perform Recall Knowledge.');
-} else {
-
-/**
-* Get the available roll options
-*
-* @param {Object} options
-* @returns {string[]} All available roll options
-*/
-const getRollOptions = ({} = {}) => [
-    ...token.actor.getRollOptions(['all', 'skill-check']),
-    'action:recall-knowledge',
-   ];
-   
-
-/**
-* Global d20 roll used for all skills.
-*/
-let globalroll = await new Roll("1d20").roll({extraRollOptions: getRollOptions({}), async: true }); 
-
-const rollColor = {
-      20: "green",
-      1: "red"
-    }[globalroll.terms[0].results[0].result] ?? "royalblue";
-
-
-/**
-* Get lore skills from current actor
-*/
-function getLoreSkillsSlugs(token) {
-    let loreSkillsSlugs = [];
-    for (const skill of Object.entries(token.actor.system.skills)) {
-        if (skill[1].lore) {
-            loreSkillsSlugs.push(skill[1].slug)
-        }
-    };
-    return loreSkillsSlugs;
+if (!game.modules.get("xdy-pf2e-workbench")?.active) {
+    return ui.notifications.error("This Macro requires PF2e Workbench module");
 }
 
-let my_string = ``;
-const SKILL_OPTIONS = ["arc", "cra", "med", "nat", "occ", "rel", "soc"];
-const IDENTIFY_SKILLS = {aberration: "occ",astral: "occ",animal: "nat",beast: ["arc", "nat"] ,celestial: "rel",construct: ["arc", "cra"],dragon: "arc",elemental: ["arc", "nat"],ethereal: "occ",fey: "nat",fiend: "rel",fungus: "nat",giant: "soc",humanoid: "soc",monitor: "rel",ooze: "occ",plant: "nat",spirit: "occ",undead: "rel"};
+if (canvas.tokens.controlled.length !== 1) {
+    return ui.notifications.warn('You need to select exactly one token to perform Recall Knowledge.');
+}
+
+const SKILL_OPTIONS = ["arcana", "crafting", "medicine", "nature", "occultism", "religion", "society"];
+const SKILL_SHORTFORM = {
+    acrobatics: "acr",
+    arcana: "arc",
+    athletics: "ath",
+    crafting: "cra",
+    deception: "dec",
+    diplomacy: "dip",
+    intimidation: "itm",
+    medicine: "med",
+    nature: "nat",
+    occultism: "occ",
+    performance: "prf",
+    religion: "rel",
+    society: "soc",
+    stealth: "ste",
+    survival: "sur",
+    thievery: "thi",
+};
+const IDENTIFY_SKILLS = {
+    aberration: ["occultism"],
+    astral: ["occultism"],
+    animal: ["nature"],
+    beast: ["arcana", "nature"],
+    celestial: ["religion"],
+    construct: ["arcana", "crafting"],
+    dragon: ["arcana"],
+    elemental: ["arcana", "nature"],
+    ethereal: ["occultism"],
+    fey: ["nature"],
+    fiend: ["religion"],
+    fungus: ["nature"],
+    giant: ["society"],
+    humanoid: ["society"],
+    monitor: ["religion"],
+    ooze: ["occultism"],
+    plant: ["nature"],
+    spirit: ["occultism"],
+    undead: ["religion"]
+};
+const RANK_COLORS = ["#443730", "#171f69", "#3c005e", "#5e4000", "#5e0000"];
+const RANK_NAMES = ["UNTRAINED", "TRAINED", "EXPERT", "MASTER", "LEGENDARY"];
+const OUTCOMES = [
+    "<span style='color:red'>CrFail</span>",
+    "<span style='color:orange'>Fail</span>",
+    "<span style='color:royalblue'>Suc</span>",
+    "<span style='color:green'>CrSuc</span>"
+];
+const DC_MODS = [-5, -2, 0, 2, 5, 10, "-", "-", "-"];
+const FIRST_DC_INDEX = {
+    "common" : 2,
+    "uncommon" : 3,
+    "rare" : 4,
+    "unique" : 5,
+}
+
+const token = _token;
+
+// Get token skills infos by simulating fake rolls
+// ===============================================
+
+const tokenSkills = {};
+const loreSkills = [];
+for (const skill in token.actor.skills) {
+    let fakeRoll;
+    const rank = token.actor.skills[skill].rank;
+    await token.actor.skills[skill].roll({
+        callback: (res) => {fakeRoll = res;},
+        createMessage: false,
+        skipDialog: true,
+        extraRollOptions: ["action:recall-knowledge", "skill-check", `skill:rank:${rank}`],
+    });
+    const fakeRollDieResult = fakeRoll.dice[0].values[0];
+
+    // find non-applied conditional RK modifiers
+    const rollOptions = [
+        ...token.actor.getRollOptions([ "all", "skill-check" ]),
+        "action:recall-knowledge", "skill-check", `skill:rank:${rank}`
+    ];
+    const coreSkill = token.actor.system.skills[SKILL_SHORTFORM[skill] || skill];
+    const conditionalModifiers = coreSkill._modifiers.filter(
+        mod => mod.predicate.includes("action:recall-knowledge") && !mod.predicate.test(rollOptions)
+    );
+
+    if (token.actor.skills[skill].lore) loreSkills.push(skill);
+    tokenSkills[skill] = {
+        conditionalModifiers: conditionalModifiers,
+        label: token.actor.skills[skill].label,
+        modifier: fakeRoll.total - fakeRollDieResult,
+        rank
+    };
+}
+
+// Global d20 roll used for all skills
+// ===================================
+
+const globalRoll = (await new Roll("1d20").roll({async: true })).total;
+const rollColor = globalRoll == 20 ? "green" : globalRoll == 1 ? "red" : "royalblue";
+
+
+// Skill list output
+// =================
+
+const skillListOutput = (title, skills) => {
+    let output = `<table><tr><th>${title}</th><th>Prof</th><th>Mod</th><th>Result</th></tr>`;
+    for (const skill of skills) {
+        const {label, modifier, rank} = tokenSkills[skill];
+        const adjustedResult = globalRoll + modifier;
+        output += `<tr><th>${label}</th>
+            <td class="tags"><div class="tag" style="background-color: ${RANK_COLORS[rank]}; white-space:nowrap">${RANK_NAMES[rank]}</td>
+            <td>${modifier >= 0 ? "+" : ""}${modifier}</td>
+            <td><span style="color: ${rollColor}">${adjustedResult}</span></td></tr>`;
+    }
+    output += "</table>";
+    return output;
+};
+
+// Conditional modifier output
+// ==========================
+
+const conditionalModifiersOutput = (skills) => {
+    const allModifiers = skills.map(s => tokenSkills[s].conditionalModifiers).flat();
+    const uniqModifiers = [ ...new Map(allModifiers.map((mod) => [mod.slug, mod])).values() ];
+    if (uniqModifiers.length === 0) return "";
+
+    let output = `<table style="font-size: 12px"><tr><th>Potential Modifiers</th><th>Mod</th></tr>`;
+    for (const mod of uniqModifiers) {
+        const {label, signedValue, source} = mod;
+        output += `<tr><td><a class="content-link" draggable="true" data-uuid="${source}"><i class="fas fa-suitcase"></i>${label}</a></td><td>${signedValue}</td></tr>`
+    }
+    output += "</table>";
+    return output;
+};
+
+
+// Creating output
+// ===============
+
+let output = `<strong>Recall Knowledge</strong> (Roll: <span style="color: ${rollColor}">${globalRoll}</span>)`;
 
 if (game.user.targets.size < 1){
-    // do all checks
-    for (const token of canvas.tokens.controlled) {
-        const LORE_SKILL_SLUGS = getLoreSkillsSlugs(token);
-        let LORE_AND_SKILL_OPTIONS = SKILL_OPTIONS;
-        LORE_AND_SKILL_OPTIONS.push(...LORE_SKILL_SLUGS);
-        for (primaryskill of SKILL_OPTIONS) {
-            const coreSkill = token.actor.system.skills[primaryskill];
-            let validModifiers = Number(coreSkill.totalModifier);
-            for (mod of coreSkill._modifiers) {
-                if (mod.predicate[0] === 'action:recall-knowledge') {
-                    validModifiers += mod.modifier;
-                }
-            }
-            const coreRoll = Number(globalroll.total) + Number(validModifiers);
+// No target - roll all Recall Knowledge and lore skills
 
-            const rankColor = {
-                untrained: "#443730",
-                trained: "#171f69",
-                expert: "#3c005e",
-                master: "#5e4000",
-                legendary: "#5e0000",
-            }[coreSkill._modifiers[1].label.toLowerCase()];
+    const allRKSkills = [...SKILL_OPTIONS, ...loreSkills];
+    output += skillListOutput("Skill", allRKSkills);
+    output += conditionalModifiersOutput(allRKSkills);
 
-            my_string += `<tr><th>${coreSkill.slug.indexOf('-') > -1 ? coreSkill.label : coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)} </th>
-                          <th class="tags"><div class="tag" style="background-color: ${rankColor}; white-space:nowrap">${coreSkill._modifiers[1].label}</th>
-                          <td>${validModifiers}</td>
-                          <th><span style="color: ${rollColor}">${coreRoll}</span></th></tr>`;
+} else {
+// Target - roll corresponding Recall Knowledge skills and lore skills
+
+    for (const target of game.user.targets){
+
+        const targetActor = target.actor;
+
+        const level = targetActor.system.details.level.value;
+        const actortype = targetActor.system.traits.value;
+        const rarity = targetActor.rarity;
+
+        let levelDC;
+        if (level > 20) {
+            levelDC = level * 2;
+        } else {
+            levelDC = 14 + level + ((level < 0) ? 0 : Math.floor(level/3));
         }
-    }
-    ui.notifications.info(`${token.name} tries to remember if they've heard something related to this.`)
-    await ChatMessage.create({
-        user: game.userId,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-        content: `<strong>Recall Knowledge</strong>
-                  <br><strong>Roll: <span style="color: ${rollColor}">${globalroll.total}</strong></span>
-                  <table>
-                  <tr>
-                  <th>Skill</th>
-                  <th>Prof</th>
-                  <th>Mod</th>
-                  <th>Result</th>
-                  ${my_string}`,
-        whisper: game.users.contents.flatMap((user) => (user.isGM ? user.id : [])),
-        visible: false,
-        blind: true,
-        speaker: ChatMessage.getSpeaker(),
-        flags: { "xdy-pf2e-workbench.minimumUserRole": CONST.USER_ROLES.GAMEMASTER },
-    });
-  } else {
-    // do the correct check(s)
-    for (const token of canvas.tokens.controlled) {
-        const LORE_SKILL_SLUGS = getLoreSkillsSlugs(token);
-        let my_string = ``;
- 
-        for(let target of game.user.targets){
-            let targetActor = target.actor;
-            let primaryskills = [];
 
-            level = targetActor.system.details.level.value;
-            actortype = targetActor.system.traits.value;
-            rarity = targetActor.rarity == 'uncommon' ? 2 : targetActor.rarity == 'rare' ? 5 : targetActor.rarity == 'unique' ? 10 : 0;
+        output += `<br/><strong>vs. ${targetActor.name}</strong>`;
 
-            if (targetActor.type !== "character") {
-                for (const key in IDENTIFY_SKILLS) {
-                    const element = IDENTIFY_SKILLS[key];
-                    if (actortype.includes(key)){
-                        primaryskills = primaryskills.concat(element)
-                    }
+        // Primary skills
+
+        const dcIndex = FIRST_DC_INDEX[rarity];
+        const DCs = DC_MODS.slice(dcIndex, dcIndex + 4).map(dc => typeof dc === "number" ? dc + levelDC : "-");
+
+        output += "<table><tr><td></td><td></td><td>";
+        output += "<th style='text-align:center'>1st</th><th style='text-align:center'>2nd</th><th style='text-align:center'>3rd</th><th style='text-align:center'>4th</th></tr>";
+        output += "<tr><th>Skill</th><td></td><td></td>";
+        DCs.forEach(dc => output += `<th style='text-align:center'>${typeof dc === "number" ? "DC " + dc : "-"}</th>`);
+        output += "</tr>";
+
+        let primarySkills = [];
+        if (targetActor.type !== "character") {
+            for (const trait in IDENTIFY_SKILLS) {
+                if (actortype.includes(trait)){
+                    primarySkills = primarySkills.concat(IDENTIFY_SKILLS[trait])
                 }
             }
-            // remove duplicate skills
-            primaryskills = [...new Set(primaryskills)];
-
-            if(level>20) {
-                dc = level * 2;
-            } else {
-                dc = 14 + level + ((level < 0) ? 0 : Math.floor(level/3));
-            }
-            let dcs = ["", "-", "-", "-"];
-            dcs[0] = dc + rarity;
-            switch (rarity){
-                case 0:
-                    dcs[1] = dc+2;
-                    dcs[2] = dc+5;
-                    dcs[3] = dc+10;
-                    break;
-                case 2:
-                    dcs[1] = dc+5;
-                    dcs[2] = dc+10;
-                    break;
-                case 5:
-                    dcs[1] = dc+10;
-                    break;
-                default:  
-                    break; 
-            }
-            my_string += `<br><strong>vs. ${targetActor.name}</strong><table>
-                <tr>
-                    <td>DCs</td>
-                    <td>Total</td>
-                    <td>1st: <strong>${dcs[0]}</strong></td>
-                    <td>2nd: <strong>${dcs[1]}</strong></td>
-                    <td>3rd: <strong>${dcs[2]}</strong></td>
-                    <td>4th: <strong>${dcs[3]}</strong></td>
-                </tr>`;
-            for (primaryskill of primaryskills) {
-                const coreSkill = token.actor.system.skills[primaryskill];
-                let validModifiers = Number(coreSkill.totalModifier);
-                for (mod of coreSkill._modifiers) {
-                    if (mod.predicate[0] === 'action:recall-knowledge') {
-                        validModifiers += mod.modifier;
-                    }
-                }
-                const coreRoll = Number(globalroll.total) + Number(validModifiers);
-
-                const rankColor = {
-                    untrained: "#443730",
-                    trained: "#171f69",
-                    expert: "#3c005e",
-                    master: "#5e4000",
-                    legendary: "#5e0000",
-                }[coreSkill._modifiers[1].label.toLowerCase()];
-
-                my_string += `<tr>
-                    <td><label title="${coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1)} (${coreSkill._modifiers[1].label}) Roll: ${globalroll.total} + ${validModifiers}">${coreSkill.slug[0].toUpperCase() + coreSkill.slug.substring(1,5)}</label></td>
-                <th><span style="color: ${rollColor}">${coreRoll}</span></th> 
-                `;
-
-                for (realDc of dcs) {
-                    if (!isNaN(realDc)) {
-                        const atot = coreRoll - realDc;
-                        let success = atot >= 10 ? 3 : atot >= 0 ? 2 : atot <= -10 ? 0 : 1;
-                        success += (globalroll.total === 1) ? -1 : (globalroll.total === 20) ? 1 : 0;
-                        success = Math.min(Math.max(success, 0), 3)
-
-                        const outcome = {
-                            3: "CrSuc",
-                            2: "Suc",
-                            1: "Fail",
-                            0: "CrFail",
-                        }[success];
-                        const outcomeColor = {
-                            true: "green",
-                            false: "red"
-                        }[success>=2];
-                        my_string += `<td style='text-align:center; vertical-align:middle'><span style="color: ${outcomeColor}; bgcolor: "red">${outcome}</span></td>`;
-                    } else {
-                        my_string += `<td style='text-align:center; vertical-align:middle; bgcolor: "red"'>-</td>`;
-                    }
-                }
-                my_string += ` </tr>`;
-            }
-
-            my_string += `</table>`;
-            let lore_dcs = ["", "-", "-", "-", "-", "-"];
-            switch (rarity){
-                case 0:
-                    lore_dcs[0] = dc-5;
-                    lore_dcs[1] = dc-2;
-                    lore_dcs[2] = dc;
-                    lore_dcs[3] = dc+2;
-                    lore_dcs[4] = dc+5;
-                    lore_dcs[5] = dc+10;
-                    break;
-                case 2:
-                    lore_dcs[0] = dc-2;
-                    lore_dcs[1] = dc;
-                    lore_dcs[2] = dc+2;
-                    lore_dcs[3] = dc+5;
-                    lore_dcs[4] = dc+10;
-                    break;
-                case 5:
-                    lore_dcs[0] = dc;
-                    lore_dcs[1] = dc+2;
-                    lore_dcs[2] = dc+5;
-                    lore_dcs[3] = dc+10;
-                    break;
-                case 10:
-                    lore_dcs[0] = dc+2;
-                    lore_dcs[1] = dc+5;
-                    lore_dcs[2] = dc+10;
-                    break;
-                default:  
-                    break; 
-            }
-            my_string += `<table>
-                <tr>
-                    <th>Lore Skill DCs</th>
-                    <th>1st</th>
-                    <th>2nd</th>
-                    <th>3rd</th>
-                    <th>4th</th>
-                    <th>5th</th>
-                    <th>6th</th>
-                </tr>
-                <tr>
-                    <td>Unspecific</td>
-                    <td>${lore_dcs[1]}</td>
-                    <td>${lore_dcs[2]}</td>
-                    <td>${lore_dcs[3]}</td>
-                    <td>${lore_dcs[4]}</td>
-                    <td>${lore_dcs[5]}</td>
-                    <td>-</td>
-                </tr>
-                <tr>
-                    <td>Specific</td>
-                    <td>${lore_dcs[0]}</td>
-                    <td>${lore_dcs[1]}</td>
-                    <td>${lore_dcs[2]}</td>
-                    <td>${lore_dcs[3]}</td>
-                    <td>${lore_dcs[4]}</td>
-                    <td>${lore_dcs[5]}</td>
-                </tr>
-            </table>`;
-
-            my_string += `<table>
-                            <tr>
-                                <th>Skill</th>
-                                <th>Prof</th>
-                                <th>Mod</th>
-                                <th>Result</th>`;
-                                
-            for (loreSKillSlug of LORE_SKILL_SLUGS) {
-                const loreSkill = token.actor.system.skills[loreSKillSlug];
-                let validModifiers = Number(loreSkill.totalModifier);
-                for (mod of loreSkill._modifiers) {
-                    if (mod.predicate[0] === 'action:recall-knowledge') {
-                        validModifiers += mod.modifier;
-                    }
-                }
-                const loreRoll = Number(globalroll.total) + Number(validModifiers);
-
-                const rankColor = {
-                    untrained: "#443730",
-                    trained: "#171f69",
-                    expert: "#3c005e",
-                    master: "#5e4000",
-                    legendary: "#5e0000",
-                }[loreSkill._modifiers[1].label.toLowerCase()];
-
-                my_string += `<tr><td>${loreSkill.label}</td>
-                               <td class="tags"><div class="tag" style="background-color: ${rankColor}; white-space:nowrap">${loreSkill._modifiers[1].label}</td>
-                               <td>${validModifiers}</td>
-                               <td><span style="color: ${rollColor}"><strong>${loreRoll}</strong></span></td>`;    
-            }
-            my_string += `</table>`
         }
-        ui.notifications.info(`${token.name} tries to remember if they've heard something related to this.`)
-        await ChatMessage.create({
-            user: game.userId,
-            type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-            content: `<strong>Recall Knowledge Roll: <span style="color: ${rollColor}">${globalroll.total}</strong></span>
-            ${my_string}
-            `,
-            visible: false,
-            whisper: game.users.contents.flatMap((user) => (user.isGM ? user.id : [])),
-            blind: true,
-            speaker: await ChatMessage.getSpeaker(),
-            flags: { "xdy-pf2e-workbench.minimumUserRole": CONST.USER_ROLES.GAMEMASTER },
-        });
+        primarySkills = [...new Set(primarySkills)];
+
+        for (const skill of primarySkills) {
+            const {label, modifier, rank} = tokenSkills[skill];
+            const adjustedResult = globalRoll + modifier;
+
+            output += `<tr><th>${label}
+                </th><td class="tags"><div class="tag" style="background-color: ${RANK_COLORS[rank]}; white-space:nowrap">${RANK_NAMES[rank][0]}</td>
+                <td><span style="color: ${rollColor}; text-align: center">${adjustedResult}</span></td>`;
+
+            for (const dc of DCs) {
+                if (typeof dc !== "number") {
+                    output += "<td style='text-align:center'>-</td>";
+                    continue;
+                }
+                const diff = adjustedResult - dc;
+                let success = diff >= 10 ? 3 : diff >= 0 ? 2 : diff <= -10 ? 0 : 1;
+                if (globalRoll == 20 && success < 3) success++;
+                else if (globalRoll == 1 && success > 0) success--;
+                output += `<td style="text-align:center; vertical-align:middle">${OUTCOMES[success]}</td>`;
+            }
+            output += "</tr>";
+        }
+        output += "</table>";
+
+        // Lore skill DCs
+
+        const loreDCs = DC_MODS.slice(dcIndex - 2, dcIndex + 4).map(dc => typeof dc === "number" ? dc + levelDC : "-");
+
+        output += "<table><tr><th>Lore Skill DCs</th>";
+        output += "<th>1st</th><th>2nd</th><th>3rd</th><th>4th</th><th>5th</th><th>6th</th></tr>";
+        output += "<tr><th>Unspecific</th>";
+        loreDCs.slice(1).forEach(dc => output += `<td style="text-align:center">${dc}</td>`);
+        output += "<td>-</td></tr><tr><th>Specific</th>";
+        loreDCs.forEach(dc => output += `<td style="text-align:center">${dc}</td>`);
+        output += "</tr></table>";
+
+        // Lore skills
+
+        output += skillListOutput("Lore Skill", loreSkills);
+        output += conditionalModifiersOutput([...primarySkills, ...loreSkills]);
+
     }
-  }
 }
+
+// Notification and chat card
+// ==========================
+
+ui.notifications.info(`${token.name} tries to remember if they've heard something related to this.`)
+await ChatMessage.create({
+    user: game.userId,
+    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    content: output,
+    whisper: game.users.contents.flatMap((user) => (user.isGM ? user.id : [])),
+    visible: false,
+    blind: true,
+    speaker: ChatMessage.getSpeaker(),
+    flags: { "xdy-pf2e-workbench.minimumUserRole": CONST.USER_ROLES.GAMEMASTER },
+});
