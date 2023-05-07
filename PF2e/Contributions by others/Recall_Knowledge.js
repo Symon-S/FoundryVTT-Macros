@@ -78,8 +78,6 @@ const FIRST_DC_INDEX = {
     "unique" : 5,
 }
 
-const token = _token;
-
 // Get token skills infos by simulating fake rolls
 // ===============================================
 
