@@ -78,13 +78,12 @@ const FIRST_DC_INDEX = {
     "unique" : 5,
 }
 
-const token = _token;
-
 // Get token skills infos by simulating fake rolls
 // ===============================================
 
 const tokenSkills = {};
 const loreSkills = [];
+const appliedModifiers = [];
 for (const skill in token.actor.skills) {
     let fakeRoll;
     const rank = token.actor.skills[skill].rank;
@@ -96,15 +95,19 @@ for (const skill in token.actor.skills) {
     });
     const fakeRollDieResult = fakeRoll.dice[0].values[0];
 
-    // find non-applied conditional RK modifiers
+    // find conditional RK modifiers
+    const conditionalModifiers = [];
     const rollOptions = [
         ...token.actor.getRollOptions([ "all", "skill-check" ]),
         "action:recall-knowledge", "skill-check", `skill:rank:${rank}`
     ];
     const coreSkill = token.actor.system.skills[SKILL_SHORTFORM[skill] || skill];
-    const conditionalModifiers = coreSkill._modifiers.filter(
-        mod => mod.predicate.includes("action:recall-knowledge") && !mod.predicate.test(rollOptions)
+    const recallKnowledgeModifiers = coreSkill._modifiers.filter(
+        mod => mod.predicate.includes("action:recall-knowledge")
     );
+    for (const mod of recallKnowledgeModifiers) {
+        mod.predicate.test(rollOptions) ? appliedModifiers.push(mod.slug) : conditionalModifiers.push(mod);
+    }
 
     if (token.actor.skills[skill].lore) loreSkills.push(skill);
     tokenSkills[skill] = {
@@ -143,12 +146,14 @@ const skillListOutput = (title, skills) => {
 // ==========================
 
 const conditionalModifiersOutput = (skills) => {
+    // Find unique modifiers that are never successfully applied for any skill or lore to inform user
     const allModifiers = skills.map(s => tokenSkills[s].conditionalModifiers).flat();
     const uniqModifiers = [ ...new Map(allModifiers.map((mod) => [mod.slug, mod])).values() ];
-    if (uniqModifiers.length === 0) return "";
+    const exclModifiers = uniqModifiers.filter(mod => !appliedModifiers.includes(mod.slug));
+    if (exclModifiers.length === 0) return "";
 
     let output = `<table style="font-size: 12px"><tr><th>Potential Modifiers</th><th>Mod</th></tr>`;
-    for (const mod of uniqModifiers) {
+    for (const mod of exclModifiers) {
         const {label, signedValue, source} = mod;
         output += `<tr><td><a class="content-link" draggable="true" data-uuid="${source}"><i class="fas fa-suitcase"></i>${label}</a></td><td>${signedValue}</td></tr>`
     }
