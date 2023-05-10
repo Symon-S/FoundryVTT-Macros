@@ -111,7 +111,7 @@ if (canvas.tokens.controlled.length !== 1){
     for(let target of game.user.targets){
         let targetActor = target.actor;
         
-        let distance = canvas.grid.measureDistance(token, target);
+        let distance = token.distanceTo(target);
 
         if (distance > 30) {
             ui.notifications.warn(`${targetActor.name} is out of range.`);
