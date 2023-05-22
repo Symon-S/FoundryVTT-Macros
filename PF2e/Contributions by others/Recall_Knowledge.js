@@ -102,7 +102,7 @@ for (const skill in token.actor.skills) {
         "action:recall-knowledge", "skill-check", `skill:rank:${rank}`
     ];
     const coreSkill = token.actor.system.skills[SKILL_SHORTFORM[skill] || skill];
-    const recallKnowledgeModifiers = coreSkill._modifiers.filter(
+    const recallKnowledgeModifiers = coreSkill.modifiers.filter(
         mod => mod.predicate.includes("action:recall-knowledge")
     );
     for (const mod of recallKnowledgeModifiers) {
