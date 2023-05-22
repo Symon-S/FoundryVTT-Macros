@@ -62,7 +62,7 @@ if (canvas.tokens.controlled.length !== 1){
   
 
     const skillName = "Intimidation";
-    const skillKey = "itm";
+    const skillKey = "intimidation";
     const actionSlug = "Demoralize"
     const actionName = "Demoralize"
     
@@ -152,7 +152,7 @@ if (canvas.tokens.controlled.length !== 1){
             game.pf2e.Check.roll(
                 new game.pf2e.CheckModifier(
                     `<span class="pf2-icon">A</span> <b>${actionName}</b> - <p class="compact-text">${skillName} Skill Check</p>`,
-                    token.actor.system.skills[skillKey], modifiers),
+                    token.actor.skills[skillKey], modifiers),
                 { actor: token.actor, type: 'skill-check', options, notes, dc: { value: targetWillDC } }, //for DC insert: , dc: {value: 30}
                 event,
                 async (roll) => {
