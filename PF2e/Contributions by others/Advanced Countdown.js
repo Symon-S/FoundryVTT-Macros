@@ -12,7 +12,7 @@ const effect = {
     type: 'effect',
     name: 'Countdown',
     img: 'systems/pf2e/icons/spells/time-beacon.webp',
-    data: {
+    system: {
       tokenIcon: {
           show: true
       },       
@@ -21,11 +21,12 @@ const effect = {
           unit: 'rounds',
           sustained: false,
           expiry: 'turn-start'
-      }
+      },
+      unidentified: false
     },
   };
-
-function pickIcon(event) {
+  
+  function pickIcon(event) {
     const currentTarget = event.currentTarget;
     console.log(currentTarget);
     const fp = new FilePicker({
@@ -37,22 +38,22 @@ function pickIcon(event) {
         },
     });
     fp.browse();
-}
-
-function onMainRender(html) {
+  }
+  
+  function onMainRender(html) {
   console.log("On render", html);
   document.getElementById("effect-icon").addEventListener("click", pickIcon);
   document.getElementById("save-preset").addEventListener("click", presetDialog);
-}
-
-function rewriteSelect(html) {
+  }
+  
+  function rewriteSelect(html) {
   let presetsn = game.user.flags.world.countdownPresets;
   let presets = '';
   Object.values(presetsn).forEach(p => { presets += `<option value="${p.slug}">${p.name}</option>`; });
   document.getElementById("presets").innerHTML = presets;
-}
-
-async function countdownEffect() {
+  }
+  
+  async function countdownEffect() {
   await initializePresets();
   let presetsn = game.user.flags.world.countdownPresets;
   let presets = '';
@@ -101,10 +102,13 @@ async function countdownEffect() {
     Name: <input id="countdownname" type="string" style="width: 150px;" value="${defVals.name}">
   </p> 
   <p>
-    <input type="checkbox" id="cooldown"${defVals.cooldown ? ' checked' : ''}/>Cooldown (+1 round)
+    <input type="checkbox" id="cooldown"${defVals.cooldown ? ' checked' : ''}/>Expire at End of round
+    </p>
+    <p>
+    <input type="checkbox" id="unidentified"${defVals.cooldown ? ' checked' : ''}/>Unidentified
     </p>
   `;
-
+  
   new Dialog(
     {
       title: "Countdown Effect",
@@ -124,21 +128,68 @@ async function countdownEffect() {
     }, 
     { width: 400 }
   ).render(true);
-}
-
-function bmApply(html, html2) {
-  const bmPC = html.find("#bmPC")[0].value;
-  const img = canvas.tokens.placeables.filter(pc => pc.actor.name === bmPC)[0].data.texture.src;
-  if (canvas.tokens.controlled.length === 0) {
-    ui.notifications.warn("You must select a token before clicking Apply.");
-    throw new Error('No token selected.')
-  } else {
-    main(html2, img)
   }
-}
-
-function battlemedicineEffect(html2) {
-    let playersNames = canvas.tokens.placeables.filter(pc => pc.actor.type === "character").map(pc => pc.actor.name);
+  
+  function CheckFeat(slug, healer) {
+  if (healer.items.find((i) => i.slug === slug && i.type === 'feat')) {
+      return true;
+  }
+  return false;
+  }
+  
+  async function bmApply(html, html2) {
+  const bm_UUID = 'Compendium.pf2e.feat-effects.2XEYQNZTCGpdkyR6'; //Battle medicine Immunity effect
+  const showIcons = false;
+  const bmEffect = (await fromUuid(bm_UUID)).toObject();
+  bmEffect.system.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
+  bmEffect.flags.core ??= {};
+  bmEffect.flags.core.sourceId = bm_UUID;
+  
+  const applicator = game.actors.getName(html.find("#bmPC")[0].value);
+  bmEffect.name = "BM by " + applicator.name;
+  //it was here
+  const isMedic = CheckFeat('medic-dedication', applicator);
+  const isgodless = CheckFeat('godless-healing', token.actor); //godless healing affects the patient, not the healer
+  const isForensic = CheckFeat('forensic-medicine-methodology', applicator);
+  // check if the person being healed is currently immune. If so, check if healer is a medic
+  var isImmune = token.actor.itemTypes.effect.find(obj => {
+      return obj.name === bmEffect.name
+  })
+  
+  if (isImmune) {
+      if (isMedic) {
+          var medicCooldown = applicator.itemTypes.effect.find(obj => {
+              return obj.name === "Medic dedication used"
+          })
+          if (medicCooldown) {
+              ui.notifications.warn(actor.name + " is currently immune to Battle Medicine by " + applicator.name);
+              return;
+          } else {
+              if (applicator.skills.medicine.rank > 2) {
+                  bmEffect.system.duration.unit = "hours"; //Cooldown of Medic Dedication depends on medicine skill rank
+              }
+              bmEffect.name = "Medic dedication used";
+              bmEffect.img = "icons/magic/symbols/question-stone-yellow.webp";
+              await applicator.createEmbeddedDocuments("Item", [bmEffect]);
+              ui.notifications.info(applicator.name + " has now used their Medic Dedication to Battle Medicine " + actor.name);
+              return;
+          }
+      } else {
+          ui.notifications.warn(actor.name + " is currently immune to Battle Medicine by " + applicator.name);
+          return;
+      }
+  }
+  
+  if (isForensic || isgodless) {
+      bmEffect.system.duration.unit = "hours";
+  }
+  bmEffect.img = applicator.img;
+  await token.actor.createEmbeddedDocuments("Item", [bmEffect]);
+  ui.notifications.info(token.actor.name + " is now immune to Battle Medicine by " + applicator.name);
+  }
+  
+  function battlemedicineEffect(html2) {
+  let playersNames = canvas.tokens.placeables.filter(pc => pc.actor.hasPlayerOwner && pc.actor.type === "character" && pc.actor.itemTypes.feat.some(x => x.slug === 'battle-medicine')).map(pc => pc.actor.name);
     let playerNameList = '';
     playersNames.map((pc) => {
         playerNameList += `<option value="${pc}"}>${pc}</option>`;
@@ -146,7 +197,7 @@ function battlemedicineEffect(html2) {
     let template = `
   <p>Character performing Battle Medicine:<br><select id="bmPC">${playerNameList}</select></p> 
   `;
-
+  
     new Dialog({
         title: "Battle Medicine Countdown",
         content: template,
@@ -164,24 +215,45 @@ function battlemedicineEffect(html2) {
     }, 
     { width: 300 }
   ).render(true);
-}
-
-async function clickOk(html) {
+  }
+  
+  async function clickOk(html) {
   effect.name = html.find("#countdownname")[0].value;
   if (effect.name === 'Battle Medicine') {
     if (canvas.tokens.controlled.length === 0) {
       ui.notifications.warn("You must select a token before clicking Apply.");
     }
     battlemedicineEffect(html);
+  } else if (effect.name === 'Cover') {
+    const actors = canvas.tokens.controlled.flatMap((token) => token.actor ?? []);
+    if (actors.length === 0 && game.user.character) actors.push(game.user.character);
+    if (actors.length === 0) {
+        const message = game.i18n.localize("PF2E.ErrorMessage.NoTokenSelected");
+        return ui.notifications.error(message);
+    }
+  
+    const ITEM_UUID = "Compendium.pf2e.other-effects.I9lfZUiCwMiGogVi"; // Effect: Cover
+    const source = (await fromUuid(ITEM_UUID)).toObject();
+    source.flags = mergeObject(source.flags ?? {}, { core: { sourceId: ITEM_UUID } });
+    
+    for (const actor of actors) {
+        const existing = actor.itemTypes.effect.find((e) => e.flags.core?.sourceId === ITEM_UUID);
+        if (existing) {
+            await existing.delete();
+        } else {
+            await actor.createEmbeddedDocuments("Item", [source]);
+        }
+    }
   } else {
     main(html);
   }
-}
-
-async function main(html, bmImg = null) {
+  }
+  
+  async function main(html, bmImg = null) {
     let duration = html.find("#countdowninput")[0].value;
     const unit = html.find("#countdownunits")[0].value;  
     const isCooldown = html.find("#cooldown")[0].checked; 
+    const isUnidentified = html.find("#unidentified")[0].checked;
     effect.name = html.find("#countdownname")[0].value;    
     if (effect.name === 'Battle Medicine') {
       effect.img = bmImg;
@@ -194,48 +266,52 @@ async function main(html, bmImg = null) {
     } else {
         countdownNumber = duration;
     }
-    if (isCooldown) {countdownNumber = parseInt(countdownNumber) +1};
+    if (isCooldown) {effect.system.duration.expiry = 'turn-end'};
+    if (isUnidentified) {
+      effect.system.unidentified = true;
+      effect.system.tokenIcon.show = false;
+  }
     
-    effect.data.duration.unit = unit;
-    effect.data.duration.value = countdownNumber;
+    effect.system.duration.unit = unit;
+    effect.system.duration.value = countdownNumber;
     await token.actor.createEmbeddedDocuments("Item", [effect]);
-}
-
-const defaultIcon = "systems/pf2e/icons/spells/time-beacon.webp";
-
-const defaultPresets = [
+  }
+  
+  const defaultIcon = "systems/pf2e/icons/spells/time-beacon.webp";
+  
+  const defaultPresets = [
   {slug: "battle_medicine", name: "Battle Medicine", duration: "24", units: "hours", icon: "icons/magic/symbols/question-stone-yellow.webp", cooldown: false},
   {slug: "treat_wounds", name: "Treat Wounds", duration: "50", units: "minutes", icon: "systems/pf2e/icons/features/feats/treat-wounds.webp", cooldown: false},
-];
-
-const defaultUnits = [
+  ];
+  
+  const defaultUnits = [
   {value: "rounds", name: "Rounds"},
   {value: "minutes", name: "Minutes"}, 
   {value: "hours", name: "Hours"},
   {value: "days", name: "Days"},
-];
-
-async function savePreset(preset) {
+  ];
+  
+  async function savePreset(preset) {
   console.log("Save preset", preset);
   return game.user.setFlag('world', 'countdownPresets', { [preset.slug]: preset });
-}
-
-async function removePreset(name) {
+  }
+  
+  async function removePreset(name) {
   console.log("Remove preset", name);
   return game.user.unsetFlag('world', `countdownPresets.${name}`);
-}
-
-function getPresets() {
+  }
+  
+  function getPresets() {
   console.log("Get presets", game.user.flags.world?.countdownPresets);
   return game.user.flags.world?.countdownPresets || {};
-}
-
-async function clearPresets() {
+  }
+  
+  async function clearPresets() {
   console.log("Clear presets");
   return await Promise.all(Object.keys(game.user.flags.world?.countdownPresets || {}).map(removePreset));
-}
-
-async function initializePresets(reset = false) {
+  }
+  
+  async function initializePresets(reset = false) {
   console.log("Initialize presets");
   if (reset) {
     await clearPresets();
@@ -250,25 +326,25 @@ async function initializePresets(reset = false) {
     }
   }
   return getPresets();
-}
-
-async function saveAllPresets(presets) {
+  }
+  
+  async function saveAllPresets(presets) {
   console.log("Save all presets", presets);
   return Promise.all(presets.map(savePreset));
-}
-
-function hasPresets() {
+  }
+  
+  function hasPresets() {
   const ret = Object.keys(game.user.flags.world?.countdownPresets || {}).length > 0;
   console.log("Has presets", ret);
   return ret;
-}
-
-function getUnitsHtml(selected) {
+  }
+  
+  function getUnitsHtml(selected) {
   console.log("Get units HTML", selected);
   return defaultUnits.map(u => `<option value="${u.value}" ${u.value == selected ? "selected" : ""} >${u.name}</option>`).join("");
-}
-
-function getRowHtml(i, preset) {
+  }
+  
+  function getRowHtml(i, preset) {
   console.log("Get row HTML", i, preset);
   const unitsHtml = getUnitsHtml(preset?.units);
   return `<tr id="preset-row-${i}" class="preset-row">
@@ -279,9 +355,9 @@ function getRowHtml(i, preset) {
       <td><img class="effect-icon" id="icon-${i}" src="${preset?.icon || defaultIcon }" height="35" width="35" /></td>
       <td align="center"><button class="delete-me" value="${i}" type="button" style="width:27px;height:27px;padding:0;border:none;background:none"><i class="fas fa-minus-square"></i></button></td>
     </tr>`
-}
-
-function getTableHtml() {
+  }
+  
+  function getTableHtml() {
   console.log("Get table HTML");
   const rowsHtml = Object.values(getPresets()).map((preset, i) => getRowHtml(i, preset)).join("");
   return `<h3>Countdown Presets
@@ -305,44 +381,44 @@ function getTableHtml() {
         </tbody>
       </table>
     </form>`;
-}
-
-function addRow(i) {
+  }
+  
+  function addRow(i) {
   console.log("Add row", i);
   document.getElementById("preset-table-body").insertAdjacentHTML("beforeend", getRowHtml(i));
   const row = document.getElementById(`preset-row-${i}`);
   attachEvents(row);
-}
-
-function deleteRow(event) {
+  }
+  
+  function deleteRow(event) {
   const i = event.currentTarget.value;
   console.log("Delete row", i);
   const row = document.getElementById(`preset-row-${event.currentTarget.value}`)
   removeEvents(row);
   row.remove();
-}
-
-function attachEvents(row) {
+  }
+  
+  function attachEvents(row) {
   console.log("Attach events", row);
   row.querySelector(".effect-icon").addEventListener("click", pickIcon);
   row.querySelector(".delete-me").addEventListener("click", deleteRow);
-}
-
-function removeEvents(row) {
+  }
+  
+  function removeEvents(row) {
   console.log("Remove events", row);
   row.querySelector(".effect-icon").removeEventListener("click", pickIcon);
   row.querySelector(".delete-me").removeEventListener("click", deleteRow);
-}
-
-function onPreRender(html) {
+  }
+  
+  function onPreRender(html) {
   console.log("On preset render", html);
   let count = Object.keys(getPresets()).length;
   html[0].querySelector("#add-row").addEventListener("click", event => addRow(count++));
   html[0].querySelector("#reset-presets").addEventListener("click", event => initializePresets(true));
   html[0].querySelectorAll(".preset-row").forEach(attachEvents);
-}
-
-function getPresetData(formElement) {
+  }
+  
+  function getPresetData(formElement) {
   console.log("Get preset data", formElement);
   const formData = new FormData(formElement);
   const presets = {}
@@ -364,20 +440,20 @@ function getPresetData(formElement) {
     preset.icon = formElement.querySelector(`#icon-${i}`).getAttribute("src");
   }
   return Object.values(presets);
-}
-
-async function saveCallback(html) {
+  }
+  
+  async function saveCallback(html) {
   console.log("Save callback", html);
   const form = html[0].querySelector("#preset-form");
   await clearPresets();
   await saveAllPresets(getPresetData(form));
   rewriteSelect(html);
-}
-
-async function presetDialog() {
+  }
+  
+  async function presetDialog() {
   console.log("Array test");
   // await initializePresets();
-
+  
   new Dialog(
     {
       title: "Countdown Effect",
@@ -396,8 +472,8 @@ async function presetDialog() {
     { id: 'preset-dialog',
       width: 500 }
   ).render(true);
-}
-
-// await presetDialog();
-
-countdownEffect();
+  }
+  
+  // await presetDialog();
+  
+  countdownEffect();
