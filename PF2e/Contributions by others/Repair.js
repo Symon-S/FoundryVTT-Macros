@@ -63,9 +63,8 @@ if (canvas.tokens.controlled.length !== 1){
     const modifiers = []
 
     let DCsByLevel = [14, 15, 16, 18, 19, 20, 22, 23, 24, 26, 27, 28, 30, 31, 32, 34, 35, 36, 38, 39, 40, 42, 44, 46, 48, 50]
-    let DC = DCsByLevel[token.actor.system.details.level.value + 2]
+    let DC = DCsByLevel[token.actor.system.details.level.value] + 2
 
-    const notes = [...token.actor.system.skills[skillKey].notes]; // add more notes if necessary
     const options = token.actor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
     options.push(`action:${actionSlug}`);
     let DamageRoll = CONFIG.Dice.rolls.find((r) => r.name == "DamageRoll");
@@ -73,7 +72,7 @@ if (canvas.tokens.controlled.length !== 1){
         new game.pf2e.CheckModifier(
             `<span class="pf2-icon">A</span> <b>${actionName}</b> - <p class="compact-text">${skillName} Skill Check</p>`,
             token.actor.system.skills[skillKey], modifiers),
-        { actor: token.actor, type: 'skill-check', options, notes, dc: { value: DC } }, //for DC insert: , dc: {value: 30}
+        { actor: token.actor, type: 'skill-check', options, dc: { value: DC } }, //for DC insert: , dc: {value: 30}
         event,
         async (roll) => {
             if (roll.degreeOfSuccess === 3) {
