@@ -107,14 +107,19 @@ if (canvas.tokens.controlled.length !== 1){
           rules: [],
         },
       };
-    
+
+    const alwaysShowName = !game.settings.get("pf2e", "metagame_tokenSetsNameVisibility");
     for(let target of game.user.targets){
         let targetActor = target.actor;
-        
+        const showName = alwaysShowName || target.document.playersCanSeeName;
+
+        const nameForNotifications = showName ? target.name : 'Unknown';
+        const nameForChatMessage = showName ? target.name : `Unknown <span data-visibility="gm">(${target.name})</span>`;
+
         let distance = token.distanceTo(target);
 
         if (distance > 30) {
-            ui.notifications.warn(`${targetActor.name} is out of range.`);
+            ui.notifications.warn(`${nameForNotifications} is out of range.`);
             continue;
         } else {
 
@@ -132,7 +137,7 @@ if (canvas.tokens.controlled.length !== 1){
                 return obj.name === immunityEffect.name
             });
             if (isImmune) {
-                ui.notifications.warn(target.name + ` is currently immune to ${actionName} by ` + token.name);
+                ui.notifications.warn(nameForNotifications + ` is currently immune to ${actionName} by ` + token.name);
                 continue;
             }
 
@@ -162,7 +167,7 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Critical Success</strong><br> <strong>${target.name}</strong> becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 2}${terrifiedRetreatMessage} and ${immunityMessage}`,
+                                flavor: `<strong>Critical Success</strong><br> <strong>${nameForChatMessage}</strong> becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 2}${terrifiedRetreatMessage} and ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "demoralize": {
@@ -181,7 +186,7 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Success</strong><br> <strong>${target.name}</strong> becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 1} and ${immunityMessage}`,
+                                flavor: `<strong>Success</strong><br> <strong>${nameForChatMessage}</strong> becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 1} and ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "demoralize": {
@@ -200,7 +205,7 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Failure</strong><br>You fail to demoralize ${target.name} and nothing happens. <strong>${target.name}</strong> ${immunityMessage}`,
+                                flavor: `<strong>Failure</strong><br>You fail to demoralize ${nameForChatMessage} and nothing happens. <strong>${nameForChatMessage}</strong> ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "demoralize": {
@@ -219,7 +224,7 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Critical Failure</strong><br>You fail to demoralize ${target.name} and nothing happens. <strong>${target.name}</strong> ${immunityMessage}`,
+                                flavor: `<strong>Critical Failure</strong><br>You fail to demoralize ${nameForChatMessage} and nothing happens. <strong>${nameForChatMessage}</strong> ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "demoralize": {
