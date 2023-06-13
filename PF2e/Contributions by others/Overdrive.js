@@ -35,7 +35,6 @@ if (canvas.tokens.controlled.length < 1){
         const OD_CrSu_ITEM_UUID = 'Compendium.pf2e.feat-effects.1XlJ9xLzL19GHoOL'; // Effect: Overdrive (Critical Success)
         // get Main Actor
 
-        const notes = [...inventorTokenActor.system.skills[skillKey].notes]; // add more notes if necessary
         const options = inventorTokenActor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
         options.push(`action:${actionSlug}`);
 
@@ -46,7 +45,7 @@ if (canvas.tokens.controlled.length < 1){
             new game.pf2e.CheckModifier(
                 `<span class="pf2-icon">A</span> <b>${actionName}</b> - <p class="compact-text">${skillName} Skill Check</p>`,
                 inventorTokenActor.system.skills[skillKey], modifiers),
-            { actor: inventorTokenActor, type: 'skill-check', options, notes, dc: { value: DC } }, //for DC insert: , dc: {value: 30}
+            { actor: inventorTokenActor, type: 'skill-check', options, dc: { value: DC } }, //for DC insert: , dc: {value: 30}
             event,
             async (roll) => {
                 if (roll.degreeOfSuccess === 3) {
