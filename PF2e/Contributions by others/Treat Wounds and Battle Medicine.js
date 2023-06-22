@@ -483,6 +483,8 @@ async function applyChanges($html) {
       applicatorImmunityEffect.system.tokenIcon.show = showIcons; 
       applicatorImmunityEffect.flags.core ??= {};
       applicatorImmunityEffect.flags.core.sourceId = immunityEffectUUID;
+      applicatorImmunityEffect.system.duration.unit = "minutes";
+      applicatorImmunityEffect.system.duration.value = 60;
       applicatorImmunityEffect.name = "Battle Medic's Baton used";
       await token.actor.createEmbeddedDocuments("Item", [applicatorImmunityEffect]);
       ui.notifications.info(token.name + ` has now used their Battle Medic's Baton to apply ${bmtw} to ` + targetActor.name);
