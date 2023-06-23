@@ -31,8 +31,8 @@ if (choice === "ims") {
   stance = 'imscf';
   img = 'systems/pf2e/icons/features/feats/inspiring-marshal-stance.webp'
   skillName = "Diplomacy";
-  skillKey = "dip";
-  notes = [...token.actor.system.skills[skillKey].notes];
+  skillKey = "diplomacy";
+  notes = [];
   actionSlug = "inspiring-marshal-stance";
   actionName = "Inspiring Marshal Stance";
   notes.push({"outcome":["success"], "selector":"diplomacy", "text":`<p>Your @Compendium[pf2e.feat-effects.kzEPq4aczYb6OD2h]{Marshal's Aura} grants you and allies a +1 status bonus to attack rolls and saves against mental effects.</p>`});
@@ -44,8 +44,8 @@ notes.push({"outcome":["criticalFailure"], "selector":"diplomacy", "text":`<p>Yo
 if (choice === "dms") {
     if (token.actor.itemTypes.effect.some(e => e.slug === 'dmscf')) { return ui.notifications.warn('You cannot enter a marshal stance while in cooldown!'); }
   skillName = "Intimidation";
-  skillKey = "itm";
-  notes = [...token.actor.system.skills[skillKey].notes];
+  skillKey = "intimidation"
+  notes = [];
   actionSlug = "dread-marshal-stance";
   actionName = "Dread Marshal Stance";
   notes.push({"outcome":["success"], "selector":"intimidation", "text":`<p>Your @Compendium[pf2e.feat-effects.KBEJVRrie2JTHWIK]{Marshal's Aura} grants you and allies a status bonus to damage rolls equal to the number of weapon damage dice of the unarmed attack or weapon you are wielding that has the most weapon damage dice. When you or an ally in the aura critically hits an enemy with a Strike, that enemy is @Compendium[pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 1}.</p>`});
@@ -97,7 +97,7 @@ async function SRoll() {
   const roll = await game.pf2e.Check.roll(
     new game.pf2e.CheckModifier(
       `<span class="pf2-icon">A</span> <b>${actionName}</b><br><p class="compact-text">${skillName } Skill Check</p>`,
-	  token.actor.system.skills[skillKey], modifiers 
+	  token.actor.skills[skillKey], modifiers
     ),
     { actor: token.actor, type: 'skill-check', options, notes, flag: 'marshal-stance', dc: { value: DC }, skipDialog: true },
 	null,
