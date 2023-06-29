@@ -189,7 +189,8 @@ async function itemSelectedCallback(weaponToShift, newWeaponID, revert)
 
 	let nw = await macroActor.createEmbeddedDocuments('Item',[itemObject]);
 	if (weaponToShift.flags.pf2e.originalItemData === undefined && !revert){
-		await nw[0].setFlag("pf2e","originalItemData",weaponToShift);
+		console.log(weaponToShift);
+		await nw[0].setFlag("pf2e","originalItemData",(await weaponToShift.toObject()));
 	}
 	if (weaponToShift.flags.pf2e.originalItemData !== undefined && !revert) {
 		await nw[0].setFlag("pf2e","originalItemData",weaponToShift.flags.pf2e.originalItemData);
@@ -197,7 +198,7 @@ async function itemSelectedCallback(weaponToShift, newWeaponID, revert)
 	// This line is needed as a separate call, because updating the equipped status on 
 	// the createEmbeddedDocuments call was immediately overwritten somewhere else in the 
 	// PF2E code
-	await macroActor.updateEmbeddedDocuments('Item',[{_id:nw[0].id, 'system.equipped':equippedStatus}]);
+	await macroActor.updateEmbeddedDocuments('Item',[{_id:nw[0]._id,'system.equipped':equippedStatus}]);
 					
 	let nin = nw[0].name;
 	await macroActor.deleteEmbeddedDocuments('Item', macroActor.items.filter(value=> (value.name === weaponToShift.name)).map(i=>i.id));	
