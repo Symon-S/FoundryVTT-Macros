@@ -29,7 +29,8 @@ Object.defineProperty(dClassObj, 'system', {
 const rE = {
     "domain": "all",
     "key": "RollOption",
-    "option": `class:${class2.system.slug}`
+    "option": `class:${class2.system.slug}`,
+    "priority": 0
 };
 
 const dClass = dClassObj;
