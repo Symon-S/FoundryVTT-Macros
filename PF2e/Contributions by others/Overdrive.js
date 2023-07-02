@@ -48,7 +48,15 @@ if (canvas.tokens.controlled.length < 1){
             { actor: inventorTokenActor, type: 'skill-check', options, dc: { value: DC } }, //for DC insert: , dc: {value: 30}
             event,
             async (roll) => {
-                if (roll.degreeOfSuccess === 3) {
+                    dsnHook(() => {
+                        ChatMessage.create({
+                            user: game.user.id,
+                            type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+                            flavor: `<strong>Critical Success</strong><br>Your gizmos go into a state of incredible efficiency called critical overdrive, adding great power to your attacks. Your Strikes deal additional damage equal to your Intelligence modifier for 1 minute. After the Overdrive ends, your gizmos become unusable as they cool down or reset, and you can't use Overdrive for 1 minute.`,
+                            speaker: ChatMessage.getSpeaker(),
+                        });
+                    });
+                    if (roll.degreeOfSuccess === 3) {
                     //apply crit effect
                     const source = (await fromUuid(OD_CrSu_ITEM_UUID)).toObject();
                     source.flags.core ??= {};
@@ -70,16 +78,17 @@ if (canvas.tokens.controlled.length < 1){
                             await actor.createEmbeddedDocuments('Item', [source]);
                         }
                     };
+                } else if (roll.degreeOfSuccess === 2) {
                     dsnHook(() => {
                         ChatMessage.create({
                             user: game.user.id,
                             type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                            flavor: `<strong>Critical Success</strong><br>Your gizmos go into a state of incredible efficiency called critical overdrive, adding great power to your attacks. Your Strikes deal additional damage equal to your Intelligence modifier for 1 minute. After the Overdrive ends, your gizmos become unusable as they cool down or reset, and you can't use Overdrive for 1 minute.`,
+                            flavor: `<strong>Success</strong><br>Your gizmos go into overdrive, adding power to your attacks.Your Strikes deal additional damage equal to half your Intelligence modifier for 1 minute. After the Overdrive ends, your gizmos become unusable as they cool down or reset, and you can't use Overdrive for 1 minute.<br><br>
+                            <small><strong>Special</strong> When under the effects of Overdrive, you can still use the Overdrive action. You can't extend your Overdrive's duration this way, but you can turn an overdrive into a critical overdrive if you critically succeed. A failure has no effect on your current Overdrive, and you end your Overdrive on a critical failure.</small>
+                            `,
                             speaker: ChatMessage.getSpeaker(),
                         });
                     });
-            
-                } else if (roll.degreeOfSuccess === 2) {
                     //apply success effect
                     const source = (await fromUuid(OD_Succ_ITEM_UUID)).toObject();
                     source.flags.core ??= {};
@@ -93,16 +102,6 @@ if (canvas.tokens.controlled.length < 1){
                             await actor.createEmbeddedDocuments('Item', [source]);
                         }
                     };
-                    dsnHook(() => {
-                        ChatMessage.create({
-                            user: game.user.id,
-                            type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                            flavor: `<strong>Success</strong><br>Your gizmos go into overdrive, adding power to your attacks.Your Strikes deal additional damage equal to half your Intelligence modifier for 1 minute. After the Overdrive ends, your gizmos become unusable as they cool down or reset, and you can't use Overdrive for 1 minute.<br><br>
-                            <small><strong>Special</strong> When under the effects of Overdrive, you can still use the Overdrive action. You can't extend your Overdrive's duration this way, but you can turn an overdrive into a critical overdrive if you critically succeed. A failure has no effect on your current Overdrive, and you end your Overdrive on a critical failure.</small>
-                            `,
-                            speaker: ChatMessage.getSpeaker(),
-                        });
-                    });
                 } else if (roll.degreeOfSuccess === 1) {
                     dsnHook(() => {
                         ChatMessage.create({
