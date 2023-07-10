@@ -1,7 +1,4 @@
 /**
- * This macro will currently not work properly within Workbench from the Symon-provided macros folder due to the PF2e 
- * system workaround introduced in version 4.2.5 for a Foundry bug.
- * Please use the full version of the macro in the XDY internal utility macros, do not import folder.
  * Contributed by JDCalvert
  * Allows the user to update the radius of an active aura effect. Useful for auras like Protective Ward
  */
@@ -13,23 +10,23 @@ function getControlledActorAndToken() {
     const controlledTokens = canvas.tokens.controlled;
     if (controlledTokens.length) {
         if (controlledTokens.length === 1) {
-            const token = controlledTokens[0];
-            const actor = token?.actor;
-            if (actor && token) {
-                return { actor, token };
+            const myToken = controlledTokens[0];
+            const myActor = myToken?.actor;
+            if (myToken && myActor) {
+                return { myActor, myToken };
             }
         }
     } else {
-        const actor = game.user.character;
-        const tokens = actor?.getActiveTokens();
-        const token = tokens?.length === 1 ? tokens[0] : null;
-        if (actor && token) {
-            return { actor, token };
+        const myActor = game.user.character;
+        const myTokens = myActor?.getActiveTokens();
+        const myToken = myTokens?.length === 1 ? myTokens[0] : null;
+        if (myActor && myToken) {
+            return { myActor, myToken };
         }
     }
 
     ui.notifications.warn("You must have a single character selected.");
-    return { actor: null, token: null };
+    return { myActor: null, myToken: null };
 }
 
 /**
@@ -73,7 +70,7 @@ function applyChanges($html, auraEffects) {
     
     // PF2e x JB2A Macros Implementation by MrVauxs
     if (game.modules.get("sequencer")?.active) {
-        const sequencerEffects = Sequencer.EffectManager.getEffects({ origin: auraRule.slug, source: token })
+        const sequencerEffects = Sequencer.EffectManager.getEffects({ origin: auraRule.slug, source: myToken })
         if (sequencerEffects.length) {
             const sizeChange = 1.5 + 3 * (radius / 5)
             sequencerEffects[0].update({size: { width: sizeChange, height: sizeChange, gridUnits: true }})
@@ -82,17 +79,17 @@ function applyChanges($html, auraEffects) {
 }
 
 
-const { actor, token } = getControlledActorAndToken();
-if (!(actor && token)) {
+const { myActor, myToken } = getControlledActorAndToken();
+if (!(myActor && myToken)) {
     return;
 }
 
-const auraEffects = actor.itemTypes.effect.filter(effect =>
+const auraEffects = myActor.itemTypes.effect.filter(effect =>
     effect.rules.find(rule => rule.data.key === "Aura")
 );
 
 if (!auraEffects.length) {
-    ui.notifications.warn(`${token.name} has no aura effects.`);
+    ui.notifications.warn(`${myToken.name} has no aura effects.`);
     return;
 }
 
