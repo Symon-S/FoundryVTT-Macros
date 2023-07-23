@@ -384,12 +384,19 @@ async function Spellstrike() {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> bf392ed (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 =======
 >>>>>>> 517e21b (Update Spellstrike.js)
 =======
 >>>>>>> e9a97ca (update spellstrike with auto crit roll and ray of frost critical effect)
+=======
+=======
+>>>>>>> bf392ed (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
+=======
+>>>>>>> 0e89de4 (update spellstrike with auto crit roll and ray of frost critical effect)
+>>>>>>> cb932ca (update spellstrike with auto crit roll and ray of frost critical effect)
 
             /* Parse damage formula */
             const split = spc.roll.formula.split(' ');
@@ -427,6 +434,7 @@ async function Spellstrike() {
 <<<<<<< HEAD
 =======
             console.log(spc.roll?.options)
+<<<<<<< HEAD
 =======
 >>>>>>> bf392ed (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
             if (spc.roll !== undefined && critt === 3 && spc.slug !== "chromatic-ray") {
@@ -439,8 +447,11 @@ async function Spellstrike() {
                 }
 <<<<<<< HEAD
 =======
+<<<<<<< HEAD
 =======
             console.log(spc.roll?.options)
+=======
+>>>>>>> cb932ca (update spellstrike with auto crit roll and ray of frost critical effect)
             if (spc.roll !== undefined && critt === 3 && spc.slug !== "chromatic-ray") {
                 console.log('A')
 
@@ -461,7 +472,11 @@ async function Spellstrike() {
                     console.log('B')
                     critD = '(2*(' + formula.slice(0, ind) + '))[' + formula.slice(ind + 1) + ']';
                 }
+<<<<<<< HEAD
 >>>>>>> e9a97ca (update spellstrike with auto crit roll and ray of frost critical effect)
+=======
+>>>>>>> 0e89de4 (update spellstrike with auto crit roll and ray of frost critical effect)
+>>>>>>> cb932ca (update spellstrike with auto crit roll and ray of frost critical effect)
                 spc.roll = new DamageRoll(critD)
 
                 /* roll critical damage */
@@ -470,9 +485,13 @@ async function Spellstrike() {
 =======
 >>>>>>> bf392ed (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 =======
+<<<<<<< HEAD
 >>>>>>> 517e21b (Update Spellstrike.js)
 =======
 >>>>>>> e9a97ca (update spellstrike with auto crit roll and ray of frost critical effect)
+=======
+>>>>>>> 0e89de4 (update spellstrike with auto crit roll and ray of frost critical effect)
+>>>>>>> cb932ca (update spellstrike with auto crit roll and ray of frost critical effect)
                 await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
             }
         }
@@ -490,18 +509,28 @@ async function Spellstrike() {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> cb932ca (update spellstrike with auto crit roll and ray of frost critical effect)
 =======
 
 >>>>>>> cbdd256 (update spellstrike with auto crit roll and ray of frost critical effect)
 =======
 >>>>>>> bf392ed (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 =======
+<<<<<<< HEAD
 >>>>>>> 517e21b (Update Spellstrike.js)
 =======
 =======
 
 >>>>>>> cbdd256 (update spellstrike with auto crit roll and ray of frost critical effect)
 >>>>>>> e9a97ca (update spellstrike with auto crit roll and ray of frost critical effect)
+=======
+=======
+
+>>>>>>> cbdd256 (update spellstrike with auto crit roll and ray of frost critical effect)
+>>>>>>> 0e89de4 (update spellstrike with auto crit roll and ray of frost critical effect)
+>>>>>>> cb932ca (update spellstrike with auto crit roll and ray of frost critical effect)
 }
 
 /* Dialog box */
