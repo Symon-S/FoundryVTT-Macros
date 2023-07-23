@@ -393,6 +393,7 @@ async function Spellstrike() {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> bf392ed (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 =======
@@ -444,14 +445,30 @@ async function Spellstrike() {
 >>>>>>> 517e21b (Update Spellstrike.js)
 =======
 >>>>>>> 517e21b (Update Spellstrike.js)
+=======
+            console.log(spc.roll?.options)
+>>>>>>> 52d026d (update spellstrike with auto crit roll and ray of frost critical effect)
             if (spc.roll !== undefined && critt === 3 && spc.slug !== "chromatic-ray") {
-                /* Apply critical formula according to user's crit rule preference */
+                console.log('A')
+
+                const formula = spc.roll.formula;
+                const ind = formula.lastIndexOf(' ');
+                const indD = formula.indexOf('d');
+                let critD;
+
+                /* alter the damage formula based on user's crit rule preferences */
+                console.log('((2*' + formula.slice(0, indD) + ')' + formula.slice(indD, ind) + ')[' + formula.slice(ind + 1) + ']')
                 if (game.settings.get("pf2e", "critRule") === 'doubledice') {
-                    spc.roll = new DamageRoll(`(${2 * formula.diceQty}${formula.diceSize}${formula.plusMinus}${2 * formula.bonus})[${formula.damType}]`);
+                    const indD = formula.indexOf('d');
+                    console.log('A')
+
+                    critD = '((2*' + formula.slice(0, indD) + ')' + formula.slice(indD, ind) + ')[' + formula.slice(ind + 1) + ']';
                 }
                 else {
-                    spc.roll = new DamageRoll(`(2*(${formula.dice}${formula.plusMinus}${formula.bonus}))[${formula.damType}]`);
+                    console.log('B')
+                    critD = '(2*(' + formula.slice(0, ind) + '))[' + formula.slice(ind + 1) + ']';
                 }
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -528,6 +545,11 @@ async function Spellstrike() {
 >>>>>>> 91937d4 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 =======
 >>>>>>> 517e21b (Update Spellstrike.js)
+=======
+                spc.roll = new DamageRoll(critD)
+
+                /* roll critical damage */
+>>>>>>> 52d026d (update spellstrike with auto crit roll and ray of frost critical effect)
                 await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
             }
         }
