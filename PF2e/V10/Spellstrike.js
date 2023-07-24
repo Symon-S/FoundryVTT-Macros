@@ -347,30 +347,35 @@ async function Spellstrike() {
             if (spc.slug !== "chromatic-ray" && (spc.roll === undefined || !spc.isAttack)) {
                 return await s_entry.cast(spc.spell, { slot: spc.index, level: spc.lvl, message: true });
             }
-            console.log(spc.roll?.options)
+
+            /* Parse damage formula */
+            const split = spc.roll.formula.split(' ');
+            const formula = {
+                dice: split[0],
+                diceQty: split[0].split('d')[0],
+                diceSize: `d${split[0].split('d')[1]}`,
+                damType: split[split.length - 1],
+            };
+            if (split[1] == '+' || split[1] == '-') {
+                formula.plusMinus = split[1];
+                formula.bonus = split[2];
+            }
+
+            /* Regular hit */
+            if (spc.roll !== undefined && critt === 2 && spc.slug !== "chromatic-ray") {
+                spc.roll = new DamageRoll(`(${formula.dice}${formula.plusMinus}${formula.bonus})[${formula.damType}]`);
+                await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
+            }
+
+            /* Critical hit */
             if (spc.roll !== undefined && critt === 3 && spc.slug !== "chromatic-ray") {
-                console.log('A')
-
-                const formula = spc.roll.formula;
-                const ind = formula.lastIndexOf(' ');
-                const indD = formula.indexOf('d');
-                let critD;
-
-                /* alter the damage formula based on user's crit rule preferences */
-                console.log('((2*' + formula.slice(0, indD) + ')' + formula.slice(indD, ind) + ')[' + formula.slice(ind + 1) + ']')
+                /* Apply critical formula according to user's crit rule preference */
                 if (game.settings.get("pf2e", "critRule") === 'doubledice') {
-                    const indD = formula.indexOf('d');
-                    console.log('A')
-
-                    critD = '((2*' + formula.slice(0, indD) + ')' + formula.slice(indD, ind) + ')[' + formula.slice(ind + 1) + ']';
+                    spc.roll = new DamageRoll(`(${2 * formula.diceQty}${formula.diceSize}${formula.plusMinus}${2 * formula.bonus})[${formula.damType}]`);
                 }
                 else {
-                    console.log('B')
-                    critD = '(2*(' + formula.slice(0, ind) + '))[' + formula.slice(ind + 1) + ']';
+                    spc.roll = new DamageRoll(`(2*(${formula.dice}${formula.plusMinus}${formula.bonus}))[${formula.damType}]`);
                 }
-                spc.roll = new DamageRoll(critD)
-
-                /* roll critical damage */
                 await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
             }
         }
@@ -384,7 +389,6 @@ async function Spellstrike() {
         if (spell_choice[2]) { spc = spcBack; }
         await s_entry.cast(spc.spell, { slot: spc.index, level: spc.lvl, message: false });
     }
-
 }
 
 /* Dialog box */
