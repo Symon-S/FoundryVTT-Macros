@@ -458,6 +458,7 @@ async function Spellstrike() {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> bf392ed (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 =======
@@ -481,6 +482,8 @@ async function Spellstrike() {
 >>>>>>> 8115775 (Update Spellstrike.js)
 =======
 >>>>>>> f2da5c1 (update spellstrike with auto crit roll and ray of frost critical effect)
+=======
+>>>>>>> d356f84 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 =======
 >>>>>>> bf392ed (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 =======
@@ -518,6 +521,8 @@ async function Spellstrike() {
 >>>>>>> 9d49cf2 (Update Spellstrike.js)
 =======
 >>>>>>> 7097518 (update spellstrike with auto crit roll and ray of frost critical effect)
+=======
+>>>>>>> 920c9bb (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 =======
 >>>>>>> bf392ed (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 =======
@@ -565,8 +570,16 @@ async function Spellstrike() {
 =======
 =======
 >>>>>>> 517e21b (Update Spellstrike.js)
+<<<<<<< HEAD
 >>>>>>> 9d49cf2 (Update Spellstrike.js)
+<<<<<<< HEAD
 >>>>>>> 8115775 (Update Spellstrike.js)
+=======
+=======
+=======
+>>>>>>> 0f33e61 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
+>>>>>>> 920c9bb (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
+>>>>>>> d356f84 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 
             /* Parse damage formula */
             const split = spc.roll.formula.split(' ');
@@ -594,10 +607,13 @@ async function Spellstrike() {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> 517e21b (Update Spellstrike.js)
 >>>>>>> 8115775 (Update Spellstrike.js)
+=======
+>>>>>>> d356f84 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 =======
 >>>>>>> 517e21b (Update Spellstrike.js)
 =======
@@ -605,6 +621,7 @@ async function Spellstrike() {
 =======
             console.log(spc.roll?.options)
 >>>>>>> 52d026d (update spellstrike with auto crit roll and ray of frost critical effect)
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 >>>>>>> 0f33e61 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
@@ -614,26 +631,19 @@ async function Spellstrike() {
 >>>>>>> 8e2a464 (Update Spellstrike.js)
 =======
 >>>>>>> f2da5c1 (update spellstrike with auto crit roll and ray of frost critical effect)
+=======
+=======
+>>>>>>> 0f33e61 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
+>>>>>>> d356f84 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
             if (spc.roll !== undefined && critt === 3 && spc.slug !== "chromatic-ray") {
-                console.log('A')
-
-                const formula = spc.roll.formula;
-                const ind = formula.lastIndexOf(' ');
-                const indD = formula.indexOf('d');
-                let critD;
-
-                /* alter the damage formula based on user's crit rule preferences */
-                console.log('((2*' + formula.slice(0, indD) + ')' + formula.slice(indD, ind) + ')[' + formula.slice(ind + 1) + ']')
+                /* Apply critical formula according to user's crit rule preference */
                 if (game.settings.get("pf2e", "critRule") === 'doubledice') {
-                    const indD = formula.indexOf('d');
-                    console.log('A')
-
-                    critD = '((2*' + formula.slice(0, indD) + ')' + formula.slice(indD, ind) + ')[' + formula.slice(ind + 1) + ']';
+                    spc.roll = new DamageRoll(`(${2 * formula.diceQty}${formula.diceSize}${formula.plusMinus}${2 * formula.bonus})[${formula.damType}]`);
                 }
                 else {
-                    console.log('B')
-                    critD = '(2*(' + formula.slice(0, ind) + '))[' + formula.slice(ind + 1) + ']';
+                    spc.roll = new DamageRoll(`(2*(${formula.dice}${formula.plusMinus}${formula.bonus}))[${formula.damType}]`);
                 }
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -652,6 +662,8 @@ async function Spellstrike() {
 >>>>>>> 8115775 (Update Spellstrike.js)
 =======
 >>>>>>> f2da5c1 (update spellstrike with auto crit roll and ray of frost critical effect)
+=======
+>>>>>>> d356f84 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 =======
             console.log(spc.roll?.options)
 <<<<<<< HEAD
@@ -900,8 +912,16 @@ async function Spellstrike() {
 
                 /* roll critical damage */
 >>>>>>> 52d026d (update spellstrike with auto crit roll and ray of frost critical effect)
+<<<<<<< HEAD
 >>>>>>> 7097518 (update spellstrike with auto crit roll and ray of frost critical effect)
+<<<<<<< HEAD
 >>>>>>> f2da5c1 (update spellstrike with auto crit roll and ray of frost critical effect)
+=======
+=======
+=======
+>>>>>>> 0f33e61 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
+>>>>>>> 920c9bb (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
+>>>>>>> d356f84 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
                 await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
             }
         }
