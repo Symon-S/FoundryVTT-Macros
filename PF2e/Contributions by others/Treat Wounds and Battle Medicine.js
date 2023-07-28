@@ -16,6 +16,7 @@ This Macro works just like the system's Treat Wounds macro, except for the follo
 - Adds the ability to use the macro with clever improviser.
 - Checks if the Healer is having healer's tools in the inventory.
 - Provide information to the user that Expanded Healer's Tools have to be held with 2h to gain it's bonus.
+- Supports the Spell Stitcher feat from Magus+.
 */
 
 /**
@@ -95,6 +96,7 @@ const CheckRoll = CONFIG.Dice.rolls.find(((R) => R.name === "CheckRoll"));
 * @param {boolean} options.useMortalHealing Actor uses the feat mortal healing
 * @param {boolean} options.isRiskySurgery Actor uses the feat risky surgery 
 * @param {string} options.bonusString Bonus String for this throw
+* @param {number} options.spellStitcherBonus Extra healing received from Spell Stitcher (Magus+)
 * @returns {{healFormula: string, successLabel: string}} Dice heal formula and success label
 */
 const getHealSuccess = ({
@@ -103,6 +105,7 @@ const getHealSuccess = ({
  useMortalHealing,
  isRiskySurgery,
  bonusString,
+ spellStitcherBonus,
 }) => {
  let healFormula;
  let successLabel;
@@ -126,9 +129,15 @@ const getHealSuccess = ({
        healFormula = useMagicHands ? `16${bonusString}` : `2d8${bonusString}`;
        successLabel = 'Success';
      }
+     if (spellStitcherBonus > 0) {
+       healFormula += `+${spellStitcherBonus}`;
+     }
      break;
    case 3:
      healFormula = useMagicHands ? `32${bonusString}` : `4d8${bonusString}`;
+     if (spellStitcherBonus > 0) {
+       healFormula += `+${2 * spellStitcherBonus}`;
+     }
      successLabel = 'Critical Success';
      break;
    default:
@@ -154,6 +163,7 @@ const getHealSuccess = ({
 * @param {Object} options.target current target
 * @param {Object} options.immunityEffect the immunity effect  
 * @param {string} options.immunityMacroLink the immunity Macro Link
+* @param {number} options.spellStitcherBonus The bonus healing received from Spell Stitcher (Magus+)
 */
 const rollTreatWounds = async ({
  DC,
@@ -168,6 +178,7 @@ const rollTreatWounds = async ({
  immunityEffect,
  immunityMacroLink,
  usedBattleMedicsBaton,
+ spellStitcherBonus,
 }) => {
  const dc = {
    value: DC,
@@ -205,6 +216,7 @@ const rollTreatWounds = async ({
       useMortalHealing,
       isRiskySurgery,
       bonusString,
+      spellStitcherBonus,
     });
 
     if (isRiskySurgery) {
@@ -266,6 +278,7 @@ const rollTreatWounds = async ({
           useMortalHealing,
           isRiskySurgery,
           bonusString,
+          spellStitcherBonus,
         });
         if (isRiskySurgery) {
           ChatMessage.create({
@@ -387,6 +400,18 @@ async function applyChanges($html) {
    }
    const forensicMedicine = checkFeat('forensic-medicine-methodology');
 
+   let spellStitcherBonus = 0;
+   if (checkFeat('spell-stitcher') && useBattleMedicine) {
+     if (token.actor.itemTypes.effect.some(obj => { return obj.slug === "stance-arcane-cascade" })) {
+       spellStitcherBonus = 1;
+       if (token.actor.class.slug === "magus" && checkFeat("weapon-specialization")) {
+         spellStitcherBonus = 2;
+       };
+       if (token.actor.class.slug === "magus" && checkFeat("greater-weapon-specialization")) {
+         spellStitcherBonus = 3;
+       }
+     }
+   }
    const skill = $html.find('[name="skill"]')[0]?.value;
 
    // Handle Rule Interpretation
@@ -514,6 +539,7 @@ async function applyChanges($html) {
            immunityEffect,
            immunityMacroLink,
            usedBattleMedicsBaton,
+           spellStitcherBonus,
          });
          break;
        case 2:
@@ -527,9 +553,10 @@ async function applyChanges($html) {
            assurance,
            bmtw,
            target,
-           immunityEffect,  
+           immunityEffect,
            immunityMacroLink,
            usedBattleMedicsBaton,
+           spellStitcherBonus,
          });
          break;
        case 3:
@@ -546,6 +573,7 @@ async function applyChanges($html) {
            immunityEffect,
            immunityMacroLink,
            usedBattleMedicsBaton,
+           spellStitcherBonus,
          });
          break;
        case 4:
@@ -562,6 +590,7 @@ async function applyChanges($html) {
            immunityEffect,
            immunityMacroLink,
            usedBattleMedicsBaton,
+           spellStitcherBonus,
          });
          break;
        default:
@@ -580,6 +609,7 @@ async function applyChanges($html) {
 * @param {boolean} options.hasChirurgeon Is the actor a chirurgeon
 * @param {boolean} options.hasNaturalMedicine Does the actor have natural medicine
 * @param {boolean} options.hasBattleMedicine Does the actor have battle medicine
+* @param {boolean} options.hasSpellStitcher Does the actor have Spell Stitcher (Magus+ feat)
 * @param {boolean} options.tmed Does the actor have medicine
 * @param {number} options.totalAssurance Assurance of the actor
 * @returns {string} The Dialog content
@@ -588,6 +618,7 @@ const renderDialogContent = ({
  hasChirurgeon,
  hasNaturalMedicine,
  hasBattleMedicine,
+ hasSpellStitcher,
  tmed,
  totalAssurance,
  hasHealersTools,
@@ -622,7 +653,7 @@ const renderDialogContent = ({
      : ``
  }
  ${
-   hasChirurgeon || hasNaturalMedicine
+   hasChirurgeon || hasNaturalMedicine || hasSpellStitcher
      ? `<form>
          <div class="form-group">
          <label title="Select the skill you want to use.">Treat Wounds Skill:</label>
@@ -630,6 +661,7 @@ const renderDialogContent = ({
              ${tmed ? `<option value="med">Medicine</option>` : ``}
              ${hasChirurgeon ? `<option value="cra">Crafting</option>` : ``}
              ${hasNaturalMedicine ? `<option value="nat">Nature</option>` : ``}
+             ${hasSpellStitcher ? `<option value="arc">Arcana</option>` : ``}
            </select>
          </div>
        </form>`
@@ -663,6 +695,9 @@ const renderDialogContent = ({
    (hasNaturalMedicine &&
      (checkItemTypeFeat('assurance', 'Assurance (Nature)') ||
        checkItemTypeFeat('assurance-nature'))) ||
+   (hasSpellStitcher &&
+     (checkItemTypeFeat('assurance', 'Assurance (Arcana)') ||
+       checkItemTypeFeat('assurance-arcana'))) ||
    checkItemTypeFeat('assurance', 'Assurance (Medicine)') ||
    checkItemTypeFeat('assurance-medicine')
      ? `<form>
@@ -759,11 +794,13 @@ if (canvas.tokens.controlled.length !== 1){
  const hasChirurgeon = checkFeat('chirurgeon');
  const hasNaturalMedicine = checkFeat('natural-medicine');
  const hasBattleMedicine = checkFeat('battle-medicine');
+ const hasSpellStitcher = checkFeat('spell-stitcher'); ///< From Magus+, allows using Arcana for actions that normally require Medicine
  let tmed = token.actor.skills.medicine.rank > 0;
  if (
    !tmed &&
    !hasChirurgeon &&
    !hasNaturalMedicine &&
+   !hasSpellStitcher &&
    !checkItemTypeFeat('clever-improviser')
  ) {
    ui.notifications.warn(
@@ -780,6 +817,9 @@ if (canvas.tokens.controlled.length !== 1){
    } else if (hasNaturalMedicine && (checkItemTypeFeat('assurance', 'Assurance (Nature)') ||
     checkItemTypeFeat('assurance-nature'))) {
      bmtw_skill = token.actor.skills.nature;
+   } else if (hasSpellStitcher && (checkItemTypeFeat('assurance', 'Assurance (Arcana)') ||
+    checkItemTypeFeat('assurance-arcana'))) {
+     bmtw_skill = token.actor.skills.arcana;
    }
    const hasHealersTools = checkItemPresent('healer-s-tools') || checkItemPresent('healers-tools') 
                            || checkItemPresent('healers-tools-expanded') || checkItemPresent('violet-ray')
@@ -799,6 +839,7 @@ if (canvas.tokens.controlled.length !== 1){
        hasChirurgeon,
        hasNaturalMedicine,
        hasBattleMedicine,
+       hasSpellStitcher,
        tmed,
        totalAssurance,
        hasHealersTools,
