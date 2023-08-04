@@ -25,7 +25,7 @@ const condition_list = [
 	"enfeebled",
 	"fascinated",
 	"fatigued",
-	"flat-footed",
+	"off-guard",
 	"fleeing",
 	"frightened",
 	"grabbed",
