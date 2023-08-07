@@ -162,11 +162,11 @@ async function Spellstrike()
     // Check for spell variants
     if(spc.spell.hasVariants && spc.isAttack){
       let spell_variants;
-      if (spc.spell.overlays.contents[0].system.time !== undefined){
+      if (spc.spell.overlays.contents[0].system?.time !== undefined){
         spell_variants = Array.from(spc.spell.overlays).map(ovr => ({name: spc.name + ovr.system.time.value, id: ovr._id, lvl:spc.lvl}));
       }
       else { 
-        spell_variants = Array.from(spc.spell.overlays).map(ovr => ({name: ovr.name, id: ovr._id, lvl:spc.lvl}));
+        spell_variants = Array.from(spc.spell.overlays).map(ovr => ({name: ovr.name ?? spc.name, id: ovr._id, lvl:spc.lvl}));
       }
       spell_variants.sort((a, b) => {
         if (a.lvl === b.lvl)
@@ -231,7 +231,7 @@ async function Spellstrike()
       if (spc.spell.system.save.basic === "basic") { basic = true }
       flavor += `@Check[type:${spc.spell.system.save.value}|dc:${spc.DC}|traits:damaging-effect,${spc.spell.system.traits.value.join()}|basic:${basic}]`;
     }
-
+    
     /* Acid Splash */
     if(spc.slug === 'acid-splash') {
       let pers = 0;
@@ -258,17 +258,25 @@ async function Spellstrike()
       }     
       flavor += `[[/r ${splash}[splash,acid]]] splash`
       if (critt === 3){
-        flavor += `<br>[[/r ${pers}[persistent,acid]]]`
+        spc.roll = new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],${pers}[persistent,acid]}`);
       }
     }
-
+    if(spc.slug === 'ignition' && critt === 3) {
+      pers = Math.ceil(actor.level / 2);
+      if (spc.spell.name.includes("Melee")) {
+        spc.roll = new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],${pers}d6[persistent,fire]}`);
+      }
+      else {
+        spc.roll = new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],${pers}d4[persistent,fire]}`);
+      }
+    }
     if(spc.slug === 'produce-flame' && critt === 3) {
-       pers = Math.ceil(actor.level / 2) + "d4";
-      flavor += `[[/r ${pers}[persistent,fire]]]`
+      pers = Math.ceil(actor.level / 2) + "d4";
+      spc.roll = new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],${pers}[persistent,fire]}`);
     }
     if(spc.slug === 'gouging-claw' && critt === 3) {
       pers = Math.ceil(actor.level / 2) + "d4";
-      flavor += `[[/r ${pers}[persistent,bleed]]]`
+      spc.roll = new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],${pers}[persistent,bleed]}`);
     }
     if(spc.slug === 'searing-light' || spc.slug === 'moonlight-ray'){
       if (game.user.targets.first().actor.traits.has('undead') || game.user.targets.first().actor.traits.has('fiend')) {
