@@ -209,6 +209,7 @@ async function Spellstrike() {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 08ef19f (update spellstrike with auto crit roll and ray of frost critical effect)
 =======
@@ -278,6 +279,8 @@ async function Spellstrike() {
 >>>>>>> 517e21b (Update Spellstrike.js)
 >>>>>>> 9d49cf2 (Update Spellstrike.js)
 >>>>>>> 0f667d6 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
+=======
+>>>>>>> aed0777 (Revert and adapted)
 
         let pers;
 
@@ -293,6 +296,7 @@ async function Spellstrike() {
             ttags += `<span class="tag tag_alt" data-trait=${s.value} data-description=${s.description}>${s.value[0].toUpperCase() + s.value.substring(1)}</span>`
         }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -404,6 +408,8 @@ async function Spellstrike() {
 =======
 >>>>>>> 517e21b (Update Spellstrike.js)
 >>>>>>> 0f667d6 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
+=======
+>>>>>>> aed0777 (Revert and adapted)
         let dos;
         let hit = false
 
@@ -540,6 +546,7 @@ async function Spellstrike() {
             if (spc.slug !== "chromatic-ray" && (spc.roll === undefined || !spc.isAttack)) {
                 return await s_entry.cast(spc.spell, { slot: spc.index, level: spc.lvl, message: true });
             }
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -865,6 +872,9 @@ async function Spellstrike() {
 >>>>>>> 0f33e61 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 >>>>>>> 920c9bb (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 >>>>>>> 0f667d6 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
+=======
+
+>>>>>>> aed0777 (Revert and adapted)
             if (spc.roll !== undefined && critt === 3 && spc.slug !== "chromatic-ray") {
                 /* Apply critical formula according to user's crit rule preference */
                 if (game.settings.get("pf2e", "critRule") === 'doubledice') {
@@ -873,6 +883,7 @@ async function Spellstrike() {
                 else {
                     spc.roll = new DamageRoll(`(2*(${formula.dice}${formula.plusMinus}${formula.bonus}))[${formula.damType}]`);
                 }
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1337,6 +1348,11 @@ async function Spellstrike() {
 >>>>>>> 0f33e61 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 >>>>>>> 920c9bb (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 >>>>>>> 0f667d6 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
+=======
+
+                /* roll critical damage */
+                spc.roll = new DamageRoll(critD)
+>>>>>>> aed0777 (Revert and adapted)
                 await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker() });
             }
         }
@@ -1350,6 +1366,7 @@ async function Spellstrike() {
         if (spell_choice[2]) { spc = spcBack; }
         await s_entry.cast(spc.spell, { slot: spc.index, level: spc.lvl, message: false });
     }
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1608,6 +1625,8 @@ async function Spellstrike() {
 >>>>>>> 9d49cf2 (Update Spellstrike.js)
 >>>>>>> 0f667d6 (fix bug causing regular hits to not roll spell damage. Clean up formula parsing. fix issue where added damage didn't double when in double dice crit mode)
 }
+=======
+>>>>>>> aed0777 (Revert and adapted)
 
 /* Dialog box */
 async function quickDialog({ data, title = `Quick Dialog` } = {}) {
@@ -1659,4 +1678,5 @@ async function quickDialog({ data, title = `Quick Dialog` } = {}) {
         }, { width: "auto" })._render(true);
         document.getElementById("0qd").focus();
     });
+ }
 }
