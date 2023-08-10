@@ -162,7 +162,6 @@ const script2 = async function rollSecretCheck(name) {
 let content = `<style>
 .zmenumain {
     margin: 1px auto;
-    background: url(systems/pf2e/assets/sheet/parchment.webp);
 }
 .zmenu {
     margin: 1px auto;
