@@ -29,7 +29,7 @@ const condition_list = {
 	"immobilized": "Immobilised",
 	// "indifferent": "Indifferent",
 	"invisible": "Invisible",
-	// "observed": "Observed",
+	"observed": "Observed",
 	"paralyzed": "Paralysed",
 	"persistent-damage": "Persistent Damage",
 	"petrified": "Petrified",
@@ -41,9 +41,9 @@ const condition_list = {
 	"stunned": "Stunned",
 	"stupefied": "Stupefied",
 	"unconscious": "Unconscious",
-	// "undetected": "Undetected",
+	"undetected": "Undetected",
 	// "unfriendly": "Unfriendly",
-	// "unnoticed": "Unnoticed",
+	"unnoticed": "Unnoticed",
 	"wounded": "Wounded",
 	// Add more options to your hearts content here.
 }
