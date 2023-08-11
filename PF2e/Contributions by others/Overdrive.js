@@ -48,6 +48,7 @@ if (canvas.tokens.controlled.length < 1){
             { actor: inventorTokenActor, type: 'skill-check', options, dc: { value: DC } }, //for DC insert: , dc: {value: 30}
             event,
             async (roll) => {
+                if (roll.degreeOfSuccess === 3) {
                     dsnHook(() => {
                         ChatMessage.create({
                             user: game.user.id,
@@ -56,7 +57,6 @@ if (canvas.tokens.controlled.length < 1){
                             speaker: ChatMessage.getSpeaker(),
                         });
                     });
-                    if (roll.degreeOfSuccess === 3) {
                     //apply crit effect
                     const source = (await fromUuid(OD_CrSu_ITEM_UUID)).toObject();
                     source.flags.core ??= {};
