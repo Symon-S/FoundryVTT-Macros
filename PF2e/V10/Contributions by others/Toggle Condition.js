@@ -67,9 +67,18 @@ new Dialog({
             label: "<span class='pf2-icon'>1</span> Add condition",
             callback: (html) => {
                 const condition = html.find("[name=condition-selector]")[0].value;
-	console.log(condition);			
-                        token.actor.toggleCondition(condition);
+                console.log(condition);
+
+                const actors = canvas.tokens.controlled.flatMap((t) => t.actor ?? []);
+                if (actors.length === 0) {
+                    ui.notifications.error("You must select at least one token.");
+                    return;
                 }
+
+                for (const actor of actors) {
+                    actor.toggleCondition(condition);
+                }
+            }
         },
         cancel: {
             label: "<span class='pf2-icon'>R</span> Cancel"
