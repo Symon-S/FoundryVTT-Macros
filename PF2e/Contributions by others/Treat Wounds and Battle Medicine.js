@@ -431,12 +431,21 @@ async function applyChanges($html) {
      if (skill === 'nat') {
        med = token.actor.skills.nature;
      }
+     if (skill === 'arc') {
+       med = token.actor.skills.arcana;
+     }
      usedProf = requestedProf <= med.rank ? requestedProf : med.rank;
    } else {
      usedProf = requestedProf <= med.rank ? requestedProf : med.rank;
      if (skill === 'cra') {
        med = token.actor.skills.crafting;
-    }
+     }
+     if (skill === 'arc') {
+       med = token.actor.skills.arcana;
+       if (usedProf === 0) {
+         usedProf = 1;
+       }
+     }
      if (skill === 'nat') {
        med = token.actor.skills.nature;
        if (usedProf === 0) {
