@@ -2,6 +2,8 @@
 To use this macro, you need to have the lingering composition feat on your character sheet.
 To use inspire heroics, you must have the inspire heroics feat on your character sheet.
 This macro requires Workbench module., the macro will automatically use the effects in the workbench compendium.
+Some custom items will be created to overcome system limitations.
+This macro is not compatible with PFS for inspire defense.
 */
 
 if(!game.modules.get("xdy-pf2e-workbench")?.active) { return ui.notifications.error("This Macro requires PF2e Workbench module")}
@@ -37,8 +39,7 @@ const cast_spell = token.actor.itemTypes.spell.find(n => n.name === choice[0]);
 let effectcom = game.packs.find(sp => sp.collection === "pf2e.spell-effects");
       
 let effects = await effectcom.getDocuments();
-      
-const effect = effects.some(e => e.name.includes(choice[0])) ? effects.find(e => e.name.includes(choice[0])) : "";
+let effect = effects.some(e => e.name.includes(choice[0])) ? effects.find(e => e.name.includes(choice[0])) : "";
 let suc,cs;
       
 if (choice[2]) {
@@ -152,15 +153,28 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 	});
 }
 
-let aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.MRmGlGAFd3tSJioo")).toObject();
+let aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.Item.MRmGlGAFd3tSJioo")).toObject();
+if ( effect.slug === "spell-effect-inspire-defense" ) {
+	aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.Item.89T07EBAgn78RBbJ")).toObject();
+	if ( !game.items.some(e => e.slug === "spell-effect-inspire-defense-lh") ) {
+		if (!game.user.isGM) { return ui.notifications.error("The first time this macro is run for inspire defense it must be run by the GM so that a custom item is made due to system limitations.") }
+		const tempe = effect.toObject();
+		tempe.system.slug += "-lh";
+		tempe.system.rules[1].value = 'floor(( @actor.level ) / 2 )';
+		await Item.create(tempe);
+	}
+	effect = game.items.find(e => e.slug === "spell-effect-inspire-defense-lh");
+}
+
 if (effect === "") {
-	aura.system.rules[0] = {key: "Aura", radius: 60, slug:"is-aura-effect"}
+	aura.system.rules[0] = {key: "Aura", radius: 60, slug:"is-aura-effect" }
 }
 else { aura.system.rules[0].effects[0].uuid = effect.uuid; }
 aura.img = cast_spell.img;
 aura.name = `Aura: ${actionName} (${choice[0]})`
 aura.slug = `aura-${actionSlug}`
 aura.system.duration.sustained = false;
+aura.system.level.value = Math.ceil(token.actor.level/2);
 if (cs !== undefined) {
 	aura.img = cs.img;
 }
