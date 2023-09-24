@@ -121,6 +121,7 @@ class2.system.trainedSkills.value.forEach( v => {
 dClass.img = "systems/pf2e/icons/spells/guidance.webp";
 
 await Item.create(dClass);
+ui.notifications.info(`A new item called ${dClass.name} has been created in the game's items tab. Drag and drop to an actor sheet to create a Dual Class Character. System's Dual Class variant must be enabled for this to work properly.`);
 
 async function quickDialog({data, title = `Quick Dialog`} = {}) {
   data = data instanceof Array ? data : [data];
