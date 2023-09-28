@@ -7,6 +7,8 @@ name of the condition. If the condition can have a value, simply click the + to 
 The Clear a condition button is used to clear a specific condition off of a group of selected tokens.
 This macro is loosely adapted from the Apply Conditions macro created by cepvep.
 CSS design by websterguy
+Added the ability to add Timed Effects that grant conditions for a specific amount of time.
+Added the ability to clear all conditions on selected tokens.
 */
 
 const condition_list = [
@@ -61,8 +63,7 @@ const wV = [
 	"wounded",
 ];
 
-const nF = [
-];
+const nF = [];
 const script1 = async function CToggle(c) {
   for(const token of canvas.tokens.controlled) {
    if (token.actor === null) { ui.notifications.warn(`${token.name} does not have an actor or is broken`); continue; }
@@ -132,6 +133,141 @@ const script4 = async function CCon() {
   }
 }
 
+const script5 = async function CConAll() {
+  for (const t of canvas.tokens.controlled) {
+    for ( const c of t.actor.items ) {
+      if ( c.type === "condition" ) {
+        await c.delete();
+      }
+    }
+  }
+}
+
+const script6 = async function TCon() {
+  const con_list = [
+	"Blinded",
+	"Broken",
+	"Clumsy",
+	"Concealed",
+	"Confused",
+	"Controlled",
+	"Dazzled",
+	"Deafened",
+	"Doomed",
+	"Drained",
+	"Encumbered",
+	"Enfeebled",
+	"Fascinated",
+	"Fatigued",
+	"Fleeing",
+	"Frightened",
+	"Grabbed",
+	"Hidden",
+	"Immobilized",
+	"Invisible",
+  "Off-guard",
+	"Paralyzed",
+	"Petrified",
+	"Prone",
+	"Quickened",
+	"Restrained",
+	"Sickened",
+	"Slowed",
+	"Stunned",
+	"Stupefied",
+	"Unconscious",
+  "Undetected"
+  ];
+
+  const w_V = [
+	"Clumsy",
+	"Doomed",
+	"Drained",
+	"Enfeebled",
+	"Frightened",
+	"Sickened",
+	"Slowed",
+	"Stunned",
+	"Stupefied",
+  ];
+
+  async function Xtml(html) { return [html.find("#condition")[0].value, html.find("#conval")[0].valueAsNumber, html.find("#time")[0].valueAsNumber, html.find("#times")[0].value, html.find("#check")[0].checked] }
+
+  let conditions;
+  for ( const l of con_list ) {
+    conditions += `<option>${l}</option>`;
+  }
+  const tcon = await Dialog.prompt({
+      title: "Timed condition to place on tokens",
+      content: `<div class="timetable1"><table>
+                  <tr><td>Choose condition:</td> <td><select id="condition" autofocus>${conditions}</select></td> <td style="text-align:center">Value(If applicable)</td><td width="8%"><input id="conval" type="number" value=1 style="text-align:center"></input></td></tr></table>
+                  <table><tr><td>Choose duration:</td> <td width="8%"><input id="time" type="number" style="text-align:center" value=1></input></td>
+                      <td><select id="times">
+                        <option value=rounds>Rounds</option>
+                        <option value=minutes>Minutes</option>
+                        <option value=hours>Hours</option>
+                        <option value=days>Days</option>
+                      </select></td>
+                      <td style="text-align:center">End of Turn?</td><td><input id="check" type="checkbox"></td>
+                  </tr>
+                </table></div>`,
+      callback: async html => await Xtml(html),
+  });
+  let name = `Efffect: ${tcon[0]} for ${tcon[2]} ${tcon[3]}`;
+  const pack = game.packs.get("pf2e.conditionitems");
+  const index = await pack.getIndex();
+  const uuid = index.find(n => n.name === tcon[0]).uuid;
+  
+  let alterations;
+  if ( w_V.includes(tcon[0]) ) {
+    name = `Efffect: ${tcon[0]} ${tcon[1]} for ${tcon[2]} ${tcon[3]}`;
+    alterations = [
+    {
+      "mode": "override",
+      "property": "badge-value",
+      "value": tcon[1]
+    }
+    ];
+  }
+
+  const effect = {
+    type: 'effect',
+    name,
+    img: `systems/pf2e/icons/conditions/${tcon[0].toLowerCase()}.webp`,
+    system: {
+      tokenIcon: {
+          show: false
+      },       
+      duration: {
+          value: tcon[2],
+          unit: `${tcon[3]}`,
+          sustained: false,
+          expiry: 'turn-start'
+      },
+      rules: [
+        {
+          "key": "GrantItem",
+          "onDeleteActions": {
+              "grantee": "restrict"
+          },
+          uuid,
+        }
+      ]
+    },
+  };
+
+  if ( alterations !== undefined ) {
+    effect.system.rules[0].alterations = alterations;
+  }
+  if ( tcon[4] ) {
+    effect.system.duration.expiry = "turn-end";
+  }
+  for ( const t of canvas.tokens.controlled ) {
+    await t.actor.createEmbeddedDocuments("Item", [effect]);
+  }
+}
+
+
 let content = `
 <style>
   .cond-cont {
@@ -182,7 +318,9 @@ let content = `
     text-shadow: 0 0 2px #fff;
   }
 
-</style><script>${script1}${script2}${script3}${script4}</script><div class="cond-cont">`
+
+
+</style><script>${script1}${script2}${script3}${script4}${script5}${script6}</script><div class="cond-cont">`
 
 condition_list.forEach((c,i) => {
     if (wV.includes(c)) {
@@ -198,7 +336,9 @@ condition_list.forEach((c,i) => {
   }
 });
 
-content +=  `<button name="button-clear" class="cond-buttons clear" type="button" onclick="CCon()">Clear a condition</button></div>`;
+content += `<button name="button-timed" class="cond-buttons timed" type="button" onclick="TCon()">Timed Condition</button> 
+<button name="button-clear" class="cond-buttons clear" type="button" onclick="CCon()">Clear a condition</button>
+<button name="button-clear-all" class="cond-buttons clear-all" type="button" onclick="CConAll()">Clear all Conditions</button></div>`
 
 await new Promise(async (resolve) => {
     setTimeout(resolve,200);
