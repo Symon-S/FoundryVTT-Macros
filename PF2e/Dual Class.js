@@ -38,17 +38,17 @@ const dClass = dClassObj;
 dClass.name = `${class1.name} - ${class2.name}`;
 
 //Attacks
-if (class2.system.attacks.avanced > class1.system.attacks.avanced) { dClass.system.attacks.advanced = class2.system.attacks.avanced }
-if (class2.system.attacks.martial > class1.system.attacks.martial) { dClass.system.attacks.martial = class2.system.attacks.martial }
-if (class2.system.attacks.simple > class1.system.attacks.simple) { dClass.system.attacks.advanced = class2.system.attacks.simple }
-if (class2.system.attacks.unarmed > class1.system.attacks.unarmed) { dClass.system.attacks.advanced = class2.system.attacks.unarmed }
-if (dClass.system.attacks.martial <= class2.system.attacks.other.rank) { 
-  if ( class2.system.attacks.other.rank === class1.system.attacks.other.rank ) {
+if (class2.system.attacks.advanced > dClass.system.attacks.advanced) { dClass.system.attacks.advanced = class2.system.attacks.advanced }
+if (class2.system.attacks.martial > dClass.system.attacks.martial) { dClass.system.attacks.martial = class2.system.attacks.martial }
+if (class2.system.attacks.simple > dClass.system.attacks.simple) { dClass.system.attacks.simple = class2.system.attacks.simple }
+if (class2.system.attacks.unarmed > dClass.system.attacks.unarmed) { dClass.system.attacks.unarmed = class2.system.attacks.unarmed }
+if (dClass.system.attacks.martial <= dClass.system.attacks.other.rank) {
+  if ( class2.system.attacks.other.rank === dClass.system.attacks.other.rank ) {
     let mashed = `${dClass.system.attacks.other.name}, ${class2.system.attacks.other.name}`
     mashed = mashed.replace("and ", "")
     dClass.system.attacks.other.name = [...new Set(mashed.split(','))].join(',');
   }
-  if ( class2.system.attacks.other.rank > class1.system.attacks.other.rank ) { dClass.system.attacks.other.name = class2.system.attacks.other.name; dClass.system.attacks.other.rank = class2.system.attacks.other.rank; }
+  if ( class2.system.attacks.other.rank > dClass.system.attacks.other.rank ) { dClass.system.attacks.other.name = class2.system.attacks.other.name; dClass.system.attacks.other.rank = class2.system.attacks.other.rank; }
 }
 if (dClass.system.attacks.martial >= class2.system.attacks.other.rank && dClass.system.attacks.martial >= dClass.system.attacks.other.rank) { dClass.system.attacks.other.rank = 0; dClass.system.attacks.other.name = ""; }
 
@@ -59,7 +59,7 @@ if (class2.system.classDC > dClass.system.classDC) { dClass.system.classDC = cla
 if (class2.system.defenses.heavy > dClass.system.defenses.heavy) { dClass.system.defenses.heavy = class2.system.defenses.heavy }
 if (class2.system.defenses.light > dClass.system.defenses.light) { dClass.system.defenses.light = class2.system.defenses.light }
 if (class2.system.defenses.heavy > dClass.system.defenses.medium) { dClass.system.defenses.medium = class2.system.defenses.medium }
-if (class2.system.defenses.heavy > dClass.system.defenses.unarmored) { dClass.system.defenses.unarmored = class2.system.defenses.unarmored }
+if (class2.system.defenses.unarmored > dClass.system.defenses.unarmored) { dClass.system.defenses.unarmored = class2.system.defenses.unarmored }
 
 //Description
 dClass.system.description.value = `${dClass.system.description.value} ${class2.system.description.value}`;
