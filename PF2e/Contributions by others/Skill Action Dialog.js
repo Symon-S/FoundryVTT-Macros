@@ -4,7 +4,7 @@ This Macro is an easy way to use Skill Actions.
 Simply choose your Skill and the associated Action.
 */
 
-//dialog constructor
+// dialog constructor
 class SkillActionDialog extends Dialog {
   static get defaultOptions() {
     return {
@@ -22,37 +22,73 @@ class SkillActionDialog extends Dialog {
 }
 
 // start of macro
+const standardSkills = [
+  "acrobatics",
+  "arcana",
+  "athletics",
+  "crafting",
+  "deception",
+  "diplomacy",
+  "intimidation",
+  "medicine",
+  "nature",
+  "occultism",
+  "performance",
+  "religion",
+  "society",
+  "stealth",
+  "survival",
+  "thievery"
+]
 
-//get token and actor
-if (token == null) {
-  return ui.notifications.error("Select a token");
+// get token and actor
+const actors = canvas.tokens.controlled
+  .flatMap((token) => (token.actor ? token.actor : []))
+  .filter((actor) => actor.isOwner)
+  .filter((actor) => actor.type == "character");
+
+if (actors.length === 0 && game.user.character) {
+  actors.push(game.user.character);
 }
 
+// do nothing if we couldn't find the player's character
+if (actors.length === 0) {
+  new Dialog({
+    title: `Problem with auto-detection`,
+    content: `Unfortunately, this macro wasn't able to automatically detect which token is yours.<br/><br/>Please manually select your token and try again.`,
+    buttons: {}
+  }).render(true);
+  return; // this is illegal, but I don't know how else to make processing stop
+}
+
+// simplify, make global
+const actor = actors[0];
+
 let selectedToken = token;
-let tokenSkills = token.actor.data.data.skills;
+// let tokenSkills = token.actor.data.data.skills;
+let tokenSkills = actor.skills;
 let SelectedActor = selectedToken.actor;
-let selectedActorFeats = Array.from(SelectedActor.data.items).filter(
+let selectedActorFeats = Array.from(SelectedActor.items).filter(
   (item) => item.type === "feat"
 );
 
 // lore variables
-
 let tokenSkillKeys = Object.keys(tokenSkills);
 let loreKeys = [];
 let loreListForHTML = [];
 let selectedLore = "";
 
 tokenSkillKeys.forEach((skillKey) => {
-  if (skillKey.search("-lore") !== -1) {
+  if (!standardSkills.includes(skillKey)) {
     loreKeys.push(skillKey);
   }
 });
 
-//make lore dialog
+// make lore dialog
 selectedLore = loreKeys[0];
 loreKeys.forEach((lore) => {
   loreListForHTML.push(
-    `<option value="${lore}">${tokenSkills[lore].name}</option>`
+    `<option value="${lore}">${tokenSkills[lore].label}</option>`
   );
 });
 
@@ -69,7 +105,7 @@ let loreDialog = new SkillActionDialog({
   buttons: {
     performAction: {
       label: "Select lore",
-      callback: () => uncodedSkill(selectedLore,true),
+      callback: () => unspecifiedActivity(selectedLore, true),
     },
     cancel: {
       label: "Cancel",
@@ -83,7 +119,7 @@ let loreDialog = new SkillActionDialog({
   },
 }).render(false);
 
-//skill data model
+// skill data model
 const skillActionDirectory = getSkillActionDirectory();
 
 // Make skill list
@@ -97,7 +133,7 @@ const skillListForHTML = []; // array of skills formatted for HTML options - one
 let selectedSkill = skillList[0];
 let selectedAction = skillActionDirectory[0].actions[0].actionName;
 
-//initialize skill strings for HTML
+// initialize skill strings for HTML
 let skillsTextForHTML = "";
 let actionsTextForHTML = "";
 updateSkills();
@@ -118,7 +154,7 @@ let dialogContent = `<form name="skill-action-dialog">
     </div>
 </form>`;
 
-//create the actions dialog
+// create the actions dialog
 let actionsDialog = new SkillActionDialog({
   title: "Action Selector",
   content: dialogContent,
@@ -142,7 +178,7 @@ let actionsDialog = new SkillActionDialog({
   },
 }).render(true);
 
-//end of macro - functions are below
+// end of macro - functions are below
 
 function updateSkills() {
   skillListForHTML.splice(0, skillListForHTML.length); // clear skill list for HTML
@@ -161,10 +197,10 @@ function updateSkills() {
 }
 
 function updateActions() {
-  //empty action arrays
+  // empty action arrays
   actionList.splice(0, actionList.length);
   actionListForHTML.splice(0, actionListForHTML.length);
-  //get actions from selected skill
+  // get actions from selected skill
   actionList = [
     ...skillActionDirectory[skillList.indexOf(selectedSkill)].actions,
   ];
@@ -185,14 +221,12 @@ function updateActions() {
       }
       if (action.actionName !== selectedAction) {
         actionListForHTML.push(
-          `<option value="${action.actionName}">${
-            action.actionName + costString
+          `<option value="${action.actionName}">${action.actionName + costString
           }</option>`
         );
       } else {
         actionListForHTML.push(
-          `<option value="${action.actionName}" selected = "selected">${
-            action.actionName + costString
+          `<option value="${action.actionName}" selected = "selected">${action.actionName + costString
           }</option>`
         );
       }
@@ -235,26 +269,12 @@ function performAction() {
   });
 }
 
-function coreAction(whatAction) {
-  game.pf2e.actions[whatAction]({ event: event });
-}
-
-function uncodedSkill(skillKey,isSecret = false) {
-  const whatSkill = token.actor.data.data.skills[skillKey];
-  if (isSecret == false){
-  game.pf2e.Check.roll(new game.pf2e.CheckModifier("", whatSkill), {
-    actor,
-    type: "skill-check",
-    createMessage: true,
-  });
-} else {
-    game.pf2e.Check.roll(new game.pf2e.CheckModifier("", whatSkill), {
-    actor,
-    type: "skill-check",
-    options: ['secret'],
-    createMessage: true,
-  });
-}
+function coreAction(whatAction, skill = "") {
+  let actionProperties = { event: event }
+  if (skill.length > 0) {
+    actionProperties["skill"] = skill;
+  }
+  game.pf2e.actions[whatAction](actionProperties);
 }
 
 function loreSkill(whatAction) {
@@ -298,8 +318,22 @@ function earnIncome() {
   _executeMacroByName("Earn Income");
 }
 
-//TODO use exsiting action macros
-//game.macros.getName(``).execute();
+function unspecifiedActivity(skillName, secret = false) {
+  let _title = skillName.charAt(0).toUpperCase() + skillName.slice(1) + " Check"; // uppercase first letter
+  const _skill = actor.skills[skillName];
+  let checkData = {
+    actor,
+    type: "skill-check",
+    createMessage: true,
+  }
+  if (secret) {
+    checkData["options"] = ["secret"];
+}
+  game.pf2e.Check.roll(new game.pf2e.CheckModifier(_title, _skill), checkData);
+}
+
+// TODO use exsiting action macros
+// game.macros.getName(``).execute();
 
 // An array of skills and all of thier actions
 function getSkillActionDirectory() {
@@ -307,6 +341,16 @@ function getSkillActionDirectory() {
     {
       skillName: "Acrobatics",
       actions: [
+        {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("acrobatics");
+          }
+        },
         {
           actionName: "Balance",
           actionType: "enc",
@@ -353,13 +397,23 @@ function getSkillActionDirectory() {
       skillName: "Arcana",
       actions: [
         {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("arcana");
+          }
+        },
+        {
           actionName: "Recall Knowledge, Arcana",
           actionType: "enc",
           proficiency: "untrained",
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            uncodedSkill("arc");
+            unspecifiedActivity("arcana");
           },
         },
         {
@@ -369,7 +423,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("arc");
+            unspecifiedActivity("arcana");
           },
         },
         {
@@ -379,7 +433,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("arc");
+            coreAction("decipherWriting", "arcana");
           },
         },
         {
@@ -389,7 +443,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("arc");
+            unspecifiedActivity("arcana");
           },
         },
         {
@@ -399,7 +453,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("arc");
+            unspecifiedActivity("arcana");
           },
         },
       ],
@@ -407,6 +461,16 @@ function getSkillActionDirectory() {
     {
       skillName: "Athletics",
       actions: [
+        {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("athletics");
+          }
+        },
         {
           actionName: "Climb",
           actionType: "enc",
@@ -423,7 +487,6 @@ function getSkillActionDirectory() {
           proficiency: "untrained",
           prerequisite: null,
           actionCost: 1,
-          //command: "forceOpen",
           command: () => {
             coreAction("forceOpen");
           },
@@ -514,13 +577,23 @@ function getSkillActionDirectory() {
       skillName: "Crafting",
       actions: [
         {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("crafting");
+          }
+        },
+        {
           actionName: "Recall Knowledge",
           actionType: "enc",
           proficiency: "untrained",
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            uncodedSkill("cra");
+            unspecifiedActivity("crafting");
           },
         },
         {
@@ -530,7 +603,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("cra");
+            coreAction("repair");
           },
         },
         {
@@ -560,7 +633,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("cra");
+            unspecifiedActivity("crafting");
           },
         },
       ],
@@ -568,6 +641,16 @@ function getSkillActionDirectory() {
     {
       skillName: "Deception",
       actions: [
+        {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("deception");
+          }
+        },
         {
           actionName: "Create a Diversion: Words",
           actionType: "enc",
@@ -634,6 +717,16 @@ function getSkillActionDirectory() {
       skillName: "Diplomacy",
       actions: [
         {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("diplomacy");
+          }
+        },
+        {
           actionName: "Gather Information",
           actionType: "exp",
           proficiency: "untrained",
@@ -668,6 +761,16 @@ function getSkillActionDirectory() {
     {
       skillName: "Intimidation",
       actions: [
+        {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("intimidation");
+          }
+        },
         {
           actionName: "Coerce",
           actionType: "exp",
@@ -719,13 +822,23 @@ function getSkillActionDirectory() {
       skillName: "Medicine",
       actions: [
         {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("medicine");
+          }
+        },
+        {
           actionName: "Administer First Aid",
           actionType: "enc",
           proficiency: "untrained",
           prerequisite: null,
           actionCost: 2,
           command: () => {
-            uncodedSkill("med");
+            coreAction("administerFirstAid");
           },
         },
         {
@@ -735,7 +848,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            uncodedSkill("med");
+            unspecifiedActivity("medicine");
           },
         },
         {
@@ -745,7 +858,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("med");
+            coreAction("treatDisease");
           },
         },
         {
@@ -774,6 +887,16 @@ function getSkillActionDirectory() {
       skillName: "Nature",
       actions: [
         {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("nature");
+          }
+        },
+        {
           actionName: "Command an Animal",
           actionType: "enc",
           proficiency: "untrained",
@@ -790,7 +913,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            uncodedSkill("nat");
+            unspecifiedActivity("nature");
           },
         },
         {
@@ -800,7 +923,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("nat");
+            unspecifiedActivity("nature");
           },
         },
         {
@@ -810,7 +933,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("nat");
+            unspecifiedActivity("nature");
           },
         },
       ],
@@ -819,13 +942,23 @@ function getSkillActionDirectory() {
       skillName: "Occultism",
       actions: [
         {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("occultism");
+          }
+        },
+        {
           actionName: "Recall Knowledge",
           actionType: "enc",
           proficiency: "untrained",
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            uncodedSkill("occ");
+            unspecifiedActivity("occultism");
           },
         },
         {
@@ -835,7 +968,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("occ");
+            coreAction("decipherWriting", "occultism");
           },
         },
         {
@@ -845,7 +978,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("occ");
+            unspecifiedActivity("occultism");
           },
         },
         {
@@ -855,7 +988,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("occ");
+            unspecifiedActivity("occultism");
           },
         },
       ],
@@ -864,13 +997,23 @@ function getSkillActionDirectory() {
       skillName: "Performance",
       actions: [
         {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("performance");
+          }
+        },
+        {
           actionName: "Perform",
           actionType: "enc",
           proficiency: "untrained",
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            uncodedSkill("prf");
+            coreAction("perform");
           },
         },
         {
@@ -888,6 +1031,16 @@ function getSkillActionDirectory() {
     {
       skillName: "Perception",
       actions: [
+        {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("perception", true);
+          }
+        },
         {
           actionName: "Seek",
           actionType: "enc",
@@ -914,13 +1067,23 @@ function getSkillActionDirectory() {
       skillName: "Religion",
       actions: [
         {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("religion");
+          }
+        },
+        {
           actionName: "Recall Knowledge",
           actionType: "enc",
           proficiency: "untrained",
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            uncodedSkill("rel");
+            unspecifiedActivity("religion");
           },
         },
         {
@@ -930,7 +1093,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("rel");
+            coreAction("decipherWriting", "religion");
           },
         },
         {
@@ -940,7 +1103,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("rel");
+            unspecifiedActivity("religion");
           },
         },
         {
@@ -950,7 +1113,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("rel");
+            unspecifiedActivity("religion");
           },
         },
       ],
@@ -959,13 +1122,23 @@ function getSkillActionDirectory() {
       skillName: "Society",
       actions: [
         {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("society");
+          }
+        },
+        {
           actionName: "Recall Knowledge",
           actionType: "enc",
           proficiency: "untrained",
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            uncodedSkill("soc");
+            unspecifiedActivity("society");
           },
         },
         {
@@ -975,7 +1148,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("soc");
+            coreAction("subsist", "society");
           },
         },
         {
@@ -985,7 +1158,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("soc");
+            coreAction("createForgery");
           },
         },
         {
@@ -995,7 +1168,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("soc");
+            coreAction("decipherWriting");
           },
         },
       ],
@@ -1004,13 +1177,23 @@ function getSkillActionDirectory() {
       skillName: "Stealth",
       actions: [
         {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("stealth");
+          }
+        },
+        {
           actionName: "Conceal an Object",
           actionType: "enc",
           proficiency: "untrained",
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            uncodedSkill("ste");
+            coreAction("concealAnObject");
           },
         },
         {
@@ -1040,7 +1223,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("ste");
+            coreAction("createForgery");
           },
         },
       ],
@@ -1048,6 +1231,16 @@ function getSkillActionDirectory() {
     {
       skillName: "Survival",
       actions: [
+        {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("survival");
+          }
+        },
         {
           actionName: "Sense Direction",
           actionType: "exp",
@@ -1065,7 +1258,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("sur");
+            coreAction("subsist", "survival");
           },
         },
         {
@@ -1075,7 +1268,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: null,
           command: () => {
-            uncodedSkill("sur");
+            unspecifiedActivity("sur");
           },
         },
         {
@@ -1094,13 +1287,23 @@ function getSkillActionDirectory() {
       skillName: "Thievery",
       actions: [
         {
+          actionName: "Unspecified",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: null,
+          command: () => {
+            unspecifiedActivity("theivery");
+          }
+        },
+        {
           actionName: "Palm an Object",
           actionType: "enc",
           proficiency: "untrained",
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            uncodedSkill("thi");
+            coreAction("palmAnObject");
           },
         },
         {
@@ -1110,7 +1313,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            uncodedSkill("thi");
+            coreAction("steal");
           },
         },
         {
@@ -1120,7 +1323,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: 2,
           command: () => {
-            uncodedSkill("thi");
+            coreAction("disableDevice");
           },
         },
         {
@@ -1134,6 +1337,22 @@ function getSkillActionDirectory() {
           },
         },
       ],
+    },
+    { skillName: "-----Special Activities-----", actions: [{ actionName: "", command: () => { } }] },
+    {
+      skillName: "Escape",
+      actions: [
+        {
+          actionName: "Escape",
+          actionType: "enc",
+          proficiency: "untrained",
+          prerequisite: null,
+          actionCost: 1,
+          command: () => {
+            coreAction("escape");
+          },
+        },
+      ]
     },
     {
       skillName: "Earn Income",
