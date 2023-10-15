@@ -320,7 +320,12 @@ function earnIncome() {
 
 function unspecifiedActivity(skillName, secret = false) {
   let _title = skillName.charAt(0).toUpperCase() + skillName.slice(1) + " Check"; // uppercase first letter
-  const _skill = actor.skills[skillName];
+  let _skill;
+  if (skillName == "perception") {
+    _skill = actor.perception;
+  } else {
+    _skill = actor.skills[skillName];
+  }
   let checkData = {
     actor,
     type: "skill-check",
@@ -328,7 +333,7 @@ function unspecifiedActivity(skillName, secret = false) {
   }
   if (secret) {
     checkData["options"] = ["secret"];
-}
+  }
   game.pf2e.Check.roll(new game.pf2e.CheckModifier(_title, _skill), checkData);
 }
 
