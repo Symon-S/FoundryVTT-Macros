@@ -5,7 +5,7 @@ This macro target tokens within a template
 - Tokens with the chosen alliance will be targeted
 */
 
-if ( canvas.templates.hover === null ) { return ui.notifications.info("Please hover mouse over template before executing macro"); }
+if ( canvas.templates.hover === null ) { return ui.notifications.info("Please hover mouse over template before executing macro. Must be in Measurement Controls to do this"); }
 const hlId = canvas.templates.hover.highlightId;
 const coords = [...canvas.grid.getHighlightLayer(hlId).positions];
 const toks = await Dialog.wait({
