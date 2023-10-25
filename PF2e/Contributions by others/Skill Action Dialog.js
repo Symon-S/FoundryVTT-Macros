@@ -45,7 +45,7 @@ const standardSkills = [
 const actors = canvas.tokens.controlled
   .flatMap((token) => (token.actor ? token.actor : []))
   .filter((actor) => actor.isOwner)
-  .filter((actor) => actor.type == "character");
+  .filter((actor) => actor.type == "character" || actor.type == "npc");
 
 if (actors.length === 0 && game.user.character) {
   actors.push(game.user.character);
