@@ -23,7 +23,7 @@ const macroActor = token.actor;
 
 const CompendiumID = "pf2e.equipment-srd";
 const pack = game.packs.get(CompendiumID);
-const docs = (await pack.getIndex({fields:["system.traits","system.level","system.potencyRune","system.range"]})).filter(t => t.type === "weapon" && t.system.level.value <= actor.level && t.system.range === null && !t.system.traits.value.includes("magical") && !t.system.traits.value.includes("bomb") && !t.system.traits.value.includes("vehicular") && t.system.potencyRune.value === null);
+const docs = (await pack.getIndex({fields:["system.traits","system.level","system.potencyRune","system.range","system.usage","system.slug","system.category"]})).filter(t => t.type === "weapon" && t.system.level.value <= actor.level && t.system.range === null && !t.system.traits.value.includes("magical") && !t.system.traits.value.includes("bomb") && !t.system.traits.value.includes("vehicular") && t.system.potencyRune.value === null);
 docs.sort((a, b) => {
 	if (a.name < b.name) {
     return -1;
