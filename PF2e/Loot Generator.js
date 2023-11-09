@@ -6,7 +6,14 @@ When using rarity:
 and available (rare spells not available at each level), if not available another item will be generated in its place.**
 **Unique = There are no unique spells in the game, so this will only push unique items if available.**
 
+Loot Actor with name Generated Loot will be created if the Loot Actor option is selected.
+If this name already exists, it will populate the generated loot in that actor.
+Party Stash option will generate loot in party actor's stash, if you have more than one party actor, the first actor will be populated
+
+Mystify option is on by default, but can be unchecked when not needed.
+
 Modded by LebombJames to use getIndex for faster loading.
+Special thanks to Idle for scroll/wand creation function.
 */
 
 //Limit Macro use to GM
@@ -19,7 +26,7 @@ const dialogs = [
 	{ label : `Center range value in Silver (Only Treasures)<br>(50% in either direction will be evaluated)`, type: `number`},
 	{ label : `Quantity?`, type: `number`, options: [1]},
     { label : `Rarity? (Only Permanents and Consumables)`, type: `select`, options: ["No filter", "Common", "Uncommon", "Rare", "Unique"] },
-	{ label : `Distribution type:`, type: `select`, options: ["Message", "Loot Actor", "Party Stash"]},
+	{ label : `Distribution type:`, type: `select`, options: ["Party Stash", "Loot Actor", "Message"]},
 	{ label : `Mystify?`, type: `checkbox`, options: "checked"}
 ];
 
@@ -38,7 +45,7 @@ const iC = ["pf2e.equipment-srd","battlezoo-bestiary-pf2e.pf2e-battlezoo-equipme
 const item = game.packs.filter(c => iC.includes(c.collection));
 const items = [];
 for (const i of item) {
-    const index = await i.getIndex({fields: ["system.level.value", "system.slug", "system.price.value", "system.traits.value", "system.traits.rarity"]});
+    const index = await i.getIndex({fields: ["system.level.value", "system.slug", "system.price.value", "system.traits.value", "system.traits.rarity","uuid"]});
     index.forEach( x => {
         x.compendium = i.collection;
         items.push(x);
@@ -48,12 +55,13 @@ for (const i of item) {
 //Populate Spells
 let spellz;
 let spellS = [];
+let treasures
 
 if (picks[0] !== "Treasures") {
   const iS = ["pf2e.spells-srd","pf2e-expansion-pack.Expansion-Spells","pf2e-wayfinder.wayfinder-spells"]; 
   spellz = game.packs.filter(c => iS.includes(c.collection));
   for (const s of spellz) {
-    const index = (await s.getIndex({fields: ["system.level.value","system.slug","system.traits","system.category","uuid","baseLevel"]})).filter(f => !f.system.traits.value.includes("cantrip") && f.system.category.value !== "ritual" && f.system.category.value !== "focus");
+    const index = (await s.getIndex({fields: ["system.level.value","system.slug","system.traits","system.category","uuid"]})).filter(f => !f.system.traits.value.includes("cantrip") && f.system.category.value !== "ritual" && f.system.category.value !== "focus");
     index.forEach( x => {
         x.compendium = s.collection;
         spellS.push(x);
@@ -100,12 +108,12 @@ if (picks[0] === "Permanents") {
 	if(Noan(picks[1])) { return ui.notifications.error("Level of at least 0 must be entered");}
 
 	const treasure = items.filter(t => t.type === "armor" || t.type === "weapon" || t.type === "equipment" || t.type === "backpack" || t.system.traits.value.includes("wand") );
-	let treasures = treasure.filter( l => l.system.level.value === picks[1] && !l.system.traits.value.includes("consumable") );
+	treasures = treasure.filter( l => l.system.level.value === picks[1] && !l.system.traits.value.includes("consumable") );
         if ( picks[4] !== "No filter" ) { treasures = treasures.filter( r => r.system.traits.rarity === picks[4].toLowerCase() || (r.system.slug?.includes("magic-wand") && picks[4] !== "Unique")); }
         if (treasures.length === 0) { return ui.notifications.info(`There are no ${picks[4].toLowerCase()} ${picks[0].toLowerCase()} at level ${picks[1]}`); }
 	itemArray.forEach( () => {
 		let random = Math.floor(Math.random() * treasures.length);
-		randomItems.push({name: treasures[random].name, id: treasures[random]._id, slug:treasures[random].system.slug, compendium: treasures[random].compendium})
+		randomItems.push({name: treasures[random].name, id: treasures[random]._id, slug:treasures[random].system.slug, compendium: treasures[random].compendium, uuid: treasures[random].uuid})
 	});
     return Loot();
 }
@@ -114,12 +122,12 @@ if (picks[0] === "Permanents") {
 if (picks[0] === "Consumables") {
 	if(Noan(picks[1])) { return ui.notifications.error("Level of at least 0 must be entered");}
 	const treasure = items.filter(t => ( t.type === "consumable" || t.system.traits.value.includes("consumable") ) && !t.system.traits.value.includes("wand"));
-	let treasures = treasure.filter( l => l.system.level.value === picks[1] );
+	treasures = treasure.filter( l => l.system.level.value === picks[1] );
         if ( picks[4] !== "No filter" ) { treasures = treasures.filter( r => r.system.traits.rarity === picks[4].toLowerCase() || (r.system.slug?.includes("scroll-of-") && picks[4] !== "Unique")); }
         if (treasures.length === 0) { return ui.notifications.info(`There are no ${picks[4].toLowerCase()} ${picks[0].toLowerCase()} at level ${picks[1]}`); }        
 	itemArray.forEach( () => {
 		const random = Math.floor(Math.random() * treasures.length);
-		randomItems.push({name: treasures[random].name, id: treasures[random]._id, slug:treasures[random].system.slug, compendium: treasures[random].compendium})
+		randomItems.push({name: treasures[random].name, id: treasures[random]._id, slug:treasures[random].system.slug, compendium: treasures[random].compendium, uuid: treasures[random].uuid})
 	});	
     return Loot();
 
@@ -148,12 +156,12 @@ async function Loot() {
 			const spells = spellS.filter(l => l.system.level.value === level);
             if (spells.length === 0) { 
                 const random = Math.floor(Math.random() * treasures.length);
-                const tr = treasures.filter(n => !n.system.slug.includes("scroll-of-"));
+                const tr = treasures.filter(n => !n.system.slug.includes("magic-wand"));
 		        output.push({compendium: tr[random].compendium, id: tr[random]._id, name: tr[random].name});
             }
 			else {
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-				output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `${r.name} of ${randomSpell.name}`, sid: r.id, sc: r.compendium});
+				output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `${r.name} of ${randomSpell.name}`, uuid: randomSpell.uuid, sid: r.id, sc: r.compendium, level, scrollUUID: r.uuid});
 			}
 		}
 		else if(slug !== null && slug.includes("scroll-of-")){
@@ -169,7 +177,7 @@ async function Loot() {
             }
 			else {
 			const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-			output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `${r.name} of ${randomSpell.name}`, uuid: randomSpell.uuid, sid: r.id, sc: r.compendium });
+			output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `${r.name} of ${randomSpell.name}`, uuid: randomSpell.uuid, sid: r.id, sc: r.compendium, level, scrollUUID: r.uuid});
 			}
 		}
 		else { output.push(r) }
@@ -192,7 +200,6 @@ async function Loot() {
 			a = game.actors.getName("Generated Loot");
 		}
 		const stuff = [];
-		let content = '';
 		for ( const o of output ) {
 			if ( o.sid === undefined ) {
 				const eqp = game.packs.get(o.compendium);
@@ -200,12 +207,8 @@ async function Loot() {
 				stuff.push(item);
 			}
 			else {
-				content += `<p>@Compendium[${o.compendium}.${o.id}]{${o.name}}</p>`
+				stuff.push(await createSpellScrollWand(o.compendium, o.id, o.scrollUUID, o.uuid, o.level, o.name));
 			}
-		}
-		if ( content !== '' ) {
-			await ChatMessage.create({flavor: `<strong>Random Spells to be added to ${a.name} for wand and/or scroll creation</strong><br>`,content, speaker: {alias:'GM'}, whisper:[game.user.id]});
-			ui.notifications.info("Check chat message with spells for scroll/wand creation, hold alt when dragging and dropping to mystify items");
 		}
 		if (stuff.length > 0) {
 			const updates = await a.createEmbeddedDocuments("Item",stuff);
@@ -213,6 +216,31 @@ async function Loot() {
 		}
 		a.sheet.render(true);
 	}
+}
+
+async function createSpellScrollWand(compendium, id, scrollUUID, uuid, level, name, temp = false) {
+    const spell = (await fromUuid(uuid))?.toObject();
+    if (!spell) return null;
+
+    if (level === false) level = spell.system.level.value;
+
+    scrolls = await fromUuid(scrollUUID);
+
+    const scroll = scrolls?.toObject();
+    if (!scroll) return null;
+
+    spell.system.location.heightenedLevel = level;
+
+    scroll.name = name;
+    scroll.system.temporary = temp;
+    scroll.system.spell = spell;
+	scroll.system.traits.rarity = spell.system.traits.rarity;
+    scroll.system.traits.value.push(...spell.system.traditions.value);
+
+    const sourceId = spell.flags.core?.sourceId;
+    if (sourceId) scroll.system.description.value = `@Compendium[${compendium}.${id}]{${spell.name}}\n<hr />${scroll.system.description.value}`;
+
+    return scroll;
 }
 
 async function quickDialog({data, title = `Quick Dialog`} = {}) {
