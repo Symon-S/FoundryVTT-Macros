@@ -206,7 +206,7 @@ async function Loot() {
 			await ChatMessage.create({flavor: `<strong>Random Spells to be added to ${a.name} for wand and/or scroll creation</strong><br>`,content, speaker: {alias:'GM'}, whisper:[game.user.id]});
 			ui.notifications.info("Check chat message with spells for scroll/wand creation, hold alt when dragging and dropping to mystify items");
 		}
-		if (stuff.lenght > 0) {
+		if (stuff.length > 0) {
 			const updates = await a.createEmbeddedDocuments("Item",stuff);
 			await a.updateEmbeddedDocuments("Item", updates.map(u => ({_id: u.id, "system.identification.status": "unidentified" })));
 		}
