@@ -202,7 +202,6 @@ async function Loot() {
 				content += `<p>@Compendium[${o.compendium}.${o.id}]{${o.name}}</p>`
 			}
 		}
-		console.log(stuff);
 		if ( content !== '' ) {
 			await ChatMessage.create({flavor: `<strong>Random Spells to be added to ${a.name} for wand and/or scroll creation</strong><br>`,content, speaker: {alias:'GM'}, whisper:[game.user.id]});
 			ui.notifications.info("Check chat message with spells for scroll/wand creation, hold alt when dragging and dropping to mystify items");
