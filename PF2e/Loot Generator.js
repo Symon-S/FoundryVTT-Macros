@@ -18,7 +18,8 @@ const dialogs = [
 	{ label : `Level? (Only Permanents and Consumables)`, type: `number`, options: [0]},
 	{ label : `Center range value in Silver (Only Treasures)<br>(50% in either direction will be evaluated)`, type: `number`},
 	{ label : `Quantity?`, type: `number`, options: [1]},
-        { label: `Rarity? (Only Permanents and Consumables)`, type: `select`, options: ["No filter", "Common", "Uncommon", "Rare", "Unique"] }
+    { label : `Rarity? (Only Permanents and Consumables)`, type: `select`, options: ["No filter", "Common", "Uncommon", "Rare", "Unique"] },
+	{ label : `Distribution type:`, type: `select`, options: ["Message", "Loot Actor", "Party Stash"]},
 ];
 
 //Run Dialog and gather Data
@@ -50,9 +51,8 @@ let spellS = [];
 if (picks[0] !== "Treasures") {
   const iS = ["pf2e.spells-srd","pf2e-expansion-pack.Expansion-Spells","pf2e-wayfinder.wayfinder-spells"]; 
   spellz = game.packs.filter(c => iS.includes(c.collection));
-  console.log(spellz);
   for (const s of spellz) {
-    const index = (await s.getIndex({fields: ["system.level.value","system.slug","system.traits","system.category"]})).filter(f => !f.system.traits.value.includes("cantrip") && f.system.category.value !== "ritual" && f.system.category.value !== "focus");
+    const index = (await s.getIndex({fields: ["system.level.value","system.slug","system.traits","system.category","uuid","baseLevel"]})).filter(f => !f.system.traits.value.includes("cantrip") && f.system.category.value !== "ritual" && f.system.category.value !== "focus");
     index.forEach( x => {
         x.compendium = s.collection;
         spellS.push(x);
@@ -61,25 +61,18 @@ if (picks[0] !== "Treasures") {
   if ( picks[4] !== "No filter" ) { spellS = spellS.filter(s => s.system.traits.rarity === picks[4].toLowerCase()); }
 }
 
-
 //Treasures
 if (picks[0] === "Treasures") {
 	const treasure = items.filter(t => t.type === "treasure");
 	if ( Noan(picks[2]) ) { 
 		ui.notifications.info("No center range was entered, random treasures selected");
-		itemArray.forEach( r => {
+		itemArray.forEach( () => {
 			let random = Math.floor(Math.random() * treasure.length);
 			randomItems.push({name: treasure[random].name, id: treasure[random]._id, compendium: treasure[random].compendium});
 		});
-		let output;
-		randomItems.forEach( r => {
-			if (output === undefined) { output = `<p>@Compendium[${r.compendium}.${r.id}]{${r.name}}</p>` }
-			
-			else { output += `<p>@Compendium[${r.compendium}.${r.id}]{${r.name}}</p>` }
-		});
-                return ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`, content: output, speaker: {alias:'GM'}, whisper:[game.user.id]});
+        return await Loot();
 	}
-	if (picks[2] < 1) { return ui.notifications.error("A value greater than 1 needs to be entered for range")}
+	if (picks[2] < 1 && !Noan(picks[2] ) ) { return ui.notifications.error("A value greater than 1 needs to be entered for range")}
 	else {
 		let denomination = "sp";
 		let value = Math.round(picks[2]);
@@ -93,16 +86,11 @@ if (picks[0] === "Treasures") {
                 
 		if (treasures.length === 0) { return ui.notifications.warn(`There are no treasures within 50% of ${value}${denomination}`); }
 		
-		itemArray.forEach( r => {
+		itemArray.forEach( () => {
 			let random = Math.floor(Math.random() * treasures.length);
 			randomItems.push({name: treasures[random].name, id: treasures[random]._id, compendium: treasures[random].compendium})
 		});
-		let output;
-		randomItems.forEach( r => {
-			if (output === undefined) { output = `<p>@Compendium[${r.compendium}.${r.id}]{${r.name}}</p>` }
-			else { output += `<p>@Compendium[${r.compendium}.${r.id}]{${r.name}}</p>` }
-		});
-                ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`,content: output, speaker: {alias:'GM'}, whisper:[game.user.id]});
+        return await Loot();
 	}
 }
 
@@ -114,44 +102,11 @@ if (picks[0] === "Permanents") {
 	let treasures = treasure.filter( l => l.system.level.value === picks[1] && !l.system.traits.value.includes("consumable") );
         if ( picks[4] !== "No filter" ) { treasures = treasures.filter( r => r.system.traits.rarity === picks[4].toLowerCase() || (r.system.slug?.includes("magic-wand") && picks[4] !== "Unique")); }
         if (treasures.length === 0) { return ui.notifications.info(`There are no ${picks[4].toLowerCase()} ${picks[0].toLowerCase()} at level ${picks[1]}`); }
-	itemArray.forEach( r => {
+	itemArray.forEach( () => {
 		let random = Math.floor(Math.random() * treasures.length);
 		randomItems.push({name: treasures[random].name, id: treasures[random]._id, slug:treasures[random].system.slug, compendium: treasures[random].compendium})
 	});
-	let output;
-	randomItems.forEach( r => {
-		let slug = r.slug;
-		if (output === undefined) { 
-			if(slug !== null && slug.includes("magic-wand")){
-				const level = parseInt(slug.substr(11,1));   
-				const spells = spellS.filter(l => l.system.level.value === level);
-                                if (spells.length === 0) { 
-                                  const random = Math.floor(Math.random() * treasures.length);
-                                  const tr = treasures.filter(n => !n.system.slug.includes("scroll-of-"));
-		                  return output = `<p>@Compendium[${tr[random].compendium}.${tr[random]._id}]{${tr[random].name}}</p>`;
-                                }
-				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-				output = `<p>@Compendium[${randomSpell.compendium}.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
-			}
-			else { output = `<p>@Compendium[${r.compendium}.${r.id}]{${r.name}}</p>` }
-		}
-		else { 
-			if(slug !== null && slug.includes("magic-wand")){
-				const level = parseInt(r.slug.substr(11,1));
-				const spells = spellS.filter(l => l.system.level.value === level);
-                                if (spells.length === 0) { 
-                                  const random = Math.floor(Math.random() * treasures.length);
-                                  const tr = treasures.filter(n => !n.system.slug.includes("scroll-of-"));
-		                  return output += `<p>@Compendium[${tr[random].compendium}.${tr[random]._id}]{${tr[random].name}}</p>`
-                                }
-				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-				output += `<p>@Compendium[${randomSpell.compendium}.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
-			}
-
-			else { output += `<p>@Compendium[${r.compendium}.${r.id}]{${r.name}}</p>` }
-		}
-	});
-        ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`,content: output, speaker: {alias:'GM'}, whisper:[game.user.id]});
+    return Loot();
 }
 
 //Consumbales
@@ -161,44 +116,11 @@ if (picks[0] === "Consumables") {
 	let treasures = treasure.filter( l => l.system.level.value === picks[1] );
         if ( picks[4] !== "No filter" ) { treasures = treasures.filter( r => r.system.traits.rarity === picks[4].toLowerCase() || (r.system.slug?.includes("scroll-of-") && picks[4] !== "Unique")); }
         if (treasures.length === 0) { return ui.notifications.info(`There are no ${picks[4].toLowerCase()} ${picks[0].toLowerCase()} at level ${picks[1]}`); }        
-	itemArray.forEach( r => {
+	itemArray.forEach( () => {
 		const random = Math.floor(Math.random() * treasures.length);
 		randomItems.push({name: treasures[random].name, id: treasures[random]._id, slug:treasures[random].system.slug, compendium: treasures[random].compendium})
-	});
-	let output;
-	randomItems.forEach( r => {
-		let slug = r.slug;
-		if (output === undefined) { 
-			if(slug !== null && slug.includes("scroll-of-")){
-				const level = parseInt(r.slug.substr(10,1));
-				const spells = spellS.filter(l => l.system.level.value === level);
-                                if (spells.length === 0) { 
-                                  const random = Math.floor(Math.random() * treasures.length);
-                                  const tr = treasures.filter(n => !n.system.slug.includes("scroll-of-"));
-		                  return output = `<p>@Compendium[${tr[random].compendium}.${tr[random]._id}]{${tr[random].name}}</p>`
-                                }
-				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-				output = `<p>@Compendium[${randomSpell.compendium}.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
-			}
-			else { output = `<p>@Compendium[${r.compendium}.${r.id}]{${r.name}}</p>` }
-		}
-		else { 
-			if(slug !== null && slug.includes("scroll-of-")){
-				const level = parseInt(r.slug.substr(10,1));
-				const spells = spellS.filter(l => l.system.level.value === level);
-                                if (spells.length === 0) { 
-                                  const random = Math.floor(Math.random() * treasures.length);
-                                  const tr = treasures.filter(n => !n.system.slug.includes("scroll-of-"));
-		                  return output += `<p>@Compendium[${tr[random].compendium}.${tr[random]._id}]{${tr[random].name}}</p>`
-                                }
-				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-				output += `<p>@Compendium[${randomSpell.compendium}.${randomSpell._id}]{${r.name} of ${randomSpell.name}}</p>`
-			}
-
-			else { output += `<p>@Compendium[${r.compendium}.${r.id}]{${r.name}}</p>` }
-		}
-	});
-        ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`, content: output, speaker: {alias:'GM'}, whisper:[game.user.id]});
+	});	
+    return Loot();
 
 }
 
@@ -215,6 +137,83 @@ async function Ranges(x) {
 function Noan(x) {
    return x !== x;
 };
+
+async function Loot() {
+	let output= [];
+	for ( const r of randomItems ) {
+		const slug = r.slug;
+		if(slug !== null && slug.includes("magic-wand")){
+			const level = parseInt(slug.substr(11,1));   
+			const spells = spellS.filter(l => l.system.level.value === level);
+            if (spells.length === 0) { 
+                const random = Math.floor(Math.random() * treasures.length);
+                const tr = treasures.filter(n => !n.system.slug.includes("scroll-of-"));
+		        output.push({compendium: tr[random].compendium, id: tr[random]._id, name: tr[random].name});
+            }
+			else {
+				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
+				output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `${r.name} of ${randomSpell.name}`, sid: r.id, sc: r.compendium});
+			}
+		}
+		else if(slug !== null && slug.includes("scroll-of-")){
+			let level = parseInt(r.slug.substr(10,1));
+			if (r.slug.length === 26) {
+				level = parseInt(r.slug.substr(10,2));
+			}
+			const spells = spellS.filter(l => l.system.level.value === level);
+            if (spells.length === 0) { 
+                const random = Math.floor(Math.random() * treasures.length);
+                const tr = treasures.filter(n => !n.system.slug.includes("scroll-of-"));
+		        output.push({compendium: tr[random].compendium, id: tr[random]._id, name: tr[random].name});
+            }
+			else {
+			const randomSpell = spells[Math.floor(Math.random() * spells.length)];
+			output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `${r.name} of ${randomSpell.name}`, uuid: randomSpell.uuid, sid: r.id, sc: r.compendium });
+			}
+		}
+		else { output.push(r) }
+	}
+
+	if ( picks[5] === "Message" ) {
+		let content = "";
+		for ( const o of output ) {
+			content += `<p>@Compendium[${o.compendium}.${o.id}]{${o.name}}</p>`
+		}
+		await ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`,content, speaker: {alias:'GM'}, whisper:[game.user.id]});
+		ui.notifications.info("Check chat message. Hold alt when dragging and dropping to mystify items");
+	}
+	else {
+		let a = game.actors.find( a => a.type === "party" );
+		if ( picks[5] === "Loot Actor" ) {
+			if (!game.actors.some( n => n.name === "Generated Loot")) {
+				await Actor.create({name:"Generated Loot",type:"loot",img:"icons/containers/chest/chest-reinforced-steel-red.webp"});
+			}
+			a = game.actors.getName("Generated Loot");
+		}
+		const stuff = [];
+		let content = '';
+		for ( const o of output ) {
+			if ( o.sid === undefined ) {
+				const eqp = game.packs.get(o.compendium);
+				const item = await eqp.getDocument(o.id);
+				stuff.push(item);
+			}
+			else {
+				content += `<p>@Compendium[${o.compendium}.${o.id}]{${o.name}}</p>`
+			}
+		}
+		console.log(stuff);
+		if ( content !== '' ) {
+			await ChatMessage.create({flavor: `<strong>Random Spells to be added to ${a.name} for wand and/or scroll creation</strong><br>`,content, speaker: {alias:'GM'}, whisper:[game.user.id]});
+			ui.notifications.info("Check chat message with spells for scroll/wand creation, hold alt when dragging and dropping to mystify items");
+		}
+		if (stuff.lenght > 0) {
+			const updates = await a.createEmbeddedDocuments("Item",stuff);
+			await a.updateEmbeddedDocuments("Item", updates.map(u => ({_id: u.id, "system.identification.status": "unidentified" })));
+		}
+		a.sheet.render(true);
+	}
+}
 
 async function quickDialog({data, title = `Quick Dialog`} = {}) {
 	data = data instanceof Array ? data : [data];
@@ -237,29 +236,34 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 	  await new Dialog({
 	   title, content,
 	   buttons : {
-	     Ok : { label : `Ok`, callback : (html) => {
-	       resolve(Array(data.length).fill().map((e,i)=>{
-		 let {type} = data[i];
-		 if (type.toLowerCase() === `select`)
-		 {
-		   return html.find(`select#${i}qd`).val();
-		 } else {
-		   switch(type.toLowerCase())
-		   {
-		    case `text` :
-		    case `password` :
-		    case `radio` :
-		    	return html.find(`input#${i}qd`)[0].value;
-		    case `checkbox` :
-		    	return html.find(`input#${i}qd`)[0].checked;
-		    case `number` :
-		    	return html.find(`input#${i}qd`)[0].valueAsNumber;
-		  }
-		}
+	    Ok : { label : `Ok`, callback : (html) => {
+			game.macros.getName("Loot Generator").execute();
+	    	resolve(Array(data.length).fill().map((e,i)=>{
+		 	let {type} = data[i];
+			if (type.toLowerCase() === `select`)
+			{
+			return html.find(`select#${i}qd`).val();
+			} 
+			else {
+			switch(type.toLowerCase())
+				{
+					case `text` :
+					case `password` :
+					case `radio` :
+						return html.find(`input#${i}qd`)[0].value;
+					case `checkbox` :
+						return html.find(`input#${i}qd`)[0].checked;
+					case `number` :
+						return html.find(`input#${i}qd`)[0].valueAsNumber;
+				}
+			}
 	      }));
-	    }}
+	    }},
+		Close: { 
+			label: "Close",
+		}
 	  },
-	  default : 'Ok'
+	  default : 'Ok',
 	  })._render(true);
 	  document.getElementById("0qd").focus();
 	});
