@@ -20,6 +20,7 @@ const dialogs = [
 	{ label : `Quantity?`, type: `number`, options: [1]},
     { label : `Rarity? (Only Permanents and Consumables)`, type: `select`, options: ["No filter", "Common", "Uncommon", "Rare", "Unique"] },
 	{ label : `Distribution type:`, type: `select`, options: ["Message", "Loot Actor", "Party Stash"]},
+	{ label : `Mystify?`, type: `checkbox`, options: "checked"}
 ];
 
 //Run Dialog and gather Data
@@ -68,16 +69,16 @@ if (picks[0] === "Treasures") {
 		ui.notifications.info("No center range was entered, random treasures selected");
 		itemArray.forEach( () => {
 			let random = Math.floor(Math.random() * treasure.length);
-			randomItems.push({name: treasure[random].name, id: treasure[random]._id, compendium: treasure[random].compendium});
+			randomItems.push({name: treasure[random].name, slug: treasure[random].system.slug, id: treasure[random]._id, compendium: treasure[random].compendium});
 		});
-        return await Loot();
+        return Loot();
 	}
 	if (picks[2] < 1 && !Noan(picks[2] ) ) { return ui.notifications.error("A value greater than 1 needs to be entered for range")}
 	else {
 		let denomination = "sp";
 		let value = Math.round(picks[2]);
 		let treasures = [];
-                const range = await Ranges(Math.round(picks[2]));
+        const range = await Ranges(Math.round(picks[2]));
 		if (Math.round(picks[2]) >= 10) { 
 			denomination = "gp";
 			value = Math.round(picks[2] / 10);
@@ -88,7 +89,7 @@ if (picks[0] === "Treasures") {
 		
 		itemArray.forEach( () => {
 			let random = Math.floor(Math.random() * treasures.length);
-			randomItems.push({name: treasures[random].name, id: treasures[random]._id, compendium: treasures[random].compendium})
+			randomItems.push({name: treasures[random].name, id: treasures[random]._id, slug:treasures[random].system.slug, compendium: treasures[random].compendium})
 		});
         return await Loot();
 	}
@@ -208,7 +209,7 @@ async function Loot() {
 		}
 		if (stuff.length > 0) {
 			const updates = await a.createEmbeddedDocuments("Item",stuff);
-			await a.updateEmbeddedDocuments("Item", updates.map(u => ({_id: u.id, "system.identification.status": "unidentified" })));
+			if ( picks[6] ) { await a.updateEmbeddedDocuments("Item", updates.map(u => ({_id: u.id, "system.identification.status": "unidentified" }))); }
 		}
 		a.sheet.render(true);
 	}
