@@ -1,6 +1,11 @@
 /*
-Simple Scroll/Wand Generator
+Simple Wand/Scroll Generator
 Input Type, Level, Quantity, Rarity, Output Type, and Mystification.
+This will also create useable Specialty Wands for:
+* Wand of Continuation
+* Wand of LegerDemain
+* Wand of Reaching
+* Wand of Widening
 Hit Ok and it will generate output.
 When Loot Actor is selected it will create a loot actor named Generated Loot if not available then populate this actor. If the actor is already available, it will populate the actor.
 When Party Stash is selected, the first party actor found will be populated.
@@ -30,6 +35,13 @@ const scrollIds = {
     10: 'o1XIHJ4MJyroAHfF',
 };
 
+const specWandsUUIDs = {
+    cont: "Compendium.pf2e.equipment-srd.Item.a60NH7OztaEaGlU8",
+    reach: "Compendium.pf2e.equipment-srd.Item.cyw2OgL4XJ9HOu0b",
+    wide: "Compendium.pf2e.equipment-srd.Item.Zw3BKaJYxxxzNZ0f",
+    leger: "Compendium.pf2e.equipment-srd.Item.z2QXO8vl0VsXaI1E"
+}
+
 const picks = await Dialog.wait({
     title: "Wand and Scroll Generator",
     content: `
@@ -39,6 +51,10 @@ const picks = await Dialog.wait({
                 <td width="20%"><select id="type" autofocus>
                     <option value="scroll">Scroll</option>
                     <option value="wand">Wand</option>
+                    <option value="cont">Wand of Continuation</option>
+                    <option value="leger">Wand of Legerdemain</option>
+                    <option value="reach">Wand of Reaching</option>
+                    <option value ="wide">Wand of Widening</option>
                 </select></td>
             </tr>
             <tr>
@@ -97,7 +113,7 @@ let spells = [];
 const compendiums = ["pf2e.spells-srd","pf2e-expansion-pack.Expansion-Spells","pf2e-wayfinder.wayfinder-spells"];
 const aCSpells = game.packs.filter(c => compendiums.includes(c.collection));
 for (const s of aCSpells) {
-    const index = (await s.getIndex({fields: ["system.level.value","system.slug","system.traits","system.category","uuid"]})).filter(f => !f.system.traits.value.includes("cantrip") && f.system.category.value !== "ritual" && f.system.category.value !== "focus" && f.system.level.value === picks[1] );
+    const index = (await s.getIndex({fields: ["system.level.value","system.slug","system.traits","system.category","uuid","system.area","system.duration","system.range","system.time"]})).filter(f => !f.system.traits.value.includes("cantrip") && f.system.category.value !== "ritual" && f.system.category.value !== "focus" && f.system.level.value === picks[1] );
     index.forEach( x => {
         x.compendium = s.collection;
         spells.push(x);
@@ -115,6 +131,27 @@ for ( const q of quantity ) {
     }
     if ( picks[0] === "wand" ){
 	    output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `Wand of ${randomSpell.name} (Level ${picks[1]})`, uuid: randomSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`});
+    }
+    if ( picks[0] == "wide" ){
+        spells = spells.filter( f => f.system.duration.value === "" && ((f.system.area?.value > 10 && f.system.area?.type === "burst") || (f.system.area?.type === "cone" || f.system.area?.type === "line")) && (f.system.time.value === "1" || f.system.time.value === "2") );
+        if ( spells.length === 0 ) { return ui.notifications.info("No spells available within these parameters for a Wand of Widening") }
+        const rSpell = spells[Math.floor(Math.random() * spells.length)];
+        output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Widening ${rSpell.name} (Level ${picks[1]})`, uuid: rSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]]});
+    }
+    if ( picks[0] == "cont" ){
+        spells = spells.filter( f => (f.system.duration.value === "10 minutes" || f.system.duration.value === "1 hour") && (f.system.time?.value === "1" || f.system.time?.value === "2") );
+        if ( spells.length === 0 ) { return ui.notifications.info("No spells available within these parameters for a Wand of Continuation") }
+        const rSpell = spells[Math.floor(Math.random() * spells.length)];
+        output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Continuation ${rSpell.name} (Level ${picks[1]})`, uuid: rSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]]});
+    }
+    if ( picks[0] == "reach" ){
+        spells = spells.filter( f =>  f.system.range?.value.includes("feet" || "touch") && (f.system.time?.value === "1" || f.system.time?.value === "2") );
+        if ( spells.length === 0 ) { return ui.notifications.info("No spells available within these parameters for a Wand of Reaching") }
+        const rSpell = spells[Math.floor(Math.random() * spells.length)];
+        output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Reaching ${rSpell.name} (Level ${picks[1]})`, uuid: rSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]]});
+    }
+    if ( picks[0] === "leger" ) {
+        output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `Wand of Legerdemain ${randomSpell.name} (Level ${picks[1]})`, uuid: randomSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]]});
     }
 }
 
@@ -136,16 +173,42 @@ else {
     }
     const stuff = [];
 	for ( const o of output ) {
-		stuff.push(await createSpellScrollWand(o.compendium, o.id, o.scrollUUID, o.uuid, o.level, o.name))
+		stuff.push(await createSpellScrollWand(o.compendium, o.id, o.scrollUUID, o.uuid, o.level, o.name, o.sWUUID))
 	}
 	const updates = await a.createEmbeddedDocuments("Item",stuff);
 	if ( picks[5] ) { await a.updateEmbeddedDocuments("Item", updates.map(u => ({_id: u.id, "system.identification.status": "unidentified" }))); }
 	a.sheet.render(true);
 }
 
-async function createSpellScrollWand(compendium, id, scrollUUID, uuid, level, name, temp = false) {
+async function createSpellScrollWand(compendium, id, scrollUUID, uuid, level, name, sWUUID, temp = false ) {
     const spell = (await fromUuid(uuid))?.toObject();
     if (!spell) return null;
+    if ( picks[0] === "reach" ) {
+        if ( spell.system.range.value !== "touch" ) {
+            const split = spell.system.range.value.split(" ");
+            split[0] = `${parseInt(split[0]) + 30}`;
+            spell.system.range.value = split.join(" ");
+        }
+        else {
+            spell.system.range.value === "30 feet";
+        }
+    }
+    if ( picks[0] === "wide" ) {
+        if ( spell.system.area.type === "burst" ) {
+            spell.system.area.value += 5;
+        }
+        if ( spell.system.area.type !== "burst") {
+            if ( spell.system.area.value > 15 ) {
+                spell.system.area.value += 10;
+            }
+            else { spell.system.area.value += 5; }
+        }
+    }
+    if ( picks[0] === "cont" ) {
+        const split = spell.system.duration.value.split(" ");
+        split[0] = `${parseInt(split[0]) * 1.5}`;
+        spell.system.duration.value = split.join(" ");
+    }
 
     if (level === false) level = spell.system.level.value;
 
@@ -161,9 +224,14 @@ async function createSpellScrollWand(compendium, id, scrollUUID, uuid, level, na
     scroll.system.spell = spell;
 	scroll.system.traits.rarity = spell.system.traits.rarity;
     scroll.system.traits.value.push(...spell.system.traditions.value);
-
+        
     const sourceId = spell.flags.core?.sourceId;
-    if (sourceId) scroll.system.description.value = `@Compendium[${compendium}.${id}]{${spell.name}}\n<hr />${scroll.system.description.value}`;
-
+    if (sourceId && sWUUID === undefined) scroll.system.description.value = `@Compendium[${compendium}.${id}]{${spell.name}}\n<hr />${scroll.system.description.value}`;
+    if (sWUUID !== undefined && picks[0] !== "leger" ) {
+        const w = (await fromUuid(sWUUID)).toObject();
+        scroll.system.description.value = `@Compendium[${compendium}.${id}]{${spell.name}}\n<hr />${w.system.description.value}`;
+        if ( scroll.system.spell.system.time.value === "2" ) { scroll.system.spell.system.time.value = "3" }
+        if ( scroll.system.spell.system.time.value === "1" ) { scroll.system.spell.system.time.value = "2" }
+    }
     return scroll;
 }
