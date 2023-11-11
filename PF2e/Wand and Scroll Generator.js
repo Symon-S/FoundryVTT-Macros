@@ -40,10 +40,49 @@ async function WSGenerator() {
     };
 
     const specWandsUUIDs = {
-        cont: "Compendium.pf2e.equipment-srd.Item.a60NH7OztaEaGlU8",
-        reach: "Compendium.pf2e.equipment-srd.Item.cyw2OgL4XJ9HOu0b",
-        wide: "Compendium.pf2e.equipment-srd.Item.Zw3BKaJYxxxzNZ0f",
-        leger: "Compendium.pf2e.equipment-srd.Item.z2QXO8vl0VsXaI1E"
+        cont: {
+            1: "Compendium.pf2e.equipment-srd.Item.a60NH7OztaEaGlU8",
+            2: "Compendium.pf2e.equipment-srd.Item.5V9bgqgQY1CHLd40",
+            3: "Compendium.pf2e.equipment-srd.Item.R88HWv9rw1VNMRer",
+            4: "Compendium.pf2e.equipment-srd.Item.bCsdAkffuk29ssUg",
+            5: "Compendium.pf2e.equipment-srd.Item.tDEi3zLVpxwA74qz",
+            6: "Compendium.pf2e.equipment-srd.Item.35rLqxDWgiDIkL8e",
+            7: "Compendium.pf2e.equipment-srd.Item.H1XGrl6Z0bzXN2oi",
+            8: "Compendium.pf2e.equipment-srd.Item.KMqHzKfpPq5H8GOo",
+        },
+        reach: {
+            1: "Compendium.pf2e.equipment-srd.Item.cyw2OgL4XJ9HOu0b",
+            2: "Compendium.pf2e.equipment-srd.Item.rmbvBjcDMDAZLJ7v",
+            3: "Compendium.pf2e.equipment-srd.Item.AzLEUTp4RHYAoXIe",
+            4: "Compendium.pf2e.equipment-srd.Item.XgKwydoro5eaIWC8",
+            5: "Compendium.pf2e.equipment-srd.Item.dPwRgQKEFLLDF2iB",
+            6: "Compendium.pf2e.equipment-srd.Item.pCr0zPdJoXZW3I6y",
+            7: "Compendium.pf2e.equipment-srd.Item.qeLAYEwUXNbri5eB",
+            8: "Compendium.pf2e.equipment-srd.Item.eFGpWmM8ehW9mkI4",
+            9: "Compendium.pf2e.equipment-srd.Item.sa9UGUMWYiZkTPjA",
+        },
+        wide: {
+            1: "Compendium.pf2e.equipment-srd.Item.Zw3BKaJYxxxzNZ0f",
+            2: "Compendium.pf2e.equipment-srd.Item.qmWlvoIlJRJ6pAeG",
+            3: "Compendium.pf2e.equipment-srd.Item.TJaumkbZy11sIAgR",
+            4: "Compendium.pf2e.equipment-srd.Item.zYRzgETeR1Hs1ti1",
+            5: "Compendium.pf2e.equipment-srd.Item.TGxZ3acyWjjTvfU9",
+            6: "Compendium.pf2e.equipment-srd.Item.JDQ4jqp6O8SurQGe",
+            7: "Compendium.pf2e.equipment-srd.Item.kNfdGNIGzF0fW7aq",
+            8: "Compendium.pf2e.equipment-srd.Item.20nQTcGzpUv8jJ6R",
+            9: "Compendium.pf2e.equipment-srd.Item.t5978mZ6CqfUDCP6",
+        },
+        leger: {
+            1: "Compendium.pf2e.equipment-srd.Item.z2QXO8vl0VsXaI1E",
+            2: "Compendium.pf2e.equipment-srd.Item.zaJ4HSNa6kMozYvM",
+            3: "Compendium.pf2e.equipment-srd.Item.XPqKEI246hsr9R6P",
+            4: "Compendium.pf2e.equipment-srd.Item.4hsPZ6rBpLKOlDjm",
+            5: "Compendium.pf2e.equipment-srd.Item.pdsepgrBRgdZ4DWm",
+            6: "Compendium.pf2e.equipment-srd.Item.dn53uqBi6MXg2gIM",
+            7: "Compendium.pf2e.equipment-srd.Item.AYIel6a1nARjqygh",
+            8: "Compendium.pf2e.equipment-srd.Item.34D6lFZ2gpZiyUU6",
+            9: "Compendium.pf2e.equipment-srd.Item.qoNaajuoAnKRrFyb",
+        },
     }
 
     const picks = await Dialog.wait({
@@ -142,22 +181,22 @@ async function WSGenerator() {
             spells = spells.filter( f => f.system.duration.value === "" && ((f.system.area?.value > 10 && f.system.area?.type === "burst") || (f.system.area?.type === "cone" || f.system.area?.type === "line")) && (f.system.time.value === "1" || f.system.time.value === "2") );
             if ( spells.length === 0 ) { return ui.notifications.info("No spells available within these parameters for a Wand of Widening") }
             const rSpell = spells[Math.floor(Math.random() * spells.length)];
-            output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Widening ${rSpell.name} (Level ${picks[1]})`, uuid: rSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]]});
+            output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Widening ${rSpell.name} (Level ${picks[1]})`, uuid: rSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]][picks[1]]});
         }
         if ( picks[0] === "cont" ){
             spells = spells.filter( f => (f.system.duration.value === "10 minutes" || f.system.duration.value === "1 hour") && (f.system.time?.value === "1" || f.system.time?.value === "2") );
             if ( spells.length === 0 ) { return ui.notifications.info("No spells available within these parameters for a Wand of Continuation") }
             const rSpell = spells[Math.floor(Math.random() * spells.length)];
-            output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Continuation ${rSpell.name} (Level ${picks[1]})`, uuid: rSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]]});
+            output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Continuation ${rSpell.name} (Level ${picks[1]})`, uuid: rSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]][picks[1]]});
         }
         if ( picks[0] === "reach" ){
             spells = spells.filter( f =>  f.system.range?.value.includes("feet" || "touch") && (f.system.time?.value === "1" || f.system.time?.value === "2") );
             if ( spells.length === 0 ) { return ui.notifications.info("No spells available within these parameters for a Wand of Reaching") }
             const rSpell = spells[Math.floor(Math.random() * spells.length)];
-            output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Reaching ${rSpell.name} (Level ${picks[1]})`, uuid: rSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]]});
+            output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Reaching ${rSpell.name} (Level ${picks[1]})`, uuid: rSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]][picks[1]]});
         }
         if ( picks[0] === "leger" ) {
-            output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `Wand of Legerdemain ${randomSpell.name} (Level ${picks[1]})`, uuid: randomSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]]});
+            output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `Wand of Legerdemain ${randomSpell.name} (Level ${picks[1]})`, uuid: randomSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]][picks[1]]});
         }
     }
 
@@ -233,11 +272,14 @@ async function WSGenerator() {
             
         const sourceId = spell.flags.core?.sourceId;
         if (sourceId && sWUUID === undefined) scroll.system.description.value = `@Compendium[${compendium}.${id}]{${spell.name}}\n<hr />${scroll.system.description.value}`;
-        if (sWUUID !== undefined && picks[0] !== "leger" ) {
+        if (sWUUID !== undefined) {
             const w = (await fromUuid(sWUUID)).toObject();
-            scroll.system.description.value = `@Compendium[${compendium}.${id}]{${spell.name}}\n<hr />${w.system.description.value}`;
-            if ( scroll.system.spell.system.time.value === "2" ) { scroll.system.spell.system.time.value = "3" }
-            if ( scroll.system.spell.system.time.value === "1" ) { scroll.system.spell.system.time.value = "2" }
+            scroll.system.price = w.system.price;
+            if ( picks[0] !== "leger" ) {
+                scroll.system.description.value = `@Compendium[${compendium}.${id}]{${spell.name}}\n<hr />${w.system.description.value}`;
+                if ( scroll.system.spell.system.time.value === "2" ) { scroll.system.spell.system.time.value = "3" }
+                if ( scroll.system.spell.system.time.value === "1" ) { scroll.system.spell.system.time.value = "2" }
+            }
         }
         return scroll;
     }
