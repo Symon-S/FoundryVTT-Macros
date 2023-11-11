@@ -7,6 +7,7 @@ and available (rare spells not available at each level), if not available anothe
 **Unique = There are no unique spells in the game, so this will only push unique items if available.**
 
 
+
 Modded by LebombJames to use getIndex for faster loading.
 Special thanks to Idle for scroll/wand creation function.
 */
@@ -51,7 +52,7 @@ async function LootGenerator() {
 	let randomItems = [];
 
 	//Populate items
-	const iC = ["pf2e.equipment-srd","battlezoo-bestiary-pf2e.pf2e-battlezoo-equipment","pf2e-expansion-pack.Expansion-Equipment","pf2e-wayfinder.wayfinder-equipment","battlezoo-bestiary-su-pf2e.pf2e-battlezoo-su-equipment",];
+	const iC = ["pf2e.equipment-srd","battlezoo-bestiary-pf2e.pf2e-battlezoo-equipment","pf2e-expansion-pack.Expansion-Equipment","pf2e-wayfinder.wayfinder-equipment","battlezoo-bestiary-su-pf2e.pf2e-battlezoo-su-equipment","battlezoo-world-of-indigo-isles-pf2e.indigo-isles-equipment",];
 	const item = game.packs.filter(c => iC.includes(c.collection));
 	let items = [];
 	for (const i of item) {
