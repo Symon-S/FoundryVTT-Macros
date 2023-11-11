@@ -137,19 +137,19 @@ async function WSGenerator() {
         if ( picks[0] === "wand" ){
             output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `Wand of ${randomSpell.name} (Level ${picks[1]})`, uuid: randomSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`});
         }
-        if ( picks[0] == "wide" ){
+        if ( picks[0] === "wide" ){
             spells = spells.filter( f => f.system.duration.value === "" && ((f.system.area?.value > 10 && f.system.area?.type === "burst") || (f.system.area?.type === "cone" || f.system.area?.type === "line")) && (f.system.time.value === "1" || f.system.time.value === "2") );
             if ( spells.length === 0 ) { return ui.notifications.info("No spells available within these parameters for a Wand of Widening") }
             const rSpell = spells[Math.floor(Math.random() * spells.length)];
             output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Widening ${rSpell.name} (Level ${picks[1]})`, uuid: rSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]]});
         }
-        if ( picks[0] == "cont" ){
+        if ( picks[0] === "cont" ){
             spells = spells.filter( f => (f.system.duration.value === "10 minutes" || f.system.duration.value === "1 hour") && (f.system.time?.value === "1" || f.system.time?.value === "2") );
             if ( spells.length === 0 ) { return ui.notifications.info("No spells available within these parameters for a Wand of Continuation") }
             const rSpell = spells[Math.floor(Math.random() * spells.length)];
             output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Continuation ${rSpell.name} (Level ${picks[1]})`, uuid: rSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]]});
         }
-        if ( picks[0] == "reach" ){
+        if ( picks[0] === "reach" ){
             spells = spells.filter( f =>  f.system.range?.value.includes("feet" || "touch") && (f.system.time?.value === "1" || f.system.time?.value === "2") );
             if ( spells.length === 0 ) { return ui.notifications.info("No spells available within these parameters for a Wand of Reaching") }
             const rSpell = spells[Math.floor(Math.random() * spells.length)];
