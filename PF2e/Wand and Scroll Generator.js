@@ -110,7 +110,8 @@ async function WSGenerator() {
     });
     if (picks === "close") { return }
     if ( picks[1] > 10 ) { return ui.notifications.info("There are no spells above level 10") }
-    if ( picks[0] === "wand" && picks[1] > 9 ) { return ui.notifications.info("There are no wands for spells above level 9") }
+    if ( picks[0] === "cont" && picks[1] > 8 ) { return ui.notifications.info ("There are no wands of continuation for spells above level 8")}
+    if ( picks[0] !== "scroll" && picks[1] > 9 ) { return ui.notifications.info("There are no wands for spells above level 9") }
     if (picks[1] === NaN || picks[2] === NaN || picks[1] < 1 || picks[2] < 1) { return ui.notifications.warn("Level must be a value between 1 and 10 and Quantity must be a value greater than 1!")}
 
     const quantity = new Array.fromRange(picks[2]);
