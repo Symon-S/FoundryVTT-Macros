@@ -7,7 +7,6 @@ and available (rare spells not available at each level), if not available anothe
 **Unique = There are no unique spells in the game, so this will only push unique items if available.**
 
 
-
 Modded by LebombJames to use getIndex for faster loading.
 Special thanks to Idle for scroll/wand creation function.
 */
@@ -15,6 +14,18 @@ Special thanks to Idle for scroll/wand creation function.
 LootGenerator();
 
 async function LootGenerator() {
+	const wandIds = {
+        1: "UJWiN0K3jqVjxvKk",
+        2: "vJZ49cgi8szuQXAD",
+        3: "wrDmWkGxmwzYtfiA",
+        4: "Sn7v9SsbEDMUIwrO",
+        5: "5BF7zMnrPYzyigCs",
+        6: "kiXh4SUWKr166ZeM",
+        7: "nmXPj9zuMRQBNT60",
+        8: "Qs8RgNH6thRPv2jt",
+        9: "Fgv722039TVM5JTc"
+    };
+
 	//Limit Macro use to GM
 	if (!game.user.isGM) { return ui.notifications.error("You are unable to use this macro!"); }
 
@@ -42,7 +53,7 @@ async function LootGenerator() {
 	//Populate items
 	const iC = ["pf2e.equipment-srd","battlezoo-bestiary-pf2e.pf2e-battlezoo-equipment","pf2e-expansion-pack.Expansion-Equipment","pf2e-wayfinder.wayfinder-equipment","battlezoo-bestiary-su-pf2e.pf2e-battlezoo-su-equipment",];
 	const item = game.packs.filter(c => iC.includes(c.collection));
-	const items = [];
+	let items = [];
 	for (const i of item) {
 		const index = await i.getIndex({fields: ["system.level.value", "system.slug", "system.price.value", "system.traits.value", "system.traits.rarity","uuid"]});
 		index.forEach( x => {
@@ -69,6 +80,17 @@ async function LootGenerator() {
 	if ( picks[4] !== "No filter" ) { spellS = spellS.filter(s => s.system.traits.rarity === picks[4].toLowerCase()); }
 	}
 
+	if ( spellS.length === 0 ) {
+		const exclude = [
+			"scroll-of-",
+			"magic-wand",
+			"wand-of-continuation-",
+			"wand-of-legerdemain-",
+			"wand-of-reaching-",
+			"wand-of-widening-"
+		]
+		items = items.filter(i => !exclude.includes(i.system.slug));
+	}
 	//Treasures
 	if (picks[0] === "Treasures") {
 		const treasure = items.filter(t => t.type === "treasure");
@@ -147,21 +169,14 @@ async function LootGenerator() {
 	};
 
 	async function Loot() {
-		let output= [];
+		const output= [];
 		for ( const r of randomItems ) {
 			const slug = r.slug;
 			if(slug !== null && slug.includes("magic-wand")){
-				const level = parseInt(slug.substr(11,1));   
+				const level = parseInt(slug.substr(11,1));
 				const spells = spellS.filter(l => l.system.level.value === level);
-				if (spells.length === 0) { 
-					const random = Math.floor(Math.random() * treasures.length);
-					const tr = treasures.filter(n => !n.system.slug.includes("magic-wand"));
-					output.push({compendium: tr[random].compendium, id: tr[random]._id, name: tr[random].name});
-				}
-				else {
-					const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-					output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `${r.name} of ${randomSpell.name}`, uuid: randomSpell.uuid, sid: r.id, sc: r.compendium, level, scrollUUID: r.uuid});
-				}
+				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
+				output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `Wand of ${randomSpell.name} (Level ${level})`, uuid: randomSpell.uuid, sid: r.id, sc: r.compendium, level, scrollUUID: r.uuid});
 			}
 			else if(slug !== null && slug.includes("scroll-of-")){
 				let level = parseInt(r.slug.substr(10,1));
@@ -169,16 +184,62 @@ async function LootGenerator() {
 					level = parseInt(r.slug.substr(10,2));
 				}
 				const spells = spellS.filter(l => l.system.level.value === level);
-				if (spells.length === 0) { 
-					const random = Math.floor(Math.random() * treasures.length);
-					const tr = treasures.filter(n => !n.system.slug.includes("scroll-of-"));
-					output.push({compendium: tr[random].compendium, id: tr[random]._id, name: tr[random].name});
+				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
+				output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `Scroll of ${randomSpell.name} (Level ${level})`, uuid: randomSpell.uuid, sid: r.id, sc: r.compendium, level, scrollUUID: r.uuid});
+			}
+			else if (slug !== null && slug.includes("wand-of-continuation-")) {
+				const level = parseInt(r.slug.substr(21,1));
+				const spells = spellS.filter( f => f.system.level.value === level && (f.system.duration.value === "10 minutes" || f.system.duration.value === "1 hour") && (f.system.time?.value === "1" || f.system.time?.value === "2") );
+            	if ( spells.length === 0 ) { 
+					const tr = treasures.filter(n => !n.system.slug.includes("wand-of-continuation-"));
+					randomItems.push(tr);
+					continue;
 				}
 				else {
-				const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-				output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `${r.name} of ${randomSpell.name}`, uuid: randomSpell.uuid, sid: r.id, sc: r.compendium, level, scrollUUID: r.uuid});
+					const specWand = "cont";
+					const rSpell = spells[Math.floor(Math.random() * spells.length)];
+            		output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Continuation ${rSpell.name} (Level ${level})`, uuid: rSpell.uuid, sid: wandIds[level], sc: "pf2e.equipment-srd", level, scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[level]}`, sWUUID: r.uuid, specWand });
 				}
 			}
+
+			else if (slug !== null && slug.includes("wand-of-legerdemain-")) {
+				const level = parseInt(r.slug.substr(20,1));
+				const specWand = "leger";
+				const spells = spellS.filter(l => l.system.level.value === level);
+				const rSpell = spells[Math.floor(Math.random() * spells.length)];
+            	output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Legerdemain ${rSpell.name} (Level ${level})`, uuid: rSpell.uuid, sid: wandIds[level], sc: "pf2e.equipment-srd", level, scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[level]}`, sWUUID: r.uuid, specWand });
+			}
+
+			else if (slug !== null && slug.includes("wand-of-reaching-")) {
+				const level = parseInt(r.slug.substr(17,1));
+				const spells = spellS.filter( f => f.system.level.value === level && f.system.range?.value.includes("feet" || "touch") && (f.system.time?.value === "1" || f.system.time?.value === "2") );
+            	if ( spells.length === 0 ) { 
+					const tr = treasures.filter(n => !n.system.slug.includes("wand-of-reaching-"));
+					randomItems.push(tr);
+					continue;
+				}
+				else {
+					const specWand = "reach";
+					const rSpell = spells[Math.floor(Math.random() * spells.length)];
+            		output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Reaching ${rSpell.name} (Level ${level})`, uuid: rSpell.uuid, sid: wandIds[level], sc: "pf2e.equipment-srd", level, scrollUUID: `Compendium.pf2e.equipment-srd.Item.${level}`, sWUUID: r.uuid, specWand });
+				}
+			}
+
+			else if (slug !== null && slug.includes("wand-of-widening-")) {
+				const level = parseInt(r.slug.substr(17,1));
+				const spells = spellS.filter( f => f.system.level.value === level && f.system.duration.value === "" && ((f.system.area?.value > 10 && f.system.area?.type === "burst") || (f.system.area?.type === "cone" || f.system.area?.type === "line")) && (f.system.time.value === "1" || f.system.time.value === "2") );
+            	if ( spells.length === 0 ) { 
+					const tr = treasures.filter(n => !n.system.slug.includes("wand-of-widening-"));
+					randomItems.push(tr);
+					continue;
+				}
+				else {
+					const specWand = "wide";
+					const rSpell = spells[Math.floor(Math.random() * spells.length)];
+            		output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Widening ${rSpell.name} (Level ${level})`, uuid: rSpell.uuid, sid: wandIds[level], sc: "pf2e.equipment-srd", level, scrollUUID: `Compendium.pf2e.equipment-srd.Item.${level}`, sWUUID: r.uuid, specWand });
+				}
+			}
+
 			else { output.push(r) }
 		}
 
@@ -206,7 +267,7 @@ async function LootGenerator() {
 					stuff.push(item);
 				}
 				else {
-					stuff.push(await createSpellScrollWand(o.compendium, o.id, o.scrollUUID, o.uuid, o.level, o.name));
+					stuff.push(await createSpellScrollWand(o.compendium, o.id, o.scrollUUID, o.uuid, o.level, o.name, o.sWUUID, o.specWand));
 				}
 			}
 			if (stuff.length > 0) {
@@ -217,30 +278,64 @@ async function LootGenerator() {
 		}
 	}
 
-	async function createSpellScrollWand(compendium, id, scrollUUID, uuid, level, name, temp = false) {
-		const spell = (await fromUuid(uuid))?.toObject();
-		if (!spell) return null;
+	async function createSpellScrollWand(compendium, id, scrollUUID, uuid, level, name, sWUUID, specWand, temp = false ) {
+        const spell = (await fromUuid(uuid))?.toObject();
+        if (!spell) return null;
+        if ( specWand === "reach" ) {
+            if ( spell.system.range.value !== "touch" ) {
+                const split = spell.system.range.value.split(" ");
+                split[0] = `${parseInt(split[0]) + 30}`;
+                spell.system.range.value = split.join(" ");
+            }
+            else {
+                spell.system.range.value === "30 feet";
+            }
+        }
+        if ( specWand === "wide" ) {
+            if ( spell.system.area.type === "burst" ) {
+                spell.system.area.value += 5;
+            }
+            if ( spell.system.area.type !== "burst") {
+                if ( spell.system.area.value > 15 ) {
+                    spell.system.area.value += 10;
+                }
+                else { spell.system.area.value += 5; }
+            }
+        }
+        if ( specWand === "cont" ) {
+            const split = spell.system.duration.value.split(" ");
+            split[0] = `${parseInt(split[0]) * 1.5}`;
+            spell.system.duration.value = split.join(" ");
+        }
 
-		if (level === false) level = spell.system.level.value;
+        if (level === false) level = spell.system.level.value;
 
-		scrolls = await fromUuid(scrollUUID);
+        scrolls = await fromUuid(scrollUUID);
 
-		const scroll = scrolls?.toObject();
-		if (!scroll) return null;
+        const scroll = scrolls?.toObject();
+        if (!scroll) return null;
 
-		spell.system.location.heightenedLevel = level;
+        spell.system.location.heightenedLevel = level;
 
-		scroll.name = name;
-		scroll.system.temporary = temp;
-		scroll.system.spell = spell;
-		scroll.system.traits.rarity = spell.system.traits.rarity;
-		scroll.system.traits.value.push(...spell.system.traditions.value);
-
-		const sourceId = spell.flags.core?.sourceId;
-		if (sourceId) scroll.system.description.value = `@Compendium[${compendium}.${id}]{${spell.name}}\n<hr />${scroll.system.description.value}`;
-
-		return scroll;
-	}
+        scroll.name = name;
+        scroll.system.temporary = temp;
+        scroll.system.spell = spell;
+        scroll.system.traits.rarity = spell.system.traits.rarity;
+        scroll.system.traits.value.push(...spell.system.traditions.value);
+            
+        const sourceId = spell.flags.core?.sourceId;
+        if (sourceId && sWUUID === undefined) scroll.system.description.value = `@Compendium[${compendium}.${id}]{${spell.name}}\n<hr />${scroll.system.description.value}`;
+        if ( sWUUID !== undefined ) {
+            const w = (await fromUuid(sWUUID)).toObject();
+			scroll.system.price = w.system.price;
+			if ( specWand !== "leger" ) {
+				scroll.system.description.value = `@Compendium[${compendium}.${id}]{${spell.name}}\n<hr />${w.system.description.value}`;
+				if ( scroll.system.spell.system.time.value === "2" ) { scroll.system.spell.system.time.value = "3" }
+				if ( scroll.system.spell.system.time.value === "1" ) { scroll.system.spell.system.time.value = "2" }
+			}
+        }
+        return scroll;
+    }
 
 	async function quickDialog({data, title = `Quick Dialog`} = {}) {
 		data = data instanceof Array ? data : [data];
