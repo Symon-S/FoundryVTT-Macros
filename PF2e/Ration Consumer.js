@@ -23,6 +23,7 @@ const days = await Dialog.wait({
             label: "Cancel",
         }
     },
+    close: () => { return "cancel" },
     default:"ok",
 },{width:300});
 if (days === "cancel") { return }
