@@ -179,8 +179,6 @@ async function WSGenerator() {
         if ( picks[6] !== "random" ) { spells = spells.filter(r => r.system.traditions?.value.includes(picks[6])) }
     }
 
-    console.log(spells);
-
     if ( spells.length < 1 ) { return ui.notifications.info(`There are no ${picks[3]} spells at level ${picks[1]}`)}
 
     const output = [];
