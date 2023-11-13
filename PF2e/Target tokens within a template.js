@@ -29,6 +29,8 @@ const toks = await Dialog.wait({
             label: "Party",
             callback: () => { return canvas.tokens.placeables.filter( c => c.actor.alliance === "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["move"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"move",mode:"any"})).map( i => i.id ) },
         }
-    }
+    },
+    close: () => { return "close" }
 });
+if (toks === "close") { return }
 await game.user.updateTokenTargets(toks);
