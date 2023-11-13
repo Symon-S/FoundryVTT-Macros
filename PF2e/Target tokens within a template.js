@@ -20,22 +20,87 @@ const toks = await Dialog.wait({
     buttons: {
         all: {
             label: "All",
-            callback: () => { return canvas.tokens.placeables.filter( c => coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends[col].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:col,mode:"any"})).map( i => i.id ) },   
+            callback: () => { return FilterTargets("all") },   
         },
         opp: {
             label: "Opposition",
-            callback: () => { return canvas.tokens.placeables.filter( c => c.actor.alliance === "opposition" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends[col].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:col,mode:"any"})).map( i => i.id ) },
+            callback: () => { return FilterTargets("opposition") },
         },
         nopp: {
             label: `Opposition/Neutral`,
-            callback: () => { return canvas.tokens.placeables.filter( c => c.actor.alliance !== "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends[col].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:col,mode:"any"})).map( i => i.id ) },
+            callback: () => { return FilterTargets("!party") },
         },
         party: {
             label: "Party",
-            callback: () => { return canvas.tokens.placeables.filter( c => c.actor.alliance === "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends[col].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:col,mode:"any"})).map( i => i.id ) },
+            callback: () => { return FilterTargets("party") },
         }
     },
     close: () => { return "close" }
 });
 if (toks === "close") { return }
 await game.user.updateTokenTargets(toks);
+
+function FilterTargets (type) {
+    let ids = [];
+    if ( type === "all" ) {
+        if ( template.document.flags.pf2e?.origin?.traits.includes("auditory") && !template.document.flags.pf2e?.origin?.traits.includes("visual") ) {
+            ids = canvas.tokens.placeables.filter( c => coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
+        }
+        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
+            ids = canvas.tokens.placeables.filter( c => coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"}) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
+        }
+        
+        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && !template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
+            ids = canvas.tokens.placeables.filter( c => coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"})).map( i => i.id );
+        }
+        else {
+            ids = canvas.tokens.placeables.filter( c => coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["move"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"move",mode:"any"})).map( i => i.id );
+        }
+    }
+    if ( type === "opposition" ) {
+        if ( template.document.flags.pf2e?.origin?.traits.includes("auditory") && !template.document.flags.pf2e?.origin?.traits.includes("visual") ) {
+            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "opposition" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
+        }
+        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
+            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "opposition" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"}) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
+        }
+        
+        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && !template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
+            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "opposition" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"})).map( i => i.id );
+        }
+        else {
+            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "opposition" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["move"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"move",mode:"any"})).map( i => i.id );
+        }
+    }
+    if ( type === "party" ) {
+        if ( template.document.flags.pf2e?.origin?.traits.includes("auditory") && !template.document.flags.pf2e?.origin?.traits.includes("visual") ) {
+            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
+        }
+        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
+            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"}) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
+        }
+        
+        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && !template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
+            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"})).map( i => i.id );
+        }
+        else {
+            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["move"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"move",mode:"any"})).map( i => i.id );
+        }
+    }
+    if ( type === "!party" ) {
+        if ( template.document.flags.pf2e?.origin?.traits.includes("auditory") && !template.document.flags.pf2e?.origin?.traits.includes("visual") ) {
+            ids = canvas.tokens.placeables.filter( c => c.actor.alliance !== "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
+        }
+        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
+            ids = canvas.tokens.placeables.filter( c => c.actor.alliance !== "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"}) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
+        }
+        
+        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && !template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
+            ids = canvas.tokens.placeables.filter( c => c.actor.alliance !== "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"})).map( i => i.id );
+        }
+        else {
+            ids = canvas.tokens.placeables.filter( c => c.actor.alliance !== "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["move"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"move",mode:"any"})).map( i => i.id );
+        }
+    }
+    return ids;
+}
