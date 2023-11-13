@@ -1,6 +1,6 @@
 /*
 Simple Wand/Scroll Generator
-Input Type, Level, Quantity, Rarity, Output Type, and Mystification.
+Input Type, Level, Tradition, Quantity, Rarity, Output Type, and Mystification.
 This will also create useable Specialty Wands for:
 * Wand of Continuation
 * Wand of LegerDemain
@@ -101,9 +101,20 @@ async function WSGenerator() {
                     </select></td>
                 </tr>
                 <tr>
-                    <th style="text-align:center">Spell Level (Scrolls 0-10, Wands 0-9):</th>
+                    <th style="text-align:center">Spell Level:</th>
                     <td>
                         <input style="text-align:center" type="number" id="level" value=1 />
+                    </td>
+                </tr>
+                <tr>
+                    <th style="text-align:center">Tradition:</th>
+                    <td>
+                        <select id="trad">
+                            <option value="random">Random</option>
+                            <option value="arcane">Arcane</option>
+                            <option value="divine">Divine</option>
+                            <option value="occult">Occult</option>
+                            <option value="primal">Primal</option>
                     </td>
                 </tr>
                 <tr>
@@ -138,24 +149,25 @@ async function WSGenerator() {
                 label: "Ok",
                 callback: (html) => { 
                     WSGenerator();
-                    return [ html[0].querySelector("#type").value, html[0].querySelector("#level").valueAsNumber, html[0].querySelector("#quantity").valueAsNumber, html[0].querySelector("#rarity").value, html[0].querySelector("#outtype").value, html[0].querySelector("#mystify").checked ] },
+                    return [ html[0].querySelector("#type").value, html[0].querySelector("#level").valueAsNumber, html[0].querySelector("#quantity").valueAsNumber, html[0].querySelector("#rarity").value, html[0].querySelector("#outtype").value, html[0].querySelector("#mystify").checked,  html[0].querySelector("#trad").value ] },
             },
             close: {
                 label: "Close",
             }
         },
-        close: () => {},
+        close: () => { return "close" },
         default: "ok",
-    });
+    },{width:"auto"});
+
     if (picks === "close") { return }
     if ( picks[1] > 10 ) { return ui.notifications.info("There are no spells above level 10") }
     if ( picks[0] === "cont" && picks[1] > 8 ) { return ui.notifications.info ("There are no wands of continuation for spells above level 8")}
     if ( picks[0] !== "scroll" && picks[1] > 9 ) { return ui.notifications.info("There are no wands for spells above level 9") }
-    if (picks[1] === NaN || picks[2] === NaN || picks[1] < 1 || picks[2] < 1) { return ui.notifications.warn("Level must be a value between 1 and 10 and Quantity must be a value greater than 1!")}
+    if ( picks[1] === NaN || picks[2] === NaN || picks[1] < 1 || picks[2] < 1) { return ui.notifications.warn("Level must be a value between 1 and 10 and Quantity must be a value greater than 1!")}
 
     const quantity = new Array.fromRange(picks[2]);
     let spells = [];
-    const compendiums = ["pf2e.spells-srd","pf2e-expansion-pack.Expansion-Spells","pf2e-wayfinder.wayfinder-spells"];
+    const compendiums = ["pf2e.spells-srd","pf2e-expansion-pack.Expansion-Spells"];
     const aCSpells = game.packs.filter(c => compendiums.includes(c.collection));
     for (const s of aCSpells) {
         const index = (await s.getIndex({fields: ["system.level.value","system.slug","system.traits","system.category","uuid","system.area","system.duration","system.range","system.time"]})).filter(f => !f.system.traits.value.includes("cantrip") && f.system.category.value !== "ritual" && f.system.category.value !== "focus" && f.system.level.value === picks[1] );
@@ -163,8 +175,11 @@ async function WSGenerator() {
             x.compendium = s.collection;
             spells.push(x);
         });
-        if (picks[3] !== "any") { spells = spells.filter(r => r.system.traits.rarity === picks[3]) }
+        if ( picks[3] !== "any" ) { spells = spells.filter(r => r.system.traits.rarity === picks[3]) }
+        if ( picks[6] !== "random" ) { spells = spells.filter(r => r.system.traditions?.value.includes(picks[6])) }
     }
+
+    console.log(spells);
 
     if ( spells.length < 1 ) { return ui.notifications.info(`There are no ${picks[3]} spells at level ${picks[1]}`)}
 
