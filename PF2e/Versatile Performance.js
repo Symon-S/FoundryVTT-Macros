@@ -23,6 +23,8 @@ const select = await Dialog.prompt({
     content: myContent,
         callback: async(html) => {
           return html.find('#exampleSelect').val();
-    }
+    },
+    rejectClose: false,
 });
+if ( select === null ) { return }
 game.pf2e.actions[select]({skill:"performance"});
