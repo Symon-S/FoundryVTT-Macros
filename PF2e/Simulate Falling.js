@@ -17,6 +17,7 @@ const height = await Dialog.wait({
             label: "Cancel",
         }
     },
+    close: () => { return "cancel" },
     default: "ok",
 },{width:300});
 
