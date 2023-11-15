@@ -11,10 +11,7 @@ const hlId = template.highlightId;
 const tx = template.x;
 const ty = template.y;
 const coords = [...canvas.grid.getHighlightLayer(hlId).positions];
-let col = "move";
-if ( template.document.flags.pf2e?.origin?.traits.includes("light") && !template.document.flags.pf2e?.origin?.traits.includes("visual") ) { col = "light" }
-if ( template.document.flags.pf2e?.origin?.traits.includes("visual") ) { col = "sight" }
-if ( template.document.flags.pf2e?.origin?.traits.includes("auditory") ) { col = "sound" }
+
 const toks = await Dialog.wait({
     title:"Tokens to select:",
     buttons: {
