@@ -35,7 +35,7 @@ async function Eldritch_shot()
       for (const active of level.active) {
         const index = i++;
         if(active === null) { continue; }
-        let spell = active.spell;
+        const spell = active.spell;
         if(!spell.system.traits.value.includes("attack") || spell === null) { continue; }
         const castLevel = active.castLevel ?? (await spell.getChatData()).castLevel;
         const {isAttack, isSave, description, save, slug, traits, formula} = await spell.getChatData({},{castLevel});
