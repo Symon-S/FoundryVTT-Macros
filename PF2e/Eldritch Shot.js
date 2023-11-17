@@ -34,7 +34,6 @@ async function Eldritch_shot()
       let i = 0;
       for (const active of level.active) {
         const index = i++;
-        console.log(active,index);
         if(active === null) { continue; }
         let spell = active.spell;
         if(!spell.system.traits.value.includes("attack") || spell === null) { continue; }
@@ -83,7 +82,6 @@ async function Eldritch_shot()
         	
   /* Run dialog and alot data */
   const spell_choice = await quickDialog({data : es_data, title : `Eldritch Shot`});
-  console.log(spell_choice);
 
   let last;
   if (spell_choice[2]) {
@@ -97,7 +95,7 @@ async function Eldritch_shot()
   const strike = token.actor.system.actions.find(a => a.type === 'strike' && a.label === spell_choice[1]);
   const spc = last ?? spells.find(sp => sp.name === spell_choice[0]);
   const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);
-  console.log(spc,spells);
+
   // Check for spell variants
   if(spc.spell.hasVariants && spc.isAttack){
     let spell_variants;
