@@ -9,6 +9,8 @@ This macro was modified slightly by Syven to include jb2a's animations.
 Further modified by MrVauxs to be usable with and without animations.
 
 And again by MrVauxs to include PF2e Target Damage compatibility.
+
+Modified once again by Maximus to add compatibility with Unleash Psyche
 */
 
 if (!token) { return ui.notifications.warn("You must have a token selected") }
@@ -121,7 +123,23 @@ let expend = true;
 let targetNum = 0;
 for (const a of fmm) {
 	if (a.num === 0 || a.num === undefined) { continue; }
-	let dam = token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery') ? `(${a.num}d4 + ${a.num} + ${mmch.level})[force]` : `(${a.num}d4 + ${a.num})[force]`;
+
+	let dam;
+	
+	if(token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery')) {
+
+		 dam = `(${a.num}d4 + ${a.num} + ${mmch.level})[force]`;
+
+	} else if(token.actor.itemTypes.effect.some(ef => ef.slug === "effect-unleash-psyche")) {
+
+		 dam = `(${a.num}d4 + ${a.num} + ${2*(mmch.level)})[force]`;
+
+	} else {
+
+		 dam = `(${a.num}d4 + ${a.num})[force]`;
+
+	}
+	
 	const droll = new DamageRoll(dam);
 	droll.toMessage(
 		{
