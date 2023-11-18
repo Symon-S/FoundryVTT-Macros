@@ -33,14 +33,48 @@ if (entry === undefined) {
 }
 
 const spells = [];
-entry.spells.contents.forEach( sp => {
-  const exceptions = ['magic-missile','force-fang','heal'];
-  if (!sp.system.traits.value.includes("attack") && !token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike')) { return; }
-  if (sp.system.spellType.value === 'utility' || sp.system.spellType.value === 'heal') { 
-    if (!exceptions.includes(sp.slug)) { return; }
-  }
-  spells.push(sp);
-});
+for (const spell of entry.spells.contents) {
+    const blacklist = [
+    "celestial-accord",
+    "shattering-gem",
+    "entangle-fate",
+    "behold-the-weave",
+    "compel-true-name",
+    "lift-natures-caul",
+    "foul-miasma",
+    "invoke-the-harrow",
+    "rewrite-memory",
+    "subconscious-suggestion",
+    "excise-lexicon",
+    "enthrall",
+    "mind-reading",
+    "mirecloak",
+    "mask-of-terror",
+    "hallucination",
+    "hyperfocus",
+    "pact broker",
+    "death-knell",
+    "sudden-recollection",
+    "favorable-review",
+    "litany-of-self-interest",
+    "suggestion",
+    "command",
+    "déjà-vu",
+    "charming-touch",
+    "charm",
+    "possession"
+    ];
+    const exceptions = ['force-barrage','force-fang'];
+    const ess = token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike')
+    if (!spell.traits.has("attack") && !ess) { return; }
+    if (!spell.traits.has('attack') && ess && !exceptions.includes(spell)) {
+        const isSave = (await spell.getChatData()).isSave;
+        if (blacklist.includes(spell.slug) || !isSave || !["1", "2", "2 or 3", "1 to 3"].includes(spell.system.time?.value)) { continue; }
+        if (!spell.system.target.value.includes("creature") && spell.system.area?.type === "emanation") { continue; }
+        if (spell.system.target.value.includes("willing")) { continue; }
+    }
+  spells.push(spell);
+};
 
 
 if (spells.some(s => s.flags.pf2e.standbySpell === true)) {
