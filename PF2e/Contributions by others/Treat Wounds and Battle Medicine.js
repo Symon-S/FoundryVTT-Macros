@@ -636,18 +636,18 @@ const renderDialogContent = ({
  hasBattleMedicsBatonHeld,
 }) => `
  <div>
-   Attempt to heal the target by 2d8 hp.<br>You have to hold healer's tools, or you are wearing them and have a hand free!<br>
+   Attempt to heal the target by 2d8 hp.<br>You have to hold healer's toolkit, or you are wearing them and have a hand free!<br>
    <small>Hover the options for more information.</small>
  </div>
  <hr/>
  ${
    !hasHealersTools 
-     ? `<b>You don't have healer's tools on your character!</b>
+     ? `<b>You don't have healer's toolkit on your character!</b>
        ${
          checkItemTypeFeat('built-in-tools')
            ? `<form>
              <div class="form-group">
-               <label title="Are you wielding, wearing, or adjacent to your innovation?">Is healer's tools one of your Built-In Tools?</label>
+               <label title="Are you wielding, wearing, or adjacent to your innovation?">Is healer's toolkit one of your Built-In Tools?</label>
                <input type="checkbox" id="useBuiltInTools" name="useBuiltInTools" checked></input>
              </div>
            </form>`
@@ -655,7 +655,7 @@ const renderDialogContent = ({
        }
        <form>
          <div class="form-group">
-          <label title="Healing Plaster is a cantrip which can can replace healer's tools for Treat Wounds.">Are you using Healing Plaster? <small>(only for Treat wounds)</small></label>
+          <label title="Healing Plaster is a cantrip which can can replace healer's toolkit for Treat Wounds.">Are you using Healing Plaster? <small>(only for Treat wounds)</small></label>
            <input type="checkbox" id="useHealingPlaster" name="useHealingPlaster"></input>
          </div>
        </form>`
@@ -789,7 +789,7 @@ const renderDialogContent = ({
  }
  ${
    !hasHealersToolsHeld
-     ? `<b>Note: To gain the bonus of Healer's Tools (if any), you have to set the Healer's Tools to be held with both hands, due to how the item is implemented in the pf2e core system.</b>`
+     ? `<b>Note: To gain the bonus of Healer's toolkit (if any), you have to set the Healer's toolkit to be WORN, due to how the item is implemented in the pf2e core system.</b>`
      : ``
  }
  </form>
@@ -830,11 +830,11 @@ if (canvas.tokens.controlled.length !== 1){
     checkItemTypeFeat('assurance-arcana'))) {
      bmtw_skill = token.actor.skills.arcana;
    }
-   const hasHealersTools = checkItemPresent('healer-s-tools') || checkItemPresent('healers-tools') 
-                           || checkItemPresent('healers-tools-expanded') || checkItemPresent('violet-ray')
+   const hasHealersTools = checkItemPresent('healer-s-toolkit') || checkItemPresent('healers-toolkit') 
+                           || checkItemPresent('healers-toolkit-expanded') || checkItemPresent('violet-ray')
                            || checkItemPresent('marvelous-medicines') || checkItemPresent('marvelous-medicines-greater');
-   const hasHealersToolsHeld = !hasHealersTools || checkItemPresent('healer-s-tools', 2) || checkItemPresent('healers-tools', 2)
-                           || checkItemPresent('healers-tools-expanded', 2) || checkItemPresent('violet-ray', 2)
+   const hasHealersToolsHeld = !hasHealersTools || checkItemPresent('healer-s-toolkit', 0) || checkItemPresent('healers-toolkit', 0)
+                           || checkItemPresent('healers-toolkit-expanded', 0) || checkItemPresent('violet-ray', 2)
                            || checkItemPresent('marvelous-medicines', 2) || checkItemPresent('marvelous-medicines-greater', 2);
    const hasBattleMedicsBatonHeld = checkItemPresent('battle-medic-s-baton', 1) || checkItemPresent('battle-medics-baton', 1);
    const batonUsed = token.actor.itemTypes.effect.find(obj => {
