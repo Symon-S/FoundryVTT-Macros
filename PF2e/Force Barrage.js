@@ -1,7 +1,7 @@
 /*
-This version of the Magic Missile Macro Automatically expends slots(prepared), spell uses(spontaneous), charges(wands), and consumes scrolls.
-When Wand of Manifold Missile is used, it places an effect on the character that allows it to tell if you are using the lingering effect of those wands. This adds the option to terminate the effect from within the dialog box through a checkbox (nothing else happens), or select the effect and have it shoot Magic Missiles as per the wand's description.
-Do not make spellcasting entries for your wands or scrolls. If you would like to use that method, please use the original macro.
+This version of the Force Barrage Macro Automatically expends slots(prepared), spell uses(spontaneous), charges(wands), and consumes scrolls.
+When Wand of Shardstorm is used, it places an effect on the character that allows it to tell if you are using the lingering effect of those wands. This adds the option to terminate the effect from within the dialog box through a checkbox (nothing else happens), or select the effect and have it shoot a Force Barrage as per the wand's description.
+Do not make spellcasting entries for your wands or scrolls.
 For staves please use a spellcasting entry due to the nature of how staves work.
 The macro will not prompt for trick magic item due to DCs being variable. May change this in the future.
 
@@ -15,18 +15,18 @@ Modified once again by Maximus to add compatibility with Unleash Psyche
 
 if (!token) { return ui.notifications.warn("You must have a token selected") }
 
-const mani = ["wand-of-manifold-missiles-1st-level-spell", "wand-of-manifold-missiles-3rd-level-spell", "wand-of-manifold-missiles-5th-level-spell", "wand-of-manifold-missiles-7th-level-spell"]
-if (!token.actor.itemTypes.spell.some(s => s.slug === 'magic-missile') && !token.actor.itemTypes.consumable.some(s => s.system.spell?.system?.slug === 'magic-missile') && !token.actor.itemTypes.equipment.some(s => mani.includes(s.slug))) { 
-	return ui.notifications.error('You do not have Magic Missile') 
+const mani = ["wand-of-shardstorm-1st-rank-spell", "wand-of-shardstorm-3rd-rank-spell", "wand-of-shardstorm-5th-rank-spell", "wand-of-shardstorm-7th-rank-spell"]
+if (!token.actor.itemTypes.spell.some(s => s.slug === 'force-barrage') && !token.actor.itemTypes.consumable.some(s => s.system.spell?.system?.slug === 'force-barrage') && !token.actor.itemTypes.equipment.some(s => mani.includes(s.slug))) { 
+	return ui.notifications.error('You do not have Force Barrage') 
 }
 if (game.user.targets.ids === undefined || game.user.targets.ids.length === 0) { return ui.notifications.error('At least 1 target is required'); }
 
 const DamageRoll = CONFIG.Dice.rolls.find(((R) => R.name === "DamageRoll"));
-const mmE = token.actor.itemTypes.spellcastingEntry.filter(m => m.spells?.some(x => x.slug === 'magic-missile'));
+const mmE = token.actor.itemTypes.spellcastingEntry.filter(m => m.spells?.some(x => x.slug === 'force-barrage'));
 
 const mmIds = [];
 for (const id of token.actor.itemTypes.spell) {
-	if (id.slug === 'magic-missile') { mmIds.push(id.id); }
+	if (id.slug === 'force-barrage') { mmIds.push(id.id); }
 };
 
 const mm = [];
@@ -39,7 +39,7 @@ for (const e of mmE) {
 		for (const spa of sp.active) {
 			const index = i++
 			if (spa === null) { continue; }
-			if (spa.spell.slug !== "magic-missile") { continue; }
+			if (spa.spell.slug !== "force-barrage") { continue; }
 			if (spa.expended) { continue; }
 			if (spellData.isFocusPool && !spa.spell.isCantrip && token.actor.system.resources.focus.value === 0) { continue; }
 			let level = `lv${sp.level}`
@@ -52,7 +52,7 @@ for (const e of mmE) {
 
 for (const s of token.actor.itemTypes.consumable) {
 	if (!s.system.traits.value.includes("wand") && !s.system.traits.value.includes("scroll")) { continue; }
-	if (s.system.spell?.system?.slug === 'magic-missile') {
+	if (s.system.spell?.system?.slug === 'force-barrage') {
 		if (s.system.traits.value.includes("wand") && s.system.charges.value > 0) {
 			mm.push({ name: `${s.name}`, level: s.system.spell.system.location.heightenedLevel, prepared: false, entryId: s.id, wand: true, scroll: false, spont: false, link: s.link})
 		}
@@ -63,16 +63,16 @@ for (const s of token.actor.itemTypes.consumable) {
 };
 for (const s of token.actor.itemTypes.equipment) {
 	if (mani.includes(s.slug)) {
-		mm.push({ name: `${s.name}`, level: parseInt(s.slug.substr(26, 1)), prepared: false, entryId: s.slug, wand: true, scroll: false, spont: false, link: s.link });
+		mm.push({ name: `${s.name}`, level: parseInt(s.slug.substr(19, 1)), prepared: false, entryId: s.slug, wand: true, scroll: false, spont: false, link: s.link });
 	}
 };
 
 if (token.actor.itemTypes.effect.some(e => e.slug === "maniEF")) {
 	const effect = token.actor.itemTypes.effect.find(e => e.slug === "maniEF");
-	mm.push({ name: `${effect.name}`, level: effect.system.level.value, prepared: false, entryId: null, wand: false, scroll: false, spont: false, link: effect.link });
+	mm.unshift({ name: `${effect.name}`, level: effect.system.level.value, prepared: false, entryId: null, wand: false, scroll: false, spont: false, link: effect.link });
 }
 
-if (mm.length === 0) { return ui.notifications.warn("You currently have no available means of casting Magic Missile"); }
+if (mm.length === 0) { return ui.notifications.warn("You currently have no available means of casting Force Barrage"); }
 
 const mmdd = [{ label: 'Which spell?', type: 'select', options: mm.map(n => n.name) },
 { label: 'Number of Actions?', type: 'select', options: [3, 2, 1] }
@@ -80,7 +80,7 @@ const mmdd = [{ label: 'Which spell?', type: 'select', options: mm.map(n => n.na
 
 if (token.actor.itemTypes.effect.some(e => e.slug === "maniEF")) { mmdd.push({ label: `Remove Effect Instead?`, type: "checkbox" }) }
 
-const mmdiag = await quickDialog({ data: mmdd, title: `Magic Missile` });
+const mmdiag = await quickDialog({ data: mmdd, title: `Force Barrage` });
 
 if (mmdiag[2] === true) {
 	const effect = token.actor.itemTypes.effect.find(e => e.slug === "maniEF")
@@ -104,7 +104,7 @@ for (const t of targets) {
 
 if (targetIds.length === 1) { tdata[0].options = [multi]; }
 
-const tdiag = await quickDialog({ data: tdata, title: `Distribute ${multi} Missiles` });
+const tdiag = await quickDialog({ data: tdata, title: `Distribute ${multi} Barrages` });
 
 let tot = 0;
 let i;
@@ -143,7 +143,7 @@ for (const a of fmm) {
 	const droll = new DamageRoll(dam);
 	droll.toMessage(
 		{
-			flavor: `<strong>${a.num} Magic Missile(s) targeting ${a.name}</strong><br>${mmch.link}`,
+			flavor: `<strong>${a.num} Force Barrage(s) targeting ${a.name}</strong><br>${mmch.link}`,
 			speaker: ChatMessage.getSpeaker(),
 			flags: {
 				"pf2e-target-damage": {
@@ -198,44 +198,22 @@ if (mmch.wand) {
 				"img": "systems/pf2e/icons/equipment/wands/specialty-wands/wand-of-manifold-missiles.webp",
 				"system": {
 					"description": {
-						"value": `<p><strong>Requirements</strong> You used Wand of Manifold Missiles to cast Magic Missile.</p>\n<hr />\n<p>After you cast the spell, an additional missile or missiles are released from the wand at the start of each of your turns, as though you cast the 1-action version of magic missile. Choose targets each time. This lasts for 1 minute, until you are no longer wielding the wand, or until you try to activate the wand again.</p>`
+						"value": `<p><strong>Requirements</strong> You used Wand of Shardstorm to cast Force Barrage.</p>\n<hr />\n<p>After you cast the spell, an additional barrage or barrages are released from the wand at the start of each of your turns, as though you cast the 1-action version of force barrage. Choose targets each time. This lasts for 1 minute, until you are no longer wielding the wand, or until you try to activate the wand again.</p>`
 					},
-					"source": {
-						"value": ""
-					},
-					"traits": {
-						"value": [],
-						"rarity": {
-							"value": "common"
-						},
-						"custom": ""
-					},
-					"rules": [],
 					"slug": "maniEF",
-					"schema": {
-						"version": 0.697,
-						"lastMigration": null
-					},
 					"level": {
 						"value": mmch.level
 					},
 					"duration": {
-						"value": -1,
-						"unit": "unlimited",
+						"value": 1,
+						"unit": "minutes",
 						"sustained": false,
-						"expiry": "turn-start"
+						"expiry":"turn-start"
 					},
-					"start": {
-						"value": 0,
-						"initiative": null
-					},
-					"target": null,
 					"tokenIcon": {
 						"show": true
 					}
 				},
-				"effects": [],
-				"sort": 0
 			};
 			await actor.createEmbeddedDocuments('Item', [maniEF]);
 		}
@@ -273,7 +251,7 @@ async function quickDialog({ data, title = `Quick Dialog` } = {}) {
 			} else if (type.toLowerCase() === `checkbox`) {
 				return `<tr><th style="width:50%"><label>${label}</label></th><td style="width:50%"><input type="${type}" id="${i}qd" ${options || ``}/></td></tr>`;
 			} else {
-				return `<tr><th style="width:50%"><label>${label}</label></th><td style="width:50%"><input type="${type}" id="${i}qd" value="${options instanceof Array ? options[0] : options}"/></td></tr>`;
+				return `<tr><th style="width:90%"><label>${label}</label></th><td style="width:10%"><input type="${type}" style="text-align:center" autofocus id="${i}qd" value="${options instanceof Array ? options[0] : options}"/></td></tr>`;
 			}
 		}).join(``)}
 			</table>`;
@@ -306,5 +284,5 @@ async function quickDialog({ data, title = `Quick Dialog` } = {}) {
 			default: 'Ok'
 		})._render(true);
 		document.getElementById("0qd").focus();
-	});
+	},{width:"auto"});
 }
