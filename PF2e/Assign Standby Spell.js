@@ -22,7 +22,7 @@ let entry = token.actor.itemTypes.spellcastingEntry.find(sce => sce.flags.pf2e.m
 if (entry === undefined) {
   if (token.actor.itemTypes.spellcastingEntry.filter(sce => sce.ability === 'int' && sce.isPrepared && sce.tradition === 'arcane').length > 1) {
     const options = token.actor.itemTypes.spellcastingEntry.filter(sce => sce.ability === 'int' && sce.isPrepared && sce.tradition === 'arcane').map(n => n.name);
-    const choice1 = await choose(options, prompt = `Choose your Magus Spellcasting entry:`);
+    const choice1 = await choose(options, prompt = `Choose your Magus Spellcasting entry : `);
     entry = token.actor.itemTypes.spellcastingEntry.find(n => n.name === choice1);
     await entry.setFlag("pf2e","magusSE",true);
   }
@@ -82,7 +82,7 @@ if (spells.some(s => s.flags.pf2e.standbySpell === true)) {
   options.sort();
   options.push(`Clear Standby Spell`);
   const flagged = spells.find(s => s.flags.pf2e.standbySpell === true);
-  const choice3 = await choose( options, prompt = `Replace your Standby Spell (${flagged.name}):`);
+  const choice3 = await choose( options, prompt = `Replace your Standby Spell (${flagged.name}) : `);
   if (choice3 === `Clear Standby Spell`) {
     const flagged1 = token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell === true);
     await flagged1.unsetFlag("pf2e","standbySpell");
@@ -97,7 +97,7 @@ if (spells.some(s => s.flags.pf2e.standbySpell === true)) {
 else {
   const options = spells.filter(c => !c.isCantrip).map(n => n.name);
   options.sort();
-  const choice2 = await choose( options, prompt = `Choose your Standby Spell:`);
+  const choice2 = await choose( options, prompt = `Choose your Standby Spell : `);
   const spell = spells.find(f => f.name === choice2);
   await spell.setFlag("pf2e","standbySpell",true);
 }
