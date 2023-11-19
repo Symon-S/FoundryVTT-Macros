@@ -170,7 +170,7 @@ async function WSGenerator() {
     const compendiums = ["pf2e.spells-srd","pf2e-expansion-pack.Expansion-Spells"];
     const aCSpells = game.packs.filter(c => compendiums.includes(c.collection));
     for (const s of aCSpells) {
-        const index = (await s.getIndex({fields: ["system.level.value","system.slug","system.traits","system.ritual","uuid","system.area","system.duration","system.range","system.time"]})).filter(f => !f.system.traits.value.includes("cantrip") && f.system.ritual === null && !f.system.traits.value.includes("focus") && f.system.level.value === picks[1] );
+        const index = (await s.getIndex({fields: ["system.level.value","system.slug","system.traits","system.ritual","uuid","system.area","system.duration","system.range","system.time"]})).filter(f => !f.system.traits.value.includes("cantrip") && !(f.system.ritual ??= false) && !f.system.traits.value.includes("focus") && f.system.level.value === picks[1] );
         index.forEach( x => {
             x.compendium = s.collection;
             spells.push(x);
