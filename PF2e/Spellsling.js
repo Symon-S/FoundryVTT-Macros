@@ -76,9 +76,17 @@ async function Spellsling() {
   /* Run dialog and alot data */
   const spell_choice = await quickDialog({ data: es_data, title: `Spellsling` });
 
+  let last;
+  if (spell_choice[3]) {
+    if (actor.system.resources.heroPoints.value === 0) { return ui.notifications.warn("You have no hero points left")}
+    last = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined ).getFlag("world","macro.spellUsed");
+    last.spell = actor.itemTypes.spell.find(s => s.slug === last.slug);
+    if (last === undefined) { return ui.notifications.warn("There are no previously cast spells") }
+  }
+
   /* Get the strike actions and roll strike */
   const strike = token.actor.system.actions.find(a => a.type === 'strike' && a.label === spell_choice[1]);
-  const spc = spells.find(sp => sp.name === spell_choice[0]);
+  const spc = last ?? spells.find(sp => sp.name === spell_choice[0]);
   const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);
 
   // Check for spell variants
