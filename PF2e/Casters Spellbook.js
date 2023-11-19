@@ -3,8 +3,8 @@ Welcome to the Caster's Spellbook.
 This macro was designed to facilitate casting spells from a
 character with a large list of spells, like a dual class double caster
 build, or a caster with multiple spellcasting entries.
-This macro will sort by the spellcasting entries, available spell levels,
-and finally the spells you have at those levels
+This macro will sort by the spellcasting entries, available spell ranks,
+and finally the spells you have at those ranks
 Left clicking on the spell expends the slot/uses/focus point and
 posts the spell to the Chat Log.
 Right clicking on the spell pops open the spell edit sheet same as if you had edited
@@ -58,7 +58,7 @@ const script = async function Spells(id){
 				}
 				buttons[value] = {label: index, callback: async () => { await Filter(); await Spell(); }}
 			});
-			await Diag({title: "Spell Level?", buttons});
+			await Diag({title: "Spell Rank?", buttons});
 		}
 
 		async function Spell() {
