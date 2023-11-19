@@ -11,43 +11,7 @@ Added the ability to add Timed Effects that grant conditions for a specific amou
 Added the ability to clear all conditions on selected tokens.
 */
 
-const condition_list = [
-	"blinded",
-	"broken",
-	"clumsy",
-	"concealed",
-	"confused",
-	"controlled",
-	"dazzled",
-	"deafened",
-	"doomed",
-	"drained",
-	"dying",
-	"encumbered",
-	"enfeebled",
-	"fascinated",
-	"fatigued",
-	"off-guard",
-	"fleeing",
-	"frightened",
-	"grabbed",
-	"hidden",
-	"immobilized",
-	"invisible",
-	"paralyzed",
-	"persistent-damage",
-	"petrified",
-	"prone",
-	"quickened",
-	"restrained",
-	"sickened",
-	"slowed",
-	"stunned",
-	"stupefied",
-	"unconscious",
-	"wounded",
-  "undetected"
-];
+const condition_list = CONFIG.PF2E.conditionTypes;
 
 const wV = [
 	"clumsy",
@@ -144,58 +108,24 @@ const script5 = async function CConAll() {
 }
 
 const script6 = async function TCon() {
-  const con_list = [
-	"Blinded",
-	"Broken",
-	"Clumsy",
-	"Concealed",
-	"Confused",
-	"Controlled",
-	"Dazzled",
-	"Deafened",
-	"Doomed",
-	"Drained",
-	"Encumbered",
-	"Enfeebled",
-	"Fascinated",
-	"Fatigued",
-	"Fleeing",
-	"Frightened",
-	"Grabbed",
-	"Hidden",
-	"Immobilized",
-	"Invisible",
-  "Off-guard",
-	"Paralyzed",
-	"Petrified",
-	"Prone",
-	"Quickened",
-	"Restrained",
-	"Sickened",
-	"Slowed",
-	"Stunned",
-	"Stupefied",
-	"Unconscious",
-  "Undetected"
-  ];
-
+  const con_list = CONFIG.PF2E.conditionTypes;
   const w_V = [
-	"Clumsy",
-	"Doomed",
-	"Drained",
-	"Enfeebled",
-	"Frightened",
-	"Sickened",
-	"Slowed",
-	"Stunned",
-	"Stupefied",
+	"clumsy",
+	"doomed",
+	"drained",
+	"enfeebled",
+	"frightened",
+	"sickened",
+	"slowed",
+	"stunned",
+	"stupefied",
   ];
 
   async function Xtml(html) { return [html.find("#condition")[0].value, html.find("#conval")[0].valueAsNumber, html.find("#time")[0].valueAsNumber, html.find("#times")[0].value, html.find("#check")[0].checked] }
 
   let conditions;
-  for ( const l of con_list ) {
-    conditions += `<option>${l}</option>`;
+  for ( const l in con_list ) {
+    conditions += `<option value=${l}>${game.i18n.localize(con_list[l])}</option>`;
   }
   const tcon = await Dialog.prompt({
       title: "Timed condition to place on tokens",
@@ -212,15 +142,16 @@ const script6 = async function TCon() {
                   </tr>
                 </table></div>`,
       callback: async html => await Xtml(html),
+      rejectClose: true,
   });
-  let name = `Efffect: ${tcon[0]} for ${tcon[2]} ${tcon[3]}`;
+  let name = `Efffect: ${game.i18n.localize(con_list[tcon[0]])} for ${tcon[2]} ${tcon[3]}`;
   const pack = game.packs.get("pf2e.conditionitems");
-  const index = await pack.getIndex();
-  const uuid = index.find(n => n.name === tcon[0]).uuid;
+  const index = await pack.getIndex({fields:["system.slug"]});
+  const uuid = index.find(n => n.system.slug === tcon[0]).uuid;
   
   let alterations;
   if ( w_V.includes(tcon[0]) ) {
-    name = `Efffect: ${tcon[0]} ${tcon[1]} for ${tcon[2]} ${tcon[3]}`;
+    name = `Efffect: ${game.i18n.localize(con_list[tcon[0]])} for ${tcon[2]} ${tcon[3]}`;
     alterations = [
     {
       "mode": "override",
@@ -233,7 +164,7 @@ const script6 = async function TCon() {
   const effect = {
     type: 'effect',
     name,
-    img: `systems/pf2e/icons/conditions/${tcon[0].toLowerCase()}.webp`,
+    img: `systems/pf2e/icons/conditions/${tcon[0]}.webp`,
     system: {
       tokenIcon: {
           show: false
@@ -322,16 +253,16 @@ let content = `
 
 </style><script>${script1}${script2}${script3}${script4}${script5}${script6}</script><div class="cond-cont">`
 
-condition_list.forEach((c,i) => {
+Object.keys(condition_list).forEach((c,i) => {
     if (wV.includes(c)) {
-     content += `<div class="cond-butt-set"><button name="button${i}" class="cond-buttons ${i}" type="button" onclick="CToggle('${c}')">${c[0].toUpperCase() + c.substring(1)}</button><button name="button${i}+" class="cond-buttons cond-buttons-small ${i}+" type="button" onclick="ICon('${c}')">+</button><button name="button${i}-" class="cond-buttons cond-buttons-small ${i}-" type="button" onclick="DCon('${c}')">-</button></div> `;
+     content += `<div class="cond-butt-set"><button name="button${i}" class="cond-buttons ${i}" type="button" onclick="CToggle('${c}')">${game.i18n.localize(condition_list[c])}</button><button name="button${i}+" class="cond-buttons cond-buttons-small ${i}+" type="button" onclick="ICon('${c}')">+</button><button name="button${i}-" class="cond-buttons cond-buttons-small ${i}-" type="button" onclick="DCon('${c}')">-</button></div> `;
     }
     else {
      if ( c === "persistent-damage" ) { 
 	  content += `<button name="button${i}" class="cond-buttons-pd" type="button" onclick="game.pf2e.gm.editPersistent({actors:canvas.tokens.controlled?.map((t) => t.actor)})">Persistent Damage</button> `
      }
      else{
-       content += `<button name="button${i}" class="cond-buttons ${i}" type="button" onclick="CToggle('${c}')">${c[0].toUpperCase() + c.substring(1)}</button> `;
+       content += `<button name="button${i}" class="cond-buttons ${i}" type="button" onclick="CToggle('${c}')">${game.i18n.localize(condition_list[c])}</button> `;
     }
   }
 });
