@@ -87,7 +87,7 @@ async function Eldritch_shot()
   if (spell_choice[2]) {
     if (actor.system.resources.heroPoints.value === 0) { return ui.notifications.warn("You have no hero points left")}
     last = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined ).getFlag("world","macro.spellUsed");
-    last.spell = spells.find(sp => sp.name === last.name).spell;
+    last.spell = actor.itemTypes.spell.find(s => s.slug === last.slug);
     if (last === undefined) { return ui.notifications.warn("There are no previously cast spells") }
   }
 		
