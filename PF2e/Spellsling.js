@@ -112,7 +112,7 @@ async function Spellsling() {
 
     // Build dialog data
     const ovr_data = [
-      { label: `Choose a Spell Variant:`, type: `select`, options: spell_variants.map(p => p.name) }
+      { label: `Choose a Spell Variant : `, type: `select`, options: spell_variants.map(p => p.name) }
     ];
 
     // Query user for variant choice
