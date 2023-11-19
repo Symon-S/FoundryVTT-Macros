@@ -1,6 +1,6 @@
 /*
 To use this macro, you need to have the lingering composition feat on your character sheet.
-To use inspire heroics, you must have the inspire heroics feat on your character sheet.
+To use fortissimo composition, you must have the fortissimo composition feat on your character sheet.
 This macro requires Workbench module., the macro will automatically use the effects in the workbench compendium.
 */
 
@@ -17,37 +17,43 @@ let actionSlug = "lingering-composition";
 let actionName = "Lingering Composition";
 const options = token.actor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
       
-let cantrips = token.actor.itemTypes.spell.filter(s=> s.isFocusSpell === true && s.isCantrip === true && s.system.traits.value.includes('composition') && s.system.duration.value === '1 round');
+let cantrips = token.actor.itemTypes.spell.filter(s=> s.isFocusSpell === true && s.isCantrip === true && s.traits.has('composition') && s.system.duration.value === '1 round');
             
-let label;
-if (cantrips.find(f => f.slug === 'dirge-of-doom') !== undefined) { label = `Choose a Spell : <br>(Target all affected enemies for Dirge of Doom)` }
-else { label = `Choose a Spell : ` }
       
-let lc_data = [
-	{ label: label, type: `select`, options: cantrips.map(p=> p.name) },
-	{ label: `Custom DC : `, type: `number` }
+const lc_data = [
+	{ label: `Choose a Spell : `, type: `select`, options: cantrips.map(p=> p.name) },
+	{ label: `Custom DC : `, type: `number`}
 ];
       
-if (token.actor.itemTypes.feat.some(s => s.slug === 'inspire-heroics')) { lc_data.push( { label: `Inspire Heroics (Defense, Courage, and Song of Strength Only) : `, type: `checkbox` } ) }     
+if (token.actor.itemTypes.feat.some(s => s.slug === 'fortissimo-composition')) { lc_data.push( { label: `Fortissimo Composition (Rallying Anthem, Courageous Anthem, and Song of Strength Only) : `, type: `checkbox`, options: `style="margin:auto;display:block"` } ) }     
 
 const choice = await quickDialog({data: lc_data, title: `Lingering Composition`});
+const slug = `${choice[0].slugify()}`;
       
-const cast_spell = token.actor.itemTypes.spell.find(n => n.name === choice[0]);
-      
-let effectcom = game.packs.find(sp => sp.collection === "pf2e.spell-effects");
-      
-let effects = await effectcom.getDocuments();
-const effect = effects.some(e => e.name.includes(choice[0])) ? effects.find(e => e.name.includes(choice[0])) : "";
-let suc,cs;
-      
+const cast_spell = token.actor.itemTypes.spell.find(e => e.slug === slug);
+
+let cs,suc;
+const effectcom = game.packs.find(sp => sp.collection === "pf2e.spell-effects");  
+const effects = await effectcom.getIndex({fields:["system.slug"]});
+let effect = effects.some(e => e.system.slug.includes(slug)) ? effects.find(e => e.system.slug.includes(slug)) : "";
 if (choice[2]) {
-	if (choice[0] === 'Inspire Courage' || choice[0] === 'Inspire Defense' || choice[0] === 'Song of Strength') {  
-    	actionSlug = "inspire-heroics";
-    	actionName = "Inspire Heroics";
+	if (choice[0] === 'Courageous Anthem' || choice[0] === 'Rallying Anthem' || choice[0] === 'Song of Strength') {  
+    	actionSlug = "fortissimo-composition";
+    	actionName = "Fortissimo Composition";
 		options.push(`action:${actionSlug}`);
-    	cs = effects.find(e => e.name.includes(`${choice[0].substr(8)}, +3`));
-    	suc = effects.find(e => e.name.includes(`${choice[0].substr(8)}, +2`));
-		if(effect !== ''){
+		if (slug === "courageous-anthem") {
+			cs = "Compendium.pf2e.spell-effects.Item.VFereWC1agrwgzPL";
+			suc = "Compendium.pf2e.spell-effects.Item.kZ39XWJA3RBDTnqG";
+		if (slug === "rallying-anthem") {
+			cs = "Compendium.pf2e.spell-effects.Item.BKam63zT98iWMJH7";
+			suc = "Compendium.pf2e.spell-effects.Item.Chol7ExtoN2T36mP";
+		}
+		if (slug === "song-of-strength") {
+			cs = "Compendium.pf2e.spell-effects.Item.8XaSpienzVXLmcfp";
+			suc = "Compendium.pf2e.spell-effects.Item.Fjnm1l59KH5YJ7G9";
+		}
+		}
+		if (effect !== ''){
 			notes.push({"outcome":["success"], "selector":"performance", "text":`<p>${suc.link}</p>`});
     		notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p>${cs.link}</p>`});
     		notes.push({"outcome":["failure"], "selector":"performance", "text":`<p>${effect.link} You don't spend the Focus Point for casting the spell</p>`});
@@ -55,21 +61,7 @@ if (choice[2]) {
 		}
 	}
 	else { 
-		ui.notifications.warn('Inspire Heroics is only applicable to Inspire Courage, Inspire Defense, or Song of Strength'); return; 
-	}
-}
-
-if (effect !== undefined && (choice[2] === undefined || !choice[2])) {
-    const pack = game.packs.find(s => s.collection === "xdy-pf2e-workbench.asymonous-benefactor-effects");
-    const wbef = await pack.getDocuments();
-    suc = wbef.find( s => s.slug === effect.slug && s.system.duration.value === 3 );
-    cs = wbef.find( s => s.slug === effect.slug && s.system.duration.value === 4 );
-	options.push(`action:${actionSlug}`);
-	if(effect !== ''){
-		notes.push({"outcome":["success"], "selector":"performance", "text":`<p>${suc.link} lasts 3 rounds</p>`});
-    	notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p>${cs.link} lasts 4 rounds</p>`});
-    	notes.push({"outcome":["failure"], "selector":"performance", "text":`<p>${effect.link} lasts 1 round, but you don't spend the Focus Point for casting the spell</p>`});
-		notes.push({"outcome":["criticalFailure"], "selector":"performance", "text":`<p>${effect.link}</p>`});
+		ui.notifications.warn('Fortissimo Composition is only applicable to Inspire Courage, Rallying Anthem, or Song of Strength'); return; 
 	}
 }
       
@@ -79,7 +71,12 @@ let level;
 let levels = [];
 if (choice[0] === 'Dirge of Doom') {
   options.push(`secret`)
-  const ids = game.user.targets.ids;
+  const ids = [];
+  for ( t of canvas.tokens.placeables) {
+	  if (token.distanceTo(t) <= 60) {
+		  ids.push(t.id);
+	  }
+  }
   ids.forEach(id => {
     if (canvas.tokens.placeables.find((t) => t.id === id).actor.type === `npc`) { levels.push(canvas.tokens.placeables.find((t) => t.id === id).actor.level);}
 	})
@@ -108,7 +105,7 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 	return await new Promise(async (resolve) => {
 	  let content = `
 		<table style="width:100%">
-		${data.map(({type, label, options}, i)=> {
+		${data.map(({type, label, options, style}, i)=> {
 			if(type.toLowerCase() === `select`) {
 		  	return `<tr><th style="width:50%"><label>${label}</label></th><td style="width:50%"><select id="${i}qd">${options.map((e,i)=> `<option value="${e}">${e}</option>`).join(``)}</td></tr>`;
 			}
@@ -116,7 +113,7 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 		  	return `<tr><th style="width:50%"><label>${label}</label></th><td style="width:50%"><input type="${type}" id="${i}qd" ${options || ``}/></td></tr>`;
 			}
 			else{
-		  	return `<tr><th style="width:50%"><label>${label}</label></th><td style="width:50%"><input type="${type}" id="${i}qd" value="${options instanceof Array ? options[0] : options}"/></td></tr>`;
+		  	return `<tr><th style="width:50%"><label>${label}</label></th><td style="width:50%"><input type="${type}" style="margin:auto;display:block;width:15%;text-align:center" id="${i}qd" value="${options instanceof Array ? options[0] : options} ${style || ""}"/></td></tr>`;
 			}
 		}).join(``)}
 	  </table>`;
@@ -146,26 +143,28 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 				}}
 	    },
 		default: "Ok",
-	  })._render(true);
+	  },{width:"400"})._render(true);
 	  document.getElementById("0qd").focus();
 	});
 }
 
-let aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.Item.MRmGlGAFd3tSJioo")).toObject();
-if ( effect.slug === "spell-effect-inspire-defense" ) {
-	aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.Item.89T07EBAgn78RBbJ")).toObject();
+let aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.Item.KIPV1TiPCzlhuAzo")).toObject();
+if ( effect.slug === "spell-effect-rallying-anthem" ) {
+	aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.Item.tcnjhVxyRchqjt71")).toObject();
 }
-if (effect === "") {
+if (choice[0] === "Dirge of Doom") {
+  aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.Item.wOcAf3pf04cTM4Uk")).toObject();
+}
+if (effect === "" && choice[0] !== "Dirge of Doom") {
 	aura.system.rules[0] = {key: "Aura", radius: 60, slug:"is-aura-effect" }
 }
-else { aura.system.rules[0].effects[0].uuid = effect.uuid; }
+else if (choice[0] !== "Dirge of Doom") { aura.system.rules[0].effects[0].uuid = effect.uuid; }
 aura.img = cast_spell.img;
 aura.name = `Aura: ${actionName} (${choice[0]})`
 aura.slug = `aura-${actionSlug}`
-aura.system.duration.sustained = false;
 aura.system.level.value = Math.ceil(token.actor.level/2);
 if (cs !== undefined) {
-	aura.img = cs.img;
+	aura.img = "systems/pf2e/icons/spells/inspire-heroics.webp"
 }
 
 const roll = await game.pf2e.Check.roll(
@@ -176,7 +175,7 @@ const roll = await game.pf2e.Check.roll(
 
 if (roll.options.degreeOfSuccess === 3) {
 	if(choice[2] && effect !== undefined) {
-		aura.system.rules[0].effects[0].uuid = cs.uuid;
+		aura.system.rules[0].effects[0].uuid = cs;
 	}
 	else {
 		aura.system.duration.value = 4
@@ -184,7 +183,7 @@ if (roll.options.degreeOfSuccess === 3) {
 }
 if (roll.options.degreeOfSuccess === 2) {
 	if(choice[2] && effect !== undefined) {
-		aura.system.rules[0].effects[0].uuid = suc.uuid;
+		aura.system.rules[0].effects[0].uuid = suc;
 	}
 	else {
 		aura.system.duration.value = 3
