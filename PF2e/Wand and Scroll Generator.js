@@ -170,13 +170,13 @@ async function WSGenerator() {
     const compendiums = ["pf2e.spells-srd","pf2e-expansion-pack.Expansion-Spells"];
     const aCSpells = game.packs.filter(c => compendiums.includes(c.collection));
     for (const s of aCSpells) {
-        const index = (await s.getIndex({fields: ["system.level.value","system.slug","system.traits","system.category","uuid","system.area","system.duration","system.range","system.time"]})).filter(f => !f.system.traits.value.includes("cantrip") && f.system.category.value !== "ritual" && f.system.category.value !== "focus" && f.system.level.value === picks[1] );
+        const index = (await s.getIndex({fields: ["system.level.value","system.slug","system.traits","system.ritual","uuid","system.area","system.duration","system.range","system.time"]})).filter(f => !f.system.traits.value.includes("cantrip") && f.system.ritual === null && !f.system.traits.value.includes("focus") && f.system.level.value === picks[1] );
         index.forEach( x => {
             x.compendium = s.collection;
             spells.push(x);
         });
         if ( picks[3] !== "any" ) { spells = spells.filter(r => r.system.traits.rarity === picks[3]) }
-        if ( picks[6] !== "random" ) { spells = spells.filter(r => r.system.traditions?.value.includes(picks[6])) }
+        if ( picks[6] !== "random" ) { spells = spells.filter(r => r.system.traits.traditions.includes(picks[6])) }
     }
 
     if ( spells.length < 1 ) { return ui.notifications.info(`There are no ${picks[3]} spells at level ${picks[1]}`)}
@@ -276,12 +276,11 @@ async function WSGenerator() {
         if (!scroll) return null;
 
         spell.system.location.heightenedLevel = level;
-
         scroll.name = name;
         scroll.system.temporary = temp;
         scroll.system.spell = spell;
         scroll.system.traits.rarity = spell.system.traits.rarity;
-        scroll.system.traits.value.push(...spell.system.traditions.value);
+        scroll.system.traits.value = [...new Set(scroll.system.traits.value.concat(spell.system.traits.traditions).concat(spell.system.traits.value))];
             
         const sourceId = spell.flags.core?.sourceId;
         if (sourceId && sWUUID === undefined) scroll.system.description.value = `@Compendium[${compendium}.${id}]{${spell.name}}\n<hr />${scroll.system.description.value}`;
