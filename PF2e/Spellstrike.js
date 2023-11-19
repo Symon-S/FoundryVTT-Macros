@@ -167,15 +167,15 @@ async function Spellstrike() {
   const map_weap = weapons.map(p => p.label);
 
   /* Build dialog data */
-  let label = "Choose a Spell:"
+  let label = "Choose a Spell : "
   let title = "Spellstrike";
   if (standby) {
-    label = "Choose a Spell to Expend:";
+    label = "Choose a Spell to Expend : ";
     title = `Spellstrike Standby Spell ${token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).name}`;
   }
   let es_data = [
     { label, type: `select`, options: spells.filter(s => !s.isExpended && !s.isUseless).map(p => p.name) },
-    { label: `Weapon:`, type: `select`, options: map_weap },
+    { label: `Weapon : `, type: `select`, options: map_weap },
     { label: `MAP`, type: `select`, options: [0, 1, 2] },
   ];
   if(!standby) { es_data.push({ label : `Reroll using hero point?`, type : `checkbox` }); }
@@ -227,7 +227,7 @@ async function Spellstrike() {
           
     // Build dialog data
     const ovr_data = [
-      { label : `Choose a Spell Variant:`, type : `select`, options : spell_variants.map(p => p.name) }
+      { label : `Choose a Spell Variant : `, type : `select`, options : spell_variants.map(p => p.name) }
     ];
                  
     // Query user for variant choice
