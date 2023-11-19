@@ -42,7 +42,7 @@ for (const e of mmE) {
 			if (spa.spell.slug !== "force-barrage") { continue; }
 			if (spa.expended) { continue; }
 			if (spellData.isFocusPool && !spa.spell.isCantrip && token.actor.system.resources.focus.value === 0) { continue; }
-			let level = `lv${sp.level}`
+			let level = `Rank ${sp.level}`
 			const name = spa.spell.name;
 			const sname = `${name} ${level} (${e.name})`;
 			mm.push({ name: sname, entryId: spellData.id, level: sp.level, spId: spa.spell.id, slug: spa.spell.slug, spell: spa.spell, index: index, link:spa.spell.link });
