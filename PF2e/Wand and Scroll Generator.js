@@ -6,9 +6,11 @@ This will also create useable Specialty Wands for:
 * Wand of LegerDemain
 * Wand of Reaching
 * Wand of Widening
+
 Hit Ok and it will generate output.
-When Loot Actor is selected it will create a loot actor named Generated Loot if not available then populate this actor. If the actor is already available, it will populate the actor.
-When Party Stash is selected, the first party actor found will be populated.
+
+When Generated Loot Actor is selected it will create a loot actor named Generated Loot if not available then populate this actor. If the actor is already available, it will populate the actor.
+When Party Actor or Existing Loot Actor are selected, if only one actor of that type is available, it will populate that actor. If more are available another dialog will prompt for an actor choice.
 */
 
 WSGenerator();
@@ -103,7 +105,17 @@ async function WSGenerator() {
                 <tr>
                     <th style="text-align:center">Spell Rank:</th>
                     <td>
-                        <input style="text-align:center" type="number" id="level" value=1 />
+                        <select id="level">
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                            <option>5</option>
+                            <option>6</option>
+                            <option>7</option>
+                            <option>8</option>
+                            <option>9</option>
+                            <option>10</option>
                     </td>
                 </tr>
                 <tr>
@@ -133,8 +145,9 @@ async function WSGenerator() {
                 <tr>
                     <th style="text-align:center">Output Type:</th>
                     <td><select id="outtype">
-                        <option>Party Stash</option>
-                        <option>Loot Actor</option>
+                        <option>Party Actor</option>
+                        <option>Existing Loot Actor</option>
+                        <option>Generated Loot Actor</option>
                         <option>Message</option>
                     </select></td>
                 </tr>
@@ -149,7 +162,7 @@ async function WSGenerator() {
                 label: "Ok",
                 callback: (html) => { 
                     WSGenerator();
-                    return [ html[0].querySelector("#type").value, html[0].querySelector("#level").valueAsNumber, html[0].querySelector("#quantity").valueAsNumber, html[0].querySelector("#rarity").value, html[0].querySelector("#outtype").value, html[0].querySelector("#mystify").checked,  html[0].querySelector("#trad").value ] },
+                    return [ html[0].querySelector("#type").value, parseInt(html[0].querySelector("#level").value), html[0].querySelector("#quantity").valueAsNumber, html[0].querySelector("#rarity").value, html[0].querySelector("#outtype").value, html[0].querySelector("#mystify").checked, html[0].querySelector("#trad").value ] },
             },
             close: {
                 label: "Close",
@@ -158,7 +171,6 @@ async function WSGenerator() {
         close: () => { return "close" },
         default: "ok",
     },{width:"auto"});
-
     if (picks === "close") { return }
     if ( picks[1] > 10 ) { return ui.notifications.info("There are no spells above rank 10") }
     if ( picks[0] === "cont" && picks[1] > 8 ) { return ui.notifications.info ("There are no wands of continuation for spells above rank 8")}
@@ -203,7 +215,7 @@ async function WSGenerator() {
             output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Continuation ${rSpell.name} (Rank ${picks[1]})`, uuid: rSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]][picks[1]]});
         }
         if ( picks[0] === "reach" ){
-            spells = spells.filter( f =>  (f.system.range?.value.includes("feet") || f.system.range?.value.includes("touch")) && (f.system.time?.value === "1" || f.system.time?.value === "2") );
+            spells = spells.filter( f =>  f.system.range?.value.includes("feet" || "touch") && (f.system.time?.value === "1" || f.system.time?.value === "2") );
             if ( spells.length === 0 ) { return ui.notifications.info("No spells available within these parameters for a Wand of Reaching") }
             const rSpell = spells[Math.floor(Math.random() * spells.length)];
             output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Reaching ${rSpell.name} (Rank ${picks[1]})`, uuid: rSpell.uuid, sid: wandIds[picks[1]], sc: "pf2e.equipment-srd", level: picks[1], scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[picks[1]]}`, sWUUID: specWandsUUIDs[picks[0]][picks[1]]});
@@ -222,13 +234,32 @@ async function WSGenerator() {
             ui.notifications.info("Check chat message. Hold alt when dragging and dropping to mystify items");
     }
     else {
-        let a = game.actors.find( a => a.type === "party" );
-        if ( picks[4] === "Loot Actor" ) {
-            if (!game.actors.some( n => n.name === "Generated Loot")) {
-                await Actor.create({name:"Generated Loot",type:"loot",img:"icons/containers/chest/chest-reinforced-steel-red.webp"});
-            }
-            a = game.actors.getName("Generated Loot");
-        }
+		let a;
+		if ( picks[4] === "Generated Loot Actor" ) {
+			if (!game.actors.some( n => n.name === "Generated Loot")) {
+				await Actor.create({name:"Generated Loot",type:"loot",img:"icons/containers/chest/chest-reinforced-steel-red.webp"});
+			}
+			a = game.actors.getName("Generated Loot");
+		}
+		
+		if ( picks[4] === "Party Actor" ) {
+			if ( game.actors.filter( p => p.type === "party" ).length > 1 ) {
+				a = await MyDialog("party");
+			}
+			else { 
+				a = game.actors.find(p => p.type === "party" );
+			}
+		}
+
+		if ( picks[4] === "Existing Loot Actor" ) {
+			if ( game.actors.filter( p => p.type === "loot" ).length > 1 ) {
+				a = await MyDialog("loot");
+			}
+			else { 
+				a = game.actors.find(p => p.type === "loot" );
+			}
+		}
+		if ( a === undefined ) { return }
         const stuff = [];
         for ( const o of output ) {
             stuff.push(await createSpellScrollWand(o.compendium, o.id, o.scrollUUID, o.uuid, o.level, o.name, o.sWUUID))
@@ -237,6 +268,27 @@ async function WSGenerator() {
         if ( picks[5] ) { await a.updateEmbeddedDocuments("Item", updates.map(u => ({_id: u.id, "system.identification.status": "unidentified" }))); }
         a.sheet.render(true);
     }
+
+    async function MyDialog(type) {
+		let options = "";
+		for (const plac of game.actors.filter( f => f.type === type )) {
+			options += `<option value=${plac.id}>${plac.name}</option>`
+		}
+		const myac = await Dialog.prompt({
+			title: `Select ${type} actor`,
+			content:`
+				<table>
+					<tr>
+						<th width="70%" style="text-align:center">Please select an actor : </th>
+						<td width="30%"><select>${options}</select></td>
+					</tr>
+				</table>
+			`,
+			callback: (html) => { return html[0].querySelector("select").value },
+			rejectClose:false,
+		},{width:"200px"});
+		return game.actors.get(myac);
+	}
 
     async function createSpellScrollWand(compendium, id, scrollUUID, uuid, level, name, sWUUID, temp = false ) {
         const spell = (await fromUuid(uuid))?.toObject();
