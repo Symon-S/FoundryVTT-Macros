@@ -73,15 +73,15 @@ if (choice[0] === 'Dirge of Doom') {
   options.push(`secret`)
   const ids = [];
   for ( t of canvas.tokens.placeables) {
-	  if (token.distanceTo(t) <= 60) {
-		  ids.push(t.id);
-	  }
+	if (token.distanceTo(t) <= 60) {
+		ids.push(t.id);
+	}
   }
   ids.forEach(id => {
     if (canvas.tokens.placeables.find((t) => t.id === id).actor.type === `npc`) { levels.push(canvas.tokens.placeables.find((t) => t.id === id).actor.level);}
 	})
 	        
-  if (game.user.targets.size < 1 || levels.length === 0) { ui.notifications.warn('Please target at least 1 enemy'); return;}
+  if (ids.length < 1 || levels.length === 0) { return ui.notifications.warn('There are no enemies within range'); }
   else { level = Math.max(...levels);}
 }
 else { 
@@ -147,7 +147,6 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 	  document.getElementById("0qd").focus();
 	});
 }
-
 let aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.Item.KIPV1TiPCzlhuAzo")).toObject();
 if ( effect.slug === "spell-effect-rallying-anthem" ) {
 	aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.Item.tcnjhVxyRchqjt71")).toObject();
@@ -159,6 +158,8 @@ if (effect === "" && choice[0] !== "Dirge of Doom") {
 	aura.system.rules[0] = {key: "Aura", radius: 60, slug:"is-aura-effect" }
 }
 else if (choice[0] !== "Dirge of Doom") { aura.system.rules[0].effects[0].uuid = effect.uuid; }
+aura.system.duration.value = 1;
+aura.system.duration.unit = "rounds"
 aura.img = cast_spell.img;
 aura.name = `Aura: ${actionName} (${choice[0]})`
 aura.slug = `aura-${actionSlug}`
