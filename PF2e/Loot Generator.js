@@ -6,7 +6,8 @@ When using rarity:
 and available (rare spells not available at each rank), if not available another item will be generated in its place.**
 **Unique = There are no unique spells in the game, so this will only push unique items if available.**
 
-
+When Generated Loot Actor is selected it will create a loot actor named Generated Loot if not available then populate this actor. If the actor is already available, it will populate the actor.
+When Party Actor or Existing Loot Actor are selected, if only one actor of that type is available, it will populate that actor. If more are available another dialog will prompt for an actor choice.
 
 Modded by LebombJames to use getIndex for faster loading.
 Special thanks to Idle for scroll/wand creation function.
