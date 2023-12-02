@@ -8,7 +8,8 @@ const exceptions = [
 	"hazard",
 	"party",
 ];
-let content = `<table>
+let content = `<strong>Group Perception Roller</strong>
+		<table>
 		<tr>
 			<th style="text-align:left">Name</th>
 			<th style="text-align:center">Roll + Mod</th>
@@ -31,7 +32,7 @@ for ( const t of canvas.tokens.placeables) {
 		}
 		content += `
 			<tr>
-			<th style="color:${userColor}">${t.actor.name}</th>
+			<th style="color:${userColor};text-shadow: 1px 1px 1px black">${t.actor.name}</th>
 			<td style="text-align:center">${result}</td>
 			<th style="text-align:center${color}">${total}</th>
 			</tr>`;
@@ -40,7 +41,6 @@ for ( const t of canvas.tokens.placeables) {
 content += `</table>`;
 
 await ChatMessage.create({
-	title:"Perception Rolls",
 	content,
 	type: CONST.CHAT_MESSAGE_TYPES.IC,
 	whisper: [game.userId]
