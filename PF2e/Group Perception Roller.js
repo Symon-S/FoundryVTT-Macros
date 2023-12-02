@@ -8,23 +8,32 @@ const exceptions = [
 	"hazard",
 	"party",
 ];
-let content = "<table>";
+let content = `<table>
+		<tr>
+			<th style="text-align:left">Name</th>
+			<th style="text-align:center">Roll + Mod</th>
+			<th style="text-align:center">Total</th>
+		</tr>`;
 for ( const t of canvas.tokens.placeables) {
 	if ( !exceptions.includes(t.actor.type) && t.actor.hasPlayerOwner ) {
 		const {result,total,dice} = await new Roll(`1d20 + ${t.actor.perception.mod}`).evaluate();
+		const userId = Object.keys(t.actor.ownership).find(f => f !== "default" && !game.users.get(f).isGM);
+		const userColor = game.users.get(userId).color;
 		let color = "";
 		if ( dice[0].total === 1 ) {
-			color = `style="color:red"`;
+			color = `;font-size:115%;color:red`;
 		}
-		if ( dice[0].total === 20 ) {
-			color = `style="color:green"`;
+		else if ( dice[0].total === 20 ) {
+			color = `;font-size:115%;color:green`;
+		}
+		else {
+			color = `;color:blue`;
 		}
 		content += `
 			<tr>
-			<th>${t.actor.name}</th>
-			<td>1d20 + ${t.actor.perception.mod}</td>
-			<td>${result}</td>
-			<th ${color}>${total}</th>
+			<th style="color:${userColor}">${t.actor.name}</th>
+			<td style="text-align:center">${result}</td>
+			<th style="text-align:center${color}">${total}</th>
 			</tr>`;
 	}
 }
