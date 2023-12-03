@@ -28,12 +28,12 @@ const lc_data = [
 if (token.actor.itemTypes.feat.some(s => s.slug === 'fortissimo-composition')) { lc_data.push( { label: `Fortissimo Composition (Rallying Anthem, Courageous Anthem, and Song of Strength Only) : `, type: `checkbox`, options: `style="margin:auto;display:block"` } ) }     
 
 const choice = await quickDialog({data: lc_data, title: `Lingering Composition`});
-const slug = `${choice[0].slugify()}`;
       
-const cast_spell = token.actor.itemTypes.spell.find(e => e.slug === slug);
+const cast_spell = token.actor.itemTypes.spell.find(e => e.name === choice[0]);
+const slug = cast_spell.slug;
 
-let cs,suc;
-const effectcom = game.packs.find(sp => sp.collection === "pf2e.spell-effects");  
+let cs,suc, csLink, sucLink;
+const effectcom = game.packs.find(sp => sp.collection === "pf2e.spell-effects");
 const effects = await effectcom.getIndex({fields:["system.slug"]});
 let effect = effects.some(e => e.system.slug.includes(slug)) ? effects.find(e => e.system.slug.includes(slug)) : "";
 if (choice[2]) {
@@ -44,6 +44,7 @@ if (choice[2]) {
 		if (slug === "courageous-anthem") {
 			cs = "Compendium.pf2e.spell-effects.Item.VFereWC1agrwgzPL";
 			suc = "Compendium.pf2e.spell-effects.Item.kZ39XWJA3RBDTnqG";
+		}
 		if (slug === "rallying-anthem") {
 			cs = "Compendium.pf2e.spell-effects.Item.BKam63zT98iWMJH7";
 			suc = "Compendium.pf2e.spell-effects.Item.Chol7ExtoN2T36mP";
@@ -52,10 +53,9 @@ if (choice[2]) {
 			cs = "Compendium.pf2e.spell-effects.Item.8XaSpienzVXLmcfp";
 			suc = "Compendium.pf2e.spell-effects.Item.Fjnm1l59KH5YJ7G9";
 		}
-		}
 		if (effect !== ''){
-			notes.push({"outcome":["success"], "selector":"performance", "text":`<p>${suc.link}</p>`});
-    		notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p>${cs.link}</p>`});
+			notes.push({"outcome":["success"], "selector":"performance", "text":`<p>@UUID[${suc}]</p>`});
+    		notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p>@UUID[${cs}]</p>`});
     		notes.push({"outcome":["failure"], "selector":"performance", "text":`<p>${effect.link} You don't spend the Focus Point for casting the spell</p>`});
 			notes.push({"outcome":["criticalFailure"], "selector":"performance", "text":`<p>${effect.link}</p>`});
 		}
