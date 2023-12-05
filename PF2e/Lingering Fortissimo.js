@@ -163,7 +163,8 @@ aura.system.duration.unit = "rounds"
 aura.img = cast_spell.img;
 aura.name = `Aura: ${actionName} (${choice[0]})`
 aura.slug = `aura-${actionSlug}`
-aura.system.level.value = Math.ceil(token.actor.level/2);
+aura.system.rules[0].level = Math.ceil(actor.level/2);
+aura.system.level.value = Math.ceil(actor.level/2);
 if (cs !== undefined) {
 	aura.img = "systems/pf2e/icons/spells/inspire-heroics.webp"
 }
