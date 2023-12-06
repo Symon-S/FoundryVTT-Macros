@@ -11,7 +11,6 @@ const PYROSOURCE = 'Compendium.pf2e.outlaws-of-alkenstar-bestiary.Actor.aT6c5oEP
 if (actor.sourceId === PYROSOURCE && actor.size !== 'lg') return ui.notifications.error(`Only large Pyronite Oozes split.`);
 const splitAbility = actor.itemTypes.action.find(a=>a.name.includes('Split'));
 if (!splitAbility) return ui.notifications.error(`Selected ooze does not have a Split ability.`);
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let sT = splitAbility.system.description.value.match(/(\d+) or more HP/);
 if (!sT) sT = splitAbility.system.description.value.match(/at least (\d+) HP/);
 if (!sT) ui.notifications.info(`Couldn't extract split threshold, defaulting to 10.`);
