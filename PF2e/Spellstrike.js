@@ -18,7 +18,7 @@ async function Spellstrike() {
 
 
   /* Check for eldritch archer dedication and warn if not present */
-  if (!token.actor.itemTypes.feat.some(e => e.slug === 'spellstrike')) {
+  if (!token.actor.itemTypes.feat.some(e => ["spellstriker","spellstrike"].includes(e.slug))) {
     return ui.notifications.warn('Does not have Spellstrike.');
   }
   const ess = token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike');
