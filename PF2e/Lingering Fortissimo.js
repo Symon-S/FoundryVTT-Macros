@@ -69,13 +69,14 @@ let DCbyLevel = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,
       
 let level;
 let levels = [];
+const willDCs = [];
 if (choice[0] === 'Dirge of Doom') {
   options.push(`secret`)
   const ids = [];
   for ( t of canvas.tokens.placeables) {
-	if (token.distanceTo(t) <= 60) {
-		ids.push(t.id);
-	}
+	  if (token.distanceTo(t) <= 60) {
+		  ids.push(t.id);
+	  }
   }
   ids.forEach(id => {
     if (canvas.tokens.placeables.find((t) => t.id === id).actor.type === `npc`) { levels.push(canvas.tokens.placeables.find((t) => t.id === id).actor.level);}
@@ -85,7 +86,10 @@ if (choice[0] === 'Dirge of Doom') {
   else { level = Math.max(...levels);}
 }
 else { 
-	canvas.tokens.placeables.filter(pc => pc?.actor?.hasPlayerOwner && pc?.actor?.type === "character").forEach(x => { levels.push(x.actor.level) });
+	canvas.tokens.placeables.filter(pc => pc?.actor?.hasPlayerOwner && pc?.actor?.type === "character").forEach(x => { 
+    levels.push(x.actor.level);
+    willDCs.push(x.actor.saves.will.dc.value);
+  });
 	level = Math.max(...levels);
 }
 
@@ -93,10 +97,11 @@ else {
 if (level < 0) { level = 0 }      
 let DC;
 if ( isNaN(choice[1]) ) { 
-	if (choice[2] === true) {DC = DCbyLevel[level] + 5; }
+	if (choice[2]) {
+    DC = Math.max(...willDCs); 
+  }
 	else { DC = DCbyLevel[level]; }
-} 
-
+}
 else { DC = choice[1]; }
       
 async function quickDialog({data, title = `Quick Dialog`} = {}) {
