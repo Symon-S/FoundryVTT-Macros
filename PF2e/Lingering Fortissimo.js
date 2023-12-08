@@ -69,27 +69,17 @@ let DCbyLevel = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,
       
 let level;
 let levels = [];
-const willDCs = [];
+let willDCs = [];
+const tokens = canvas.tokens.placeables.filter(t => token.distanceTo(t) <= 60 && !t.actor?.hasCondition("defeaned"));
 if (choice[0] === 'Dirge of Doom') {
   options.push(`secret`)
-  const ids = [];
-  for ( t of canvas.tokens.placeables) {
-	  if (token.distanceTo(t) <= 60) {
-		  ids.push(t.id);
-	  }
-  }
-  ids.forEach(id => {
-    if (canvas.tokens.placeables.find((t) => t.id === id).actor.type === `npc`) { levels.push(canvas.tokens.placeables.find((t) => t.id === id).actor.level);}
-	})
-	        
-  if (ids.length < 1 || levels.length === 0) { return ui.notifications.warn('There are no enemies within range'); }
-  else { level = Math.max(...levels);}
+  levels = tokens.filter(f => f.actor?.type === "npc").map(l => l.actor.level);
+  if (levels.length === 0) { return ui.notifications.warn('There are no enemies within range'); }
+  else { level = Math.max(...levels); }
 }
 else { 
-	canvas.tokens.placeables.filter(pc => pc?.actor?.hasPlayerOwner && pc?.actor?.type === "character").forEach(x => { 
-    levels.push(x.actor.level);
-    willDCs.push(x.actor.saves.will.dc.value);
-  });
+	levels = tokens.filter(pc => pc?.actor?.hasPlayerOwner && pc?.actor?.type === "character").map(l => l.actor.level);
+    willDCs = tokens.filter(pc => pc?.actor?.hasPlayerOwner && pc?.actor?.type === "character").map(l => l.actor.saves.will.dc.value);
 	level = Math.max(...levels);
 }
 
