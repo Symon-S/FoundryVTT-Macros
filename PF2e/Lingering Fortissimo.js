@@ -73,7 +73,7 @@ let willDCs = [];
 const tokens = canvas.tokens.placeables.filter(t => token.distanceTo(t) <= 60 && !t.actor?.hasCondition("defeaned"));
 if (choice[0] === 'Dirge of Doom') {
   options.push(`secret`)
-  levels = tokens.filter(f => f.actor?.type === "npc").map(l => l.actor.level);
+  levels = tokens.filter(f => f.actor?.type === "npc" && !f.actor?.hasPlayerOwner && token.distanceTo(f) <= 30).map(l => l.actor.level);
   if (levels.length === 0) { return ui.notifications.warn('There are no enemies within range'); }
   else { level = Math.max(...levels); }
 }
