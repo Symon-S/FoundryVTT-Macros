@@ -7,6 +7,7 @@ The macro will create a new instance of that weapon, copy all materials and rune
 Filters exist for rarity/complexity of the weapons chosen.  You can default those choices by updating the six variables below to be "" or "checked" accordingly.
 
 Slightly modified to work with findIndex by the macro fairies.
+Now fully maintained by the macro fairies.
 */
 
 if (!actor){ return ui.notifications.warn("No PC Token Selected"); }
@@ -23,7 +24,7 @@ const macroActor = token.actor;
 
 const CompendiumID = "pf2e.equipment-srd";
 const pack = game.packs.get(CompendiumID);
-const docs = (await pack.getIndex({fields:["system.traits","system.level","system.potencyRune","system.range","system.usage","system.slug","system.category"]})).filter(t => t.type === "weapon" && t.system.level.value <= actor.level && t.system.range === null && !t.system.traits.value.includes("magical") && !t.system.traits.value.includes("bomb") && !t.system.traits.value.includes("vehicular") && t.system.potencyRune.value === null);
+const docs = (await pack.getIndex({fields:["system.traits","system.level","system.runes","system.range","system.usage","system.slug","system.category"]})).filter(t => t.type === "weapon" && t.system.level.value <= actor.level && t.system.range === null && !t.system.traits.value.includes("magical") && !t.system.traits.value.includes("bomb") && !t.system.traits.value.includes("vehicular") && t.system.runes.potency === 0);
 docs.sort((a, b) => {
 	if (a.name < b.name) {
     return -1;
@@ -33,10 +34,6 @@ docs.sort((a, b) => {
   }
   return 0;
 });
-
-
-console.log(docs);
-
 
 let weapons = macroActor.itemTypes.weapon.filter(a => a.isMelee && a.system.runes.property.includes("shifting"));
 
@@ -182,14 +179,8 @@ async function itemSelectedCallback(weaponToShift, newWeaponID, revert)
     if (!revert) {
 	    let itemToMove = await pack.getDocument(newWeaponID);
 	    itemObject = await itemToMove.toObject();
-        itemObject.system.potencyRune.value = weaponToShift.system.potencyRune.value;
-	    itemObject.system.material.type = weaponToShift.system.material.type;
-	    itemObject.system.material.grade = weaponToShift.system.material.grade;
-	    itemObject.system.propertyRune1.value = weaponToShift.system.propertyRune1.value;
-	    itemObject.system.propertyRune2.value = weaponToShift.system.propertyRune2.value;
-	    itemObject.system.propertyRune3.value = weaponToShift.system.propertyRune3.value;
-	    itemObject.system.propertyRune4.value = weaponToShift.system.propertyRune4.value;
-	    itemObject.system.strikingRune.value = weaponToShift.system.strikingRune.value;
+	    itemObject.system.material = weaponToShift.system.material;
+	    itemObject.system.runes = weaponToShift.system.runes;
     }
     if (revert) { 
 		if (weaponToShift.flags.pf2e.originalItemData !== undefined){
@@ -202,7 +193,6 @@ async function itemSelectedCallback(weaponToShift, newWeaponID, revert)
 
 	let nw = await macroActor.createEmbeddedDocuments('Item',[itemObject]);
 	if (weaponToShift.flags.pf2e.originalItemData === undefined && !revert){
-		console.log(weaponToShift);
 		await nw[0].setFlag("pf2e","originalItemData",(await weaponToShift.toObject()));
 	}
 	if (weaponToShift.flags.pf2e.originalItemData !== undefined && !revert) {
