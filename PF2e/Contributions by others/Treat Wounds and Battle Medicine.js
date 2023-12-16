@@ -231,7 +231,7 @@ const rollTreatWounds = async ({
     let healRoll = 0;
     if (healFormula !== undefined) {
       const rollType = success > 1 ? 'Healing' : 'Damage';
-      healRoll = await new DamageRoll(`${healFormula}[${rollType}]`).roll({
+      healRoll = await new DamageRoll(`(${healFormula})[${rollType.toLowerCase()}]`).roll({
         async: true,
       });
       my_message = `<strong>${rollType.toLowerCase()} Roll: ${bmtw}</strong> (${successLabel})`;
@@ -293,7 +293,7 @@ const rollTreatWounds = async ({
         if (healFormula !== undefined) {
           const rollType = roll.options.degreeOfSuccess > 1 ? 'Healing' : 'Damage';
           const my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`;
-          healRoll = await new DamageRoll(`${healFormula}[${rollType.toLowerCase()}]`).roll(
+          healRoll = await new DamageRoll(`(${healFormula})[${rollType.toLowerCase()}]`).roll(
             { async: true }
           );
 
