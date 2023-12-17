@@ -90,7 +90,7 @@ async function Wand(){
         content
       });
       const effect = {
-        "name": `${chosen.name} is Broken`,
+        "name": `${chosen.name} is Broken and Overcharged`,
         "type": "effect",
         "img": "systems/pf2e/icons/conditions/broken.webp",
         "system": {
