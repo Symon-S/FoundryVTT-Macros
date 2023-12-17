@@ -1,5 +1,5 @@
 //This macro allows you to send scrolls and wands directly to chat as if you had clicked on them in your character sheet.
-//Handles overcharging wands
+//Also rolls the equipment item Wand of Smoldering Fireballs.
 
 new Dialog({
   title: "Wand or Scroll?",
@@ -102,8 +102,8 @@ async function Wand(){
             "value": chosen.level
           },
           "duration": {
-            "value": 1,
-            "unit": "days",
+            "value": -1,
+            "unit": "unlimited",
             "sustained": false,
             "expiry":"turn-start"
           },
