@@ -234,7 +234,7 @@ const rollTreatWounds = async ({
       healRoll = await new DamageRoll(`(${healFormula})[${rollType.toLowerCase()}]`).roll({
         async: true,
       });
-      my_message = `<strong>${rollType.toLowerCase()} Roll: ${bmtw}</strong> (${successLabel})`;
+      my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`;
 
       healRoll.toMessage({
         flavor: `${my_message}<br>${immunityMessage}`,
