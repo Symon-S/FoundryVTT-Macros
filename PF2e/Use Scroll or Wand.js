@@ -1,5 +1,5 @@
 //This macro allows you to send scrolls and wands directly to chat as if you had clicked on them in your character sheet.
-//Also rolls the equipment item Wand of Smoldering Fireballs.
+//Also handles overcharging.
 
 new Dialog({
   title: "Wand or Scroll?",
