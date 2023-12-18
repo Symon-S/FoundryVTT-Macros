@@ -53,7 +53,7 @@ for (const e of mmE) {
 for (const s of token.actor.itemTypes.consumable) {
 	if (!s.system.traits.value.includes("wand") && !s.system.traits.value.includes("scroll")) { continue; }
 	if (s.system.spell?.system?.slug === 'force-barrage') {
-		if (s.system.traits.value.includes("wand") && s.system.charges.value > 0) {
+		if (s.system.traits.value.includes("wand") && s.system.uses.value > 0) {
 			mm.push({ name: `${s.name}`, level: s.system.spell.system.location.heightenedLevel, prepared: false, entryId: s.id, wand: true, scroll: false, spont: false, link: s.link})
 		}
 		if (s.system.traits.value.includes("scroll")) {
