@@ -221,7 +221,7 @@ if (mmch.wand) {
 	else {
 		const w = token.actor.itemTypes.consumable.find(id => id.id === mmch.entryId);
 		const wData = duplicate(w);
-		wData.system.charges.value--;
+		wData.system.uses.value--;
 		await actor.updateEmbeddedDocuments('Item', [wData]);
 	}
 }
