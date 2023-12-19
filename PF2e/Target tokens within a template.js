@@ -1,5 +1,5 @@
 /*
-This macro target tokens within a template with some borrowed code from Idle's Toolbelt module.
+This macro targets tokens within a template with some borrowed code from Idle's Toolbelt module.
 - Hover over template
 - Choose tokens' alliance to target
 - Tokens with the chosen alliance will be targeted
