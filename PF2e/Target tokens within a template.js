@@ -1,5 +1,5 @@
 /*
-This macro target tokens within a template
+This macro target tokens within a template with some borrowed code from Idle's Toolbelt module.
 - Hover over template
 - Choose tokens' alliance to target
 - Tokens with the chosen alliance will be targeted
@@ -8,9 +8,7 @@ This macro target tokens within a template
 if ( canvas.templates.hover === null ) { return ui.notifications.info("Please hover mouse over template before executing macro. Must be in Measurement Controls to do this"); }
 const template = canvas.templates.hover;
 const hlId = template.highlightId;
-const tx = template.x;
-const ty = template.y;
-const coords = [...canvas.grid.getHighlightLayer(hlId).positions];
+const hL = canvas.grid.getHighlightLayer(hlId);
 
 const toks = await Dialog.wait({
     title:"Tokens to select:",
@@ -38,65 +36,60 @@ if (toks === "close") { return }
 await game.user.updateTokenTargets(toks);
 
 function FilterTargets (type) {
-    let ids = [];
+    const ids = [];
+    let tokens = [];
     if ( type === "all" ) {
-        if ( template.document.flags.pf2e?.origin?.traits.includes("auditory") && !template.document.flags.pf2e?.origin?.traits.includes("visual") ) {
-            ids = canvas.tokens.placeables.filter( c => coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
-        }
-        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
-            ids = canvas.tokens.placeables.filter( c => coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"}) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
-        }
-        
-        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && !template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
-            ids = canvas.tokens.placeables.filter( c => coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"})).map( i => i.id );
-        }
-        else {
-            ids = canvas.tokens.placeables.filter( c => coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["move"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"move",mode:"any"})).map( i => i.id );
-        }
+        tokens = canvas.tokens.placeables.filter( t => t.bounds.overlaps(template.bounds) );
     }
-    if ( type === "opposition" ) {
-        if ( template.document.flags.pf2e?.origin?.traits.includes("auditory") && !template.document.flags.pf2e?.origin?.traits.includes("visual") ) {
-            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "opposition" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
-        }
-        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
-            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "opposition" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"}) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
-        }
-        
-        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && !template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
-            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "opposition" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"})).map( i => i.id );
-        }
-        else {
-            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "opposition" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["move"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"move",mode:"any"})).map( i => i.id );
-        }
+    else if ( type === "!party" ) {
+        tokens = canvas.tokens.placeables.filter( t => t.bounds.overlaps(template.bounds) && t.actor.alliance !== "party" );
     }
-    if ( type === "party" ) {
-        if ( template.document.flags.pf2e?.origin?.traits.includes("auditory") && !template.document.flags.pf2e?.origin?.traits.includes("visual") ) {
-            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
-        }
-        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
-            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"}) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
-        }
-        
-        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && !template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
-            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"})).map( i => i.id );
-        }
-        else {
-            ids = canvas.tokens.placeables.filter( c => c.actor.alliance === "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["move"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"move",mode:"any"})).map( i => i.id );
-        }
+    else {
+        tokens = canvas.tokens.placeables.filter( t => t.bounds.overlaps(template.bounds) && t.actor.alliance === type );
     }
-    if ( type === "!party" ) {
-        if ( template.document.flags.pf2e?.origin?.traits.includes("auditory") && !template.document.flags.pf2e?.origin?.traits.includes("visual") ) {
-            ids = canvas.tokens.placeables.filter( c => c.actor.alliance !== "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
+    for ( const tk of tokens ) {
+        const gs = canvas.grid.size;
+        const ds = canvas.dimensions.size;
+        const tpos = [];
+        for (let h = 0; h < tk.document.height; h++) {
+            const tx = Math.floor(tk.x / gs) * gs;
+            const ty = Math.floor(tk.y / gs) * gs;
+            const y = ty + h * gs;
+            tpos.push(`${tx}.${y}`);
+            if (tk.document.width > 1) {
+                for (let w = 1; w < tk.document.width; w++) {
+                    tpos.push(`${tx + w * gs}.${y}`)
+                }
+            }
         }
-        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
-            ids = canvas.tokens.placeables.filter( c => c.actor.alliance !== "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"}) && !CONFIG.Canvas.polygonBackends["sound"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sound",mode:"any"})).map( i => i.id );
-        }
-        
-        else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && !template.document.flags.pf2e?.origin?.traits.includes("auditory") ) {
-            ids = canvas.tokens.placeables.filter( c => c.actor.alliance !== "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["sight"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"sight",mode:"any"})).map( i => i.id );
-        }
-        else {
-            ids = canvas.tokens.placeables.filter( c => c.actor.alliance !== "party" && coords.includes(`${c.x}.${c.y}`) && !CONFIG.Canvas.polygonBackends["move"].testCollision({x:tx,y:ty},{x:c.x,y:c.y},{type:"move",mode:"any"})).map( i => i.id );
+
+        for (const p of tpos) {
+            if (!hL.positions.has(p)) {
+                continue
+            }
+            const [gx, gy] = p.split('.').map(s => Number(s));
+            const destination = {
+                x: gx + ds * 0.5,
+                y: gy + ds * 0.5,
+            }
+            if (destination.x < 0 || destination.y < 0) continue;
+
+            if ( template.document.flags.pf2e?.origin?.traits.includes("auditory") && !template.document.flags.pf2e?.origin?.traits.includes("visual") && !CONFIG.Canvas.polygonBackends["sound"].testCollision(template.center, destination,{type:"sound",mode:"any"})) {
+                ids.push(tk.id);
+                break;
+            }
+            else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && template.document.flags.pf2e?.origin?.traits.includes("auditory") && !CONFIG.Canvas.polygonBackends["sight"].testCollision(template.center, destination,{type:"sight",mode:"any"}) && !CONFIG.Canvas.polygonBackends["sound"].testCollision(template.center, destination,{type:"sound",mode:"any"})) {
+                ids.push(tk.id);
+                break;
+            }
+            else if ( template.document.flags.pf2e?.origin?.traits.includes("visual") && !template.document.flags.pf2e?.origin?.traits.includes("auditory") && !CONFIG.Canvas.polygonBackends["sight"].testCollision(template.center, destination,{type:"sight",mode:"any"})) {
+                ids.push(tk.id);
+                break;
+            }
+            else  if ( !CONFIG.Canvas.polygonBackends["move"].testCollision(template.center, destination,{type:"move",mode:"any"})) {
+                ids.push(tk.id);
+                break;
+            }
         }
     }
     return ids;
