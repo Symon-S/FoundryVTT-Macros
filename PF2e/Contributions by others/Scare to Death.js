@@ -133,7 +133,7 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Critical Success</strong><br> <strong>${nameForChatMessage}</strong> must make a @Check[type:fortitude|dc:resolve(@actor.skills.intimidation.dc.value)|traits:death,incapacition], on a critical failure it dies. Otherwise it becomes @UUID[Compendium.pf2e.conditionitems.Item.TBSHQspnbcqxsmjL]{Frightened 2} and is @UUID[Compendium.pf2e.conditionitems.Item.sDPxOjQ9kx2RZE8D]{Fleeing} for 1 round; it suffers no effect on a critical success. <strong>${nameForChatMessage}</strong> ${immunityMessage}`,
+                                flavor: `<strong>Critical Success</strong><br> <strong>${nameForChatMessage}</strong> must make a @Check[type:fortitude|dc:resolve(@actor.skills.intimidation.dc.value)|traits:death,incapacitation], on a critical failure it dies. Otherwise it becomes @UUID[Compendium.pf2e.conditionitems.Item.TBSHQspnbcqxsmjL]{Frightened 2} and is @UUID[Compendium.pf2e.conditionitems.Item.sDPxOjQ9kx2RZE8D]{Fleeing} for 1 round; it suffers no effect on a critical success. <strong>${nameForChatMessage}</strong> ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "scaretodeath": {
