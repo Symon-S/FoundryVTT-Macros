@@ -7,27 +7,27 @@ If you would like to change the Standby Spell, simply run the macro again.
 You can clear your Standby Spell and Entry by choosing 'Clear Standby Spell' entry in the dropdown.
 */
 
-if (canvas.tokens.controlled.length !== 1) { return ui.notifications.warn("You must select 1 token that's a Magus or has the Magus Dedication!"); }
-if (token.actor.class.slug !== "magus" && token.actor.flags.pf2e.rollOptions.all["class:magus"] === undefined && !token.actor.itemTypes.feat.some(f => f.slug === "magus-dedication")) { return ui.notifications.warn("The selected token is not a Magus or does not possess the Magus Dedication!"); }
-if (token.actor.itemTypes.feat.some(f => f.slug === "magus-dedication") && !token.actor.itemTypes.feat.some(f => f.slug === "spellstriker")) { return ui.notifications.warn("Token with Magus Dedication does not possess the Spellstriker feat!"); }
-if (!token.actor.itemTypes.feat.some(f => f.slug === "standby-spell")) { return ui.notifications.warn("Selected token does not possess the Standby Spell feat!"); }
+if (canvas.tokens.controlled.length !== 1) { return void ui.notifications.warn("You must select 1 token that's a Magus or has the Magus Dedication!"); }
+if (token.actor.class.slug !== "magus" && token.actor.flags.pf2e.rollOptions.all["class:magus"] === undefined && !token.actor.itemTypes.feat.some(f => f.slug === "magus-dedication")) { return void ui.notifications.warn("The selected token is not a Magus or does not possess the Magus Dedication!"); }
+if (token.actor.itemTypes.feat.some(f => f.slug === "magus-dedication") && !token.actor.itemTypes.feat.some(f => f.slug === "spellstriker")) { return void ui.notifications.warn("Token with Magus Dedication does not possess the Spellstriker feat!"); }
+if (!token.actor.itemTypes.feat.some(f => f.slug === "standby-spell")) { return void ui.notifications.warn("Selected token does not possess the Standby Spell feat!"); }
 
 
 let entry = token.actor.itemTypes.spellcastingEntry.find(sce => sce.flags.pf2e.magusSE);
 
 //If you accidentally chose the wrong spellcasting entry just remove the comments from the following lines, then add the comments back after switching your spellcasting entry:
-//entry.unsetFlag(("pf2e","magusSE");
+//entry.unsetFlag("pf2e","magusSE");
 //entry = undefined;
 
 if (entry === undefined) {
-  if (token.actor.itemTypes.spellcastingEntry.filter(sce => sce.ability === 'int' && sce.isPrepared && sce.tradition === 'arcane').length > 1) {
-    const options = token.actor.itemTypes.spellcastingEntry.filter(sce => sce.ability === 'int' && sce.isPrepared && sce.tradition === 'arcane').map(n => n.name);
+  if (token.actor.itemTypes.spellcastingEntry.filter(sce => sce.attribute === 'int' && sce.isPrepared && sce.tradition === 'arcane').length > 1) {
+    const options = token.actor.itemTypes.spellcastingEntry.filter(sce => sce.attribute === 'int' && sce.isPrepared && sce.tradition === 'arcane').map(n => n.name);
     const choice1 = await choose(options, prompt = `Choose your Magus Spellcasting entry : `);
     entry = token.actor.itemTypes.spellcastingEntry.find(n => n.name === choice1);
     await entry.setFlag("pf2e","magusSE",true);
   }
   else {
-    entry = token.actor.itemTypes.spellcastingEntry.find(sce => sce.ability === 'int' && sce.isPrepared && sce.tradition === 'arcane');
+    entry = token.actor.itemTypes.spellcastingEntry.find(sce => sce.attribute === 'int' && sce.isPrepared && sce.tradition === 'arcane');
     await entry.setFlag("pf2e","magusSE",true);
   }
 }
@@ -65,8 +65,9 @@ for (const spell of entry.spells.contents) {
     "possession"
     ];
     const exceptions = ['force-barrage','force-fang'];
-    const ess = token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike')
-    if (!spell.traits.has("attack") && !ess) { return; }
+    const ess = token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike');
+    if ( spell.isCantrip ) { continue }
+    if (!spell.traits.has("attack") && !ess) { continue; }
     if (!spell.traits.has('attack') && ess && !exceptions.includes(spell)) {
         const isSave = (await spell.getChatData()).isSave;
         if (blacklist.includes(spell.slug) || !isSave || !["1", "2", "2 or 3", "1 to 3"].includes(spell.system.time?.value)) { continue; }
@@ -76,6 +77,7 @@ for (const spell of entry.spells.contents) {
   spells.push(spell);
 };
 
+if (spells.length === 0) { return void ui.notifications.warn("You have no spells that can be assigned as a standby spell.") }
 
 if (spells.some(s => s.flags.pf2e.standbySpell === true)) {
   const options = spells.filter(c => !c.isCantrip && c.flags.standbySpell !== true).map(n => n.name);
