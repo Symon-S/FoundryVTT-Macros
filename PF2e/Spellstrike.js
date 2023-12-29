@@ -104,8 +104,8 @@ async function Spellstrike() {
         if (active === null) { continue; }
         const spell = active.spell;
         if(standby && (spell.name === token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).name || level.level < token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).baseLevel)) { continue; }
-        if (!spell.traits.has('attack') && !ess ) { continue; }
-        if (!spell.traits.has('attack') && ess && !exceptions.includes(spell)) {
+        if (!spell.traits.has('attack') && !ess && !standby) { continue; }
+        if (!spell.traits.has('attack') && ess && !exceptions.includes(spell) && !standby) {
           const isSave = (await spell.getChatData()).isSave;
           if (blacklist.includes(spell.slug) || !isSave || !["1", "2", "2 or 3", "1 to 3"].includes(spell.system.time?.value)) { continue; }
           if (!spell.system.target.value.includes("creature") && spell.system.area?.type === "emanation") { continue; }
