@@ -72,23 +72,22 @@ async function Wand(){
   
   const choiceW = await choose(wand.flatMap(n => [[n.uuid, n.name]]),`Pick a Wand`);
   const chosen = await wand.find(x => x.uuid === choiceW);
-  if (chosen.quantity > 1) { return ui.notifications.warn("Stacked wands are not compatible with this macro.") }
+  const quantity = chosen.quantity;
   if (chosen.quantity === 0 && actor.system.resources.heroPoints.value === 0) { return ui.notifications.warn("You have no hero points left"); }
+  let fail = `${chosen.name} has been destroyed and the quantity has been reduced to zero in case you would like to try using a hero point on the flat check.<br><strong>Please remove the destroyed wand from your inventory or reuse the macro for proper reroll automation.</strong>`;
+  let success = `${chosen.name} is @UUID[Compendium.pf2e.conditionitems.Item.6dNUvdb1dhToNDj3] and needs to be repaired. If anyone tries to overcharge a wand when it's already been overcharged that day, the wand is automatically destroyed (even if it had been repaired) and no spell is cast.`;
+  if ( quantity === 0 && actor.system.resources.heroPoints.value > 0 ) {
+    fail = `Rerolled Flat Check and hero point deducted.<br>${chosen.name} has been destroyed and the quantity has been reduced to zero in case you would like to try using a hero point on the flat check.<br><strong>Please remove the destroyed wand from your inventory.</strong>`;
+    success = `Rerolled Flat Check and hero point deducted.<br>${chosen.name} is @UUID[Compendium.pf2e.conditionitems.Item.6dNUvdb1dhToNDj3] and needs to be repaired. If anyone tries to overcharge a wand when it's already been overcharged that day, the wand is automatically destroyed (even if it had been repaired) and no spell is cast.`;
+  }
+  if (quantity > 1) { return ui.notifications.warn("Stacked wands are not compatible with this macro.") }
   if (overcharge) {
-    const roll = await (new actor.perception.constructor(actor, { slug: 'flat', label: `Attempting to overcharge ${chosen.name}`, check: { type: 'flat-check' },})).roll({ dc: { value: 10, visible: true }, actor, token, showDC: "all",});
+    const notes = [
+      {"outcome":["success","criticalSuccess"], "selector":"flat-check", "text":success},
+      {"outcome":["failure","criticalFailure"], "selector":"flat-check", "text":fail}
+    ];
+    const roll = await game.pf2e.Check.roll(new game.pf2e.StatisticModifier(`Attempting to overcharge ${chosen.name}`, []), {actor, options:["flat-check"], type: 'flat-check', dc: { value: 10 }, notes});
     if (roll.options.degreeOfSuccess > 1) {
-      let content = `${chosen.name} is broken and needs to be repaired. If anyone tries to overcharge a wand when it's already been overcharged that day, the wand is automatically destroyed (even if it had been repaired) and no spell is cast.`;
-      if ( chosen.quantity === 0 ) {
-        await chosen.update({"system.quantity": 1});
-        content = `${chosen.name} is broken and needs to be repaired. If anyone tries to overcharge a wand when it's already been overcharged that day, the wand is automatically destroyed (even if it had been repaired) and no spell is cast. A hero point has been deducted and the item quantity has been increased to one.`;
-      }
-      await chosen.consume();
-      await new Promise(async (resolve) => { setTimeout(resolve,200) });
-      await ChatMessage.create({
-        speaker:ChatMessage.getSpeaker(),
-        whisper: [game.users.activeGM],
-        content
-      });
       const effect = {
         "name": `${chosen.name} is Broken and Overcharged`,
         "type": "effect",
@@ -112,22 +111,14 @@ async function Wand(){
           }
         },
       };
-      return await actor.createEmbeddedDocuments("Item", [effect]);
+      await actor.createEmbeddedDocuments("Item", [effect]);
+      if ( quantity === 0 ) { await chosen.update({"system.quantity": 1}); }
     }
     else {
-      let content = `${chosen.name} has been destroyed and the quantity has been reduced to zero in case you would like to try using a hero point on the flat check. You can reuse the macro to try again, this will consume a hero point. If not, you or the GM can remove the destroyed wand from your inventory.`
-      if (chosen.quantity === 0) {
-        await actor.update({"system.resources.heroPoints.value": actor.system.resources.heroPoints.value-1})
-        content = `${chosen.name} has been destroyed and a hero point has been deducted. You or the GM can remove the destroyed wand from your inventory.`
-      }
-      if (chosen.quantity === 1) { await chosen.update({"system.quantity": 0}); }
-        await chosen.consume();
-        await new Promise(async (resolve) => { setTimeout(resolve,200) });
-        return await ChatMessage.create({
-          speaker: ChatMessage.getSpeaker(),
-          content,
-          whisper: [game.users.activeGM]
-        });
+        await chosen.update({"system.quantity": 0});
+    }
+    if ( quantity === 0) {
+        await actor.update({"system.resources.heroPoints.value": actor.system.resources.heroPoints.value-1});
     }
   }
   await chosen.consume();
