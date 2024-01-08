@@ -1,5 +1,5 @@
 /*
-To use this macro, you just have to target someone and use it.
+To use this macro, you just have to target someone with a token selected and use it.
 */
 
 
@@ -12,49 +12,51 @@ async function Spellsling() {
   if (game.user.targets.size < 1) { return ui.notifications.warn('Please target a token'); }
   if (game.user.targets.size > 1) { return ui.notifications.warn('Spellsling can only affect 1 target'); }
 
+ const DamageRoll = CONFIG.Dice.rolls.find(((R) => R.name === "DamageRoll"));
 
   /* New Spell getter*/
   const spells = [];
   for (const e of token.actor.itemTypes.spellcastingEntry) {
     if (e.isRitual) { continue; }
     if (e.system.prepared.value === "items") { continue }
-    const spellData = await e.getSheetData();
-    for (const level of spellData.levels) {
-      const isCantrip = level.isCantrip;
+		const spellData = await e.getSheetData();
+    console.log(spellData);
+    for(const group of spellData.groups) {
+      const isCantrip = group.id === "cantrips" ? true : false;
       let i = 0;
-      for (const active of level.active) {
+      for (const active of group.active) {
         const index = i++;
-        if (active === null) { continue; }
-        const spell = active.spell;
-        if (!spell.system.traits.value.includes("attack") || spell === null) { continue; }
-        const castLevel = active.castLevel ?? (await spell.getChatData()).castLevel;
-        const { isAttack, isSave, description, save, slug, traits, formula } = await spell.getChatData({}, { castLevel });
-        let rank = `Rank ${castLevel}`
-        if (spellData.isPrepared) {
+        if(active === null) { continue; }
+        let spell = active.spell;
+        if(!spell.system.traits.value.includes("attack") || spell === null) { continue; }
+        const castRank = active.castRank ?? (await spell.getChatData()).castRank;
+        const {isAttack, isSave, description, save, slug, traits, formula} = await spell.getChatData({},{castRank});
+        let rank = `Rank ${castRank}`
+        if(spellData.isPrepared) {
           rank += ` |Slot: ${index + 1}|`
         }
-        let lvl = castLevel + 1;
+        let lvl = castRank+1;
         const name = spell.name;
-        if (isCantrip) {
-          rank = `Cantrip ${castLevel}`
+        if(isCantrip) { 
+          rank = `Cantrip ${castRank}`
           lvl = 0;
         }
-        if (spellData.isFocusPool) {
-          rank = `Focus ${castLevel}`
+        if(spellData.isFocusPool) { 
+          rank = `Focus ${castRank}`
           lvl = 1;
         }
-        const sname = `${name} ${rank} (${e.name})`;
-        spells.push({ name: sname, castLevel, sEId: spellData.id, slug, description, DC: save.value, spell, index, isSave, isAttack, basic: spell.system.defense.save?.basic ?? false, isCantrip, isFocus: spellData.isFocusPool, traits, save: save.type ?? "", lvl, formula, isExpended: active.expended ? true : false, isUseless: level.uses?.value < 1 ? true : false });
+				const sname = `${name} ${rank} (${e.name})`;
+        spells.push({name: sname, castRank, sEId: spellData.id, slug, description, DC: save.value, spell, index, isSave, isAttack, basic: spell.system.defense.save?.basic ?? false, isCantrip, isFocus: spellData.isFocusPool, traits, save: save.type ?? "", lvl, formula, isExpended: active.expended ? true : false , isUseless: rank.uses?.value < 1 ? true : false});
       }
     }
-  };
-  spells.sort((a, b) => {
+	};
+	spells.sort((a, b) => {
     if (a.lvl === b.lvl)
       return a.name
-        .toUpperCase()
-        .localeCompare(b.name.toUpperCase(), undefined, {
-          sensitivity: "base",
-        });
+      .toUpperCase()
+      .localeCompare(b.name.toUpperCase(), undefined, {
+        sensitivity: "base",
+      });
     return a.lvl - b.lvl;
   });
 
@@ -68,7 +70,7 @@ async function Spellsling() {
 
   /* Build dialog data */
   const es_data = [
-    { label: `Choose a Spell : `, type: `select`, options: spells.map(p => p.name) },
+    { label : `Choose a Spell : `, type : `select`, options : spells.filter(s => !s.isExpended && !s.isUseless).map(p => p.name) },
     { label: `Beast Gun : `, type: `select`, options: map_weap },
     { label: `Reroll using hero point?`, type: `checkbox` }
   ];
@@ -77,7 +79,7 @@ async function Spellsling() {
   const spell_choice = await quickDialog({ data: es_data, title: `Spellsling` });
 
   let last;
-  if (spell_choice[3]) {
+  if (spell_choice[2]) {
     if (actor.system.resources.heroPoints.value === 0) { return ui.notifications.warn("You have no hero points left")}
     last = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined ).getFlag("world","macro.spellUsed");
     last.spell = actor.itemTypes.spell.find(s => s.slug === last.slug);
@@ -93,10 +95,10 @@ async function Spellsling() {
   if (spc.spell.hasVariants && spc.isAttack) {
     let spell_variants;
     if (spc.spell.overlays.contents[0].system?.time !== undefined) {
-      spell_variants = Array.from(spc.spell.overlays).map(ovr => ({ name: spc.name + ovr.system.time.value, id: ovr._id, castLevel: spc.castLevel }));
+      spell_variants = Array.from(spc.spell.overlays).map(ovr => ({ name: spc.name + ovr.system.time.value, id: ovr._id, castRank: spc.castRank }));
     }
     else {
-      spell_variants = Array.from(spc.spell.overlays).map(ovr => ({ name: ovr.name ?? spc.name, id: ovr._id, castLevel: spc.castLevel }));
+      spell_variants = Array.from(spc.spell.overlays).map(ovr => ({ name: ovr.name ?? spc.name, id: ovr._id, castRank: spc.castRank }));
     }
 
     spell_variants.sort((a, b) => {
@@ -120,7 +122,7 @@ async function Spellsling() {
 
     // Obtain the ID of the chosen variant, then use that ID to fetch the modified spell
     const vrId = spell_variants.find(x => x.name === variant_choice[0]).id;
-    const variant = spc.spell.loadVariant({ castLevel: spc.castLevel, overlayIds: [vrId] });
+    const variant = spc.spell.loadVariant({ castRank: spc.castRank, overlayIds: [vrId] });
     spc.spell = variant;
   }
   const hook = Hooks.on("renderChatMessage", async function UpdateMessage(message) {
@@ -150,12 +152,12 @@ async function Spellsling() {
 
   // Automated Animations insertion by MrVauxs
   if (game.modules.get("autoanimations")?.active) {
-    AutomatedAnimations.playAnimation(token, spc.castLevel, { targets: [Array.from(game.user.targets)[0]], hitTargets: hit ? [Array.from(game.user.targets)[0]] : [] })
+    AutomatedAnimations.playAnimation(token, spc.castRank, { targets: [Array.from(game.user.targets)[0]], hitTargets: hit ? [Array.from(game.user.targets)[0]] : [] })
   }
 
-  let flavName = ` cast at Rank ${spc.castLevel}`;
-  if (spc.isCantrip) { flavName = ` Cantrip ${spc.castLevel}`; }
-  if (spc.isFocus) { flavName = ` Focus ${spc.castLevel}`; }
+  let flavName = ` cast at Rank ${spc.castRank}`;
+  if (spc.isCantrip) { flavName = ` Cantrip ${spc.castRank}`; }
+  if (spc.isFocus) { flavName = ` Focus ${spc.castRank}`; }
   let flavor = `<strong>Spellsling</strong><br>${spc.spell.link}${flavName} (${dos})`;
   if (spc.slug === null) { flavor = `<div class="tags">${ttags}<br><hr><strong>Spellsling</strong><br>${flavName} [Custom Spell] (${dos})`; }
   if (spc.isSave) {
@@ -163,10 +165,10 @@ async function Spellsling() {
   }
 
   if (spc.slug === "acid-splash" && critt === 3) {
-    if (spc.castLevel < 3) { flavor += `[[/r 1[persistent,acid]]]` }
-    else if (spc.castLevel > 2 && spc.castLevel < 5) { flavor += `[[/r 2[persistent,acid]]]` }
-    else if (spc.castLevel > 4 && spc.castLevel < 7) { flavor += `[[/r 3[persistent,acid]]]` }
-    else if (spc.castLevel > 6 && spc.castLevel < 9) { flavor += `[[/r 4[persistent,acid]]]` }
+    if (spc.castRank < 3) { flavor += `[[/r 1[persistent,acid]]]` }
+    else if (spc.castRank > 2 && spc.castRank < 5) { flavor += `[[/r 2[persistent,acid]]]` }
+    else if (spc.castRank > 4 && spc.castRank < 7) { flavor += `[[/r 3[persistent,acid]]]` }
+    else if (spc.castRank > 6 && spc.castRank < 9) { flavor += `[[/r 4[persistent,acid]]]` }
     else { flavor += `[[/r 5[persistent,acid]]]` }
   }
   if (spc.slug === 'ignition' && critt === 3) {
@@ -192,17 +194,17 @@ async function Spellsling() {
   }
   if (spc.slug === 'holy-light' || spc.slug === 'moonlight-ray') {
     if (game.user.targets.first().actor.traits.has('undead') || game.user.targets.first().actor.traits.has('fiend')) {
-      const spRD = spc.spell.getRollData({ castLevel: spc.castLevel });
+      const spRD = spc.spell.getRollData({ castRank: spc.castRank });
       spc.roll = (await spRD.item.getDamage()).template.damage.roll;
-      spc.roll = new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],(${(spc.castLevel - 3) * 2 + 5}d6)[spirit]}`);
+      spc.roll = new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],(${(spc.castRank - 3) * 2 + 5}d6)[spirit]}`);
       flavor = `<div class="tags">${ttags}<br><hr><strong>Spellsling</strong><br>${spc.spell.link}${flavName} (${dos})`;
     }
   }
   if (spc.slug === 'chilling-darkness') {
     if (game.user.targets.first().actor.traits.has('holy')) {
-      const spRD = spc.spell.getRollData({ castLevel: spc.castLevel });
+      const spRD = spc.spell.getRollData({ castRank: spc.castRank });
       spc.roll = (await spRD.item.getDamage()).template.damage.roll;
-      spc.roll = new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],(${(spc.castLevel - 3) * 2 + 5}d6)[spirit]}`);
+      spc.roll = new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],(${(spc.castRank - 3) * 2 + 5}d6)[spirit]}`);
       flavor = `<div class="tags">${ttags}<br><hr><strong>Spellsling</strong><br>${spc.spell.link}${flavName} (${dos})`;
     }
   }
@@ -222,8 +224,8 @@ async function Spellsling() {
     let ds = '';
     let dsc = '';
     if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery')) {
-      ds = ` + ${spc.castLevel}`;
-      dsc = ` + ${spc.castLevel * 2}`
+      ds = ` + ${spc.castRank}`;
+      dsc = ` + ${spc.castRank * 2}`
     }
     const chroma = [
       { d: `{30${ds}}[fire]`, f: `<span class="tag" data-trait data-description="PF2E.TraitDescriptionFire">Fire</span></div><hr><strong>Spellsling</strong><br>${spc.spell.link}${flavName} (${dos})<br><p class='compact-text'>1.<strong>Red</strong> (fire) The ray deals 30 fire damage to the target. Double on a Critical.</p>`, dd: `(60${dsc})[fire]` },
@@ -236,7 +238,7 @@ async function Spellsling() {
       { f: `</div><hr><strong>Spellsling</strong><br>${spc.spell.link}${flavName} (${dos})<br><p class='compact-text'>8.<strong>Intense Color</strong> The target is @Compendium[pf2e.conditionitems.Dazzled]{Dazzled} until the end of your next turn, or @Compendium[pf2e.conditionitems.Blinded]{Blinded} if your attack roll was a critical hit. Roll again and add the effects of another color (rerolling results of 8).</p>` },
     ];
     let chromaD = '1d4';
-    if (spc.castLevel > 5) {
+    if (spc.castRank > 5) {
       chromaD = '1d8';
       chroma[0].d = `(40${ds})[fire]`;
       chroma[0].dd = `(80${dsc})[fire]`;
@@ -273,7 +275,7 @@ async function Spellsling() {
   }
 
   let doit = true;
-  const { item } = await spc.spell.getRollData({ castLevel: spc.castLevel });
+  const { item } = await spc.spell.getRollData({ castRank: spc.castRank });
   if (critt >= 2) {
     if (spc.slug !== "chromatic-ray" && spc.roll === undefined && spc.formula === undefined) {
       doit = false;
@@ -296,7 +298,7 @@ async function Spellsling() {
   }
   /* Expend slots */
   if (spc.isCantrip || spell_choice[2]) { return; }
-  await s_entry.cast(spc.spell, { slot: spc.index, level: spc.castLevel, message: false });
+  await s_entry.cast(spc.spell, { slot: spc.index, rank: spc.castRank, message: false });
 }
 /* Dialog box */
 async function quickDialog({ data, title = `Quick Dialog` } = {}) {
