@@ -56,7 +56,7 @@ if (canvas.tokens.controlled.length !== 1){
     // const hasRepairFeat = checkFeat('tinkering-fingers');
 
     const skillName = "Repair";
-    const skillKey = "cra";
+    const skillKey = "crafting";
     const actionSlug = "Repair"
     const actionName = "Repair"
 
@@ -71,7 +71,7 @@ if (canvas.tokens.controlled.length !== 1){
     game.pf2e.Check.roll(
         new game.pf2e.CheckModifier(
             `<span class="pf2-icon">A</span> <b>${actionName}</b> - <p class="compact-text">${skillName} Skill Check</p>`,
-            token.actor.system.skills[skillKey], modifiers),
+            token.actor.skills[skillKey], modifiers),
         { actor: token.actor, type: 'skill-check', options, dc: { value: DC } }, //for DC insert: , dc: {value: 30}
         event,
         async (roll) => {

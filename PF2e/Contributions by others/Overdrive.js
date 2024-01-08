@@ -3,7 +3,7 @@ tested V9 / pf2 3.2.2.10109
 Based off of PF2 wiki's generic customizable macro
 Major thanks to stwlam for the massive legs crashing through some barriers I ran into (async roll after updating to V9 and sending dmg to chat)
 
-updated to v10 by darkim
+updated to v10 and v11 by darkim
 also did a few improvements
 */
 
@@ -26,7 +26,7 @@ if (canvas.tokens.controlled.length < 1){
        }) => {
     
         const skillName = "Overdrive";
-        const skillKey = "cra";
+        const skillKey = "crafting";
         const actionSlug = "Overdrive"
         const actionName = "Overdrive"
         
@@ -44,7 +44,7 @@ if (canvas.tokens.controlled.length < 1){
         game.pf2e.Check.roll(
             new game.pf2e.CheckModifier(
                 `<span class="pf2-icon">A</span> <b>${actionName}</b> - <p class="compact-text">${skillName} Skill Check</p>`,
-                inventorTokenActor.system.skills[skillKey], modifiers),
+                inventorTokenActor.skills[skillKey], modifiers),
             { actor: inventorTokenActor, type: 'skill-check', options, dc: { value: DC } }, //for DC insert: , dc: {value: 30}
             event,
             async (roll) => {
@@ -53,7 +53,7 @@ if (canvas.tokens.controlled.length < 1){
                         ChatMessage.create({
                             user: game.user.id,
                             type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                            flavor: `<strong>Critical Success</strong><br>Your gizmos go into a state of incredible efficiency called critical overdrive, adding great power to your attacks. Your Strikes deal additional damage equal to your Intelligence modifier for 1 minute. After the Overdrive ends, your gizmos become unusable as they cool down or reset, and you can't use Overdrive for 1 minute.`,
+                            flavor: `<strong>Critical Success</strong><br>Your gizmos go into a state of incredible efficiency called critical overdrive, adding great power to your attacks. Your Strikes deal additional damage equal to your Intelligence modifier for 1 minute. After the Overdrive ends, your gizmos become unusable as they cool down or reset, and you can't use Overdrive for 1 minute.<br>@UUID[Compendium.pf2e.feat-effects.Item.1XlJ9xLzL19GHoOL]{Effect: Overdrive (Critical Success)}`,
                             speaker: ChatMessage.getSpeaker(),
                         });
                     });
@@ -83,7 +83,7 @@ if (canvas.tokens.controlled.length < 1){
                         ChatMessage.create({
                             user: game.user.id,
                             type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                            flavor: `<strong>Success</strong><br>Your gizmos go into overdrive, adding power to your attacks.Your Strikes deal additional damage equal to half your Intelligence modifier for 1 minute. After the Overdrive ends, your gizmos become unusable as they cool down or reset, and you can't use Overdrive for 1 minute.<br><br>
+                            flavor: `<strong>Success</strong><br>Your gizmos go into overdrive, adding power to your attacks.Your Strikes deal additional damage equal to half your Intelligence modifier for 1 minute. After the Overdrive ends, your gizmos become unusable as they cool down or reset, and you can't use Overdrive for 1 minute.<br>@UUID[Compendium.pf2e.feat-effects.Item.MZDh3170EFIfOwTO]{Effect: Overdrive (Success)}<br><br>
                             <small><strong>Special</strong> When under the effects of Overdrive, you can still use the Overdrive action. You can't extend your Overdrive's duration this way, but you can turn an overdrive into a critical overdrive if you critically succeed. A failure has no effect on your current Overdrive, and you end your Overdrive on a critical failure.</small>
                             `,
                             speaker: ChatMessage.getSpeaker(),
