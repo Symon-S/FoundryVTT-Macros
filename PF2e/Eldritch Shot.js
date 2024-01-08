@@ -303,7 +303,7 @@ async function Eldritch_shot()
   }
   /* Expend slots */
   if (spc.isCantrip || spell_choice[2]) { return; }
-  await s_entry.cast(spc.spell,{slot: spc.index,rank: spc.castRank,message: false});
+  await s_entry.cast(spc.spell,{slotId: spc.index,rank: spc.castRank,message: false});
 }
 /* Dialog box */
 async function quickDialog({data, title = `Quick Dialog`} = {}) {
