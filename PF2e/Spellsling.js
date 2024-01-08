@@ -20,7 +20,6 @@ async function Spellsling() {
     if (e.isRitual) { continue; }
     if (e.system.prepared.value === "items") { continue }
 		const spellData = await e.getSheetData();
-    console.log(spellData);
     for(const group of spellData.groups) {
       const isCantrip = group.id === "cantrips" ? true : false;
       let i = 0;
