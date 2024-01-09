@@ -33,8 +33,8 @@ const mm = [];
 
 for (const e of mmE) {
 	const spellData = await e.getSheetData();
-	for (const sp of spellData.levels) {
-		if (sp.uses !== undefined && !sp.isCantrip && sp.uses.value < 1) { continue; }
+	for (const sp of spellData.groups) {
+		if (sp.uses !== undefined && sp.id !== "cantrips" && sp.uses?.value < 1) { continue; }
 		let i = 0;
 		for (const spa of sp.active) {
 			const index = i++
@@ -42,34 +42,46 @@ for (const e of mmE) {
 			if (spa.spell.slug !== "force-barrage") { continue; }
 			if (spa.expended) { continue; }
 			if (spellData.isFocusPool && !spa.spell.isCantrip && token.actor.system.resources.focus.value === 0) { continue; }
-			let level = `Rank ${sp.level}`
+			const level = sp.id === "cantrips" ? `Cantrip ${sp.maxRank}` : `Rank ${sp.maxRank}`;
+			const lvl = sp.id === "cantrips" ? 0 : sp.maxRank;
+			const rank = sp.maxRank;
 			const name = spa.spell.name;
 			const sname = `${name} ${level} (${e.name})`;
-			mm.push({ name: sname, entryId: spellData.id, level: sp.level, spId: spa.spell.id, slug: spa.spell.slug, spell: spa.spell, index: index, link:spa.spell.link });
+			mm.push({ name: sname, entryId: spellData.id, rank, lvl, spId: spa.spell.id, slug: spa.spell.slug, spell: spa.spell, index, link:spa.spell.link });
 		};
 	};
 };
 
+mm.sort((a, b) => {
+    if (a.lvl === b.lvl)
+    	return a.name
+      	.toUpperCase()
+      	.localeCompare(b.name.toUpperCase(), undefined, {
+        	sensitivity: "base",
+      	});
+    return a.lvl - b.lvl;
+});
+
 for (const s of token.actor.itemTypes.consumable) {
 	if (!s.system.traits.value.includes("wand") && !s.system.traits.value.includes("scroll")) { continue; }
 	if (s.system.spell?.system?.slug === 'force-barrage') {
-		if (s.system.traits.value.includes("wand") && s.system.uses.value > 0) {
-			mm.push({ name: `${s.name}`, level: s.system.spell.system.location.heightenedLevel, prepared: false, entryId: s.id, wand: true, scroll: false, spont: false, link: s.link})
+		if (s.system.traits.value.includes("wand") && s.system.uses?.value > 0) {
+			mm.push({ name: `${s.name}`, rank: s.system.spell.system.location.heightenedLevel, prepared: false, entryId: s.id, wand: true, scroll: false, spont: false, link: s.link})
 		}
 		if (s.system.traits.value.includes("scroll")) {
-			mm.push({ name: `${s.name}`, level: s.system.spell.system.location.heightenedLevel, prepared: false, entryId: s.id, wand: false, scroll: true, spont: false, link: s.link })
+			mm.push({ name: `${s.name}`, rank: s.system.spell.system.location.heightenedLevel, prepared: false, entryId: s.id, wand: false, scroll: true, spont: false, link: s.link })
 		}
 	}
 };
 for (const s of token.actor.itemTypes.equipment) {
 	if (mani.includes(s.slug)) {
-		mm.push({ name: `${s.name}`, level: parseInt(s.slug.substr(19, 1)), prepared: false, entryId: s.slug, wand: true, scroll: false, spont: false, link: s.link });
+		mm.push({ name: `${s.name}`, rank: parseInt(s.slug.substr(19, 1)), prepared: false, entryId: s.slug, wand: true, scroll: false, spont: false, link: s.link });
 	}
 };
 
 if (token.actor.itemTypes.effect.some(e => e.slug === "maniEF")) {
 	const effect = token.actor.itemTypes.effect.find(e => e.slug === "maniEF");
-	mm.unshift({ name: `${effect.name}`, level: effect.system.level.value, prepared: false, entryId: null, wand: false, scroll: false, spont: false, link: effect.link });
+	mm.unshift({ name: `${effect.name}`, rank: effect.system.level.value, prepared: false, entryId: null, wand: false, scroll: false, spont: false, link: effect.link });
 }
 
 if (mm.length === 0) { return ui.notifications.warn("You currently have no available means of casting Force Barrage"); }
@@ -90,8 +102,9 @@ if (mmdiag[2] === true) {
 
 const mmch = mm.find(n => n.name === mmdiag[0]);
 if (mmch.entryId === null) { mmdiag[1] = 1 }
+console.log(mmch);
 
-const multi = parseInt(mmdiag[1]) * Math.floor((1 + mmch.level) / 2);
+const multi = parseInt(mmdiag[1]) * Math.floor((1 + mmch.rank) / 2);
 
 const targetIds = game.user.targets.ids;
 const targets = canvas.tokens.placeables.filter(t => targetIds.includes(t.id));
@@ -128,11 +141,11 @@ for (const a of fmm) {
 	
 	if(token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery')) {
 
-		 dam = `(${a.num}d4 + ${a.num} + ${mmch.level})[force]`;
+		 dam = `(${a.num}d4 + ${a.num} + ${mmch.rank})[force]`;
 
 	} else if(token.actor.itemTypes.effect.some(ef => ef.slug === "effect-unleash-psyche")) {
 
-		 dam = `(${a.num}d4 + ${a.num} + ${2*(mmch.level)})[force]`;
+		 dam = `(${a.num}d4 + ${a.num} + ${2*(mmch.rank)})[force]`;
 
 	} else {
 
@@ -180,7 +193,7 @@ const s_entry = mmE.find(e => e.id === mmch.entryId);
 
 /* Expend slots */
 if (!mmch.wand && !mmch.scroll && expend) {
-	await s_entry.cast(mmch.spell, { slot: mmch.index, level: mmch.level, message: false });
+	await s_entry.cast(mmch.spell, { slotId: mmch.index, rank: mmch.rank, message: false });
 }
 
 
@@ -202,7 +215,7 @@ if (mmch.wand) {
 					},
 					"slug": "maniEF",
 					"level": {
-						"value": mmch.level
+						"value": mmch.rank
 					},
 					"duration": {
 						"value": 1,
