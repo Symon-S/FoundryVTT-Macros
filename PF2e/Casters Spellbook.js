@@ -20,28 +20,30 @@ const script = async function Spells(id){
 		let spells = [];
 		let buttons = {};
 		const spellData = await (token.actor.itemTypes.spellcastingEntry.find( i => i.id === id)).getSheetData();
-				spellData.levels.forEach(sp => {
-					if(!spellData.isRitual && !spellData.isPrepared && !spellData.isInnate && !spellData.isFocusPool && !spellData.isFlexible && !sp.isCantrip && sp.uses.value < 1) { return; }
-                                        if (sp.uses?.value !== undefined && sp.uses?.value === 0 ) { return; }
-					sp.active.forEach((spa,index) => {
-						if(spa === null) { return; }
-						if(spa.expended) { return; }
-						if(spa.spell.isFocusSpell && !spa.spell.isCantrip && token.actor.system.resources.focus.value === 0) { return; }
-						let type = '';
-						if (spellData.isRitual) { type = 'ritual'}
-						spells.push({name: spa.spell.name, spell: spa, lvl: sp.level, type: type, index: index, sEId: spellData.id});
-					});
-				});
+		spellData.groups.forEach(sp => {
+			if(!spellData.isRitual && !spellData.isPrepared && !spellData.isInnate && !spellData.isFocusPool && !spellData.isFlexible && sp.id !== "cantrips" && sp.uses?.value < 1) { return; }
+            if (sp.uses?.value !== undefined && sp.uses?.value === 0 ) { return; }
+			sp.active.forEach((spa,index) => {
+				if(spa === null) { return; }
+				if(spa.expended) { return; }
+				let lvl = sp.id;
+				if (lvl === "cantrips") { lvl = 0 }
+				if(spa.spell.isFocusSpell && !spa.spell.isCantrip && token.actor.system.resources.focus.value === 0) { return; }
+				let type = '';
+				if (spellData.isRitual) { type = 'ritual'}
+				spells.push({name: spa.spell.name, spell: spa, lvl, type: type, index: index, sEId: spellData.id});
+			});
+		});
 			
-			spells.sort((a, b) => {
-				if (a.lvl === b.lvl)
+		spells.sort((a, b) => {
+			if (a.lvl === b.lvl)
 				return a.name
 				.toUpperCase()
 				.localeCompare(b.name.toUpperCase(), undefined, {
-					sensitivity: "base",
-				});
-				return a.lvl - b.lvl;
+				sensitivity: "base",
 			});
+			return a.lvl - b.lvl;
+		});
 
 			if(spells.length === 0) { return ui.notifications.info("You have no spells available or are out of focus points"); }
 
@@ -64,35 +66,34 @@ const script = async function Spells(id){
 		async function Spell() {
 			buttons = {};
 			spells.forEach((value,index) => {
-		          async function Consume(){
-			    const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === value.sEId);
-			    await s_entry.cast(value.spell.spell,{slot: value.index,level: value.lvl,message: true})
+		        async function Consume(){
+			    	const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === value.sEId);
+			    	await s_entry.cast(value.spell.spell,{slotId: value.index,rank: value.lvl,message: true})
 			    };
 				buttons[index] = {label: value.name, value: value.spell.spell ,callback: async () => {  await Consume(); }}
 			});
 			await Diag({title: "Pick a Spell to Cast", buttons});
 			spells.forEach( async s => {
-        const elements = await document.getElementsByClassName("dialog-button");
-        let myElem1 = [...document.getElementsByClassName("app window-app dialog")].pop();
-        myElem1.style.display = "flex";
-        myElem1.style.flexWrap = "wrap";
-        myElem1.style.height = "auto";
-        myElem1.style.width = "200px";
-        myElem1.style.gap = "5px 5px";
-        let myElem2 = [...document.getElementsByClassName("dialog-buttons")].pop();
-        myElem2.style.display = "flex";
-        myElem2.style.flexFlow = "column wrap";
-        let element;
+        		const elements = document.getElementsByClassName("dialog-button");
+        		let myElem1 = [...document.getElementsByClassName("app window-app dialog")].pop();
+        		myElem1.style.display = "flex";
+        		myElem1.style.flexWrap = "wrap";
+        		myElem1.style.height = "auto";
+        		myElem1.style.width = "200px";
+        		myElem1.style.gap = "5px 5px";
+        		let myElem2 = [...document.getElementsByClassName("dialog-buttons")].pop();
+        		myElem2.style.display = "flex";
+        		myElem2.style.flexFlow = "column wrap";
+        		let element;
 				for (var i = 0; i < elements.length; i++) {
-          if (elements[i].innerText === s.name) {
-            element = elements[i];
-
+          			if (elements[i].innerText === s.name) {
+            			element = elements[i];
 						element.style.lineHeight = "normal";
 						await $(element).bind("contextmenu", function () { 
-        		s.spell.spell.sheet.render(true);
+        					s.spell.spell.sheet.render(true);
 						});
-          }
-      	}
+          			}
+      			}
 			});
 		};
 	}
@@ -121,17 +122,17 @@ let content = `
 <div><strong>Choose a Spellcasting Entry:</strong></div><script>${script}
 </script>`;
 token.actor.itemTypes.spellcastingEntry.forEach((value,index) => {
-  const test = value.getSheetData();
-  if (test.isFocusPool && !test.levels.some(x => x.isCantrip) && token.actor.system.resources.focus.value === 0){ return; }
-  content = content + `<button name="button${index}" class="psya-buttons ${index}" type="button" value="${value.name}" onclick="Spells('${value.id}')">${value.name}</button>`
+	const test = value.getSheetData();
+	if (test.isFocusPool && !test.levels.some(x => x.isCantrip) && token.actor.system.resources.focus.value === 0){ return; }
+  	content = content + `<button name="button${index}" class="psya-buttons ${index}" type="button" value="${value.name}" onclick="Spells('${value.id}')">${value.name}</button>`
 });  
 
 await new Promise(async (resolve) => {
     setTimeout(resolve,200);
- await new Dialog({
-    title:"Spellbook",
-    content,
-    buttons:{ Close: { label: "Close" } },
+ 	await new Dialog({
+    	title:"Spellbook",
+    	content,
+    	buttons:{ Close: { label: "Close" } },
     },{width: 210}).render(true);
 });
 
