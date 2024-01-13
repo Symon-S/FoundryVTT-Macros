@@ -94,10 +94,10 @@ async function Spellsling() {
   if (spc.spell.hasVariants && spc.isAttack) {
     let spell_variants;
     if (spc.spell.overlays.contents[0].system?.time !== undefined) {
-      spell_variants = Array.from(spc.spell.overlays).map(ovr => ({ name: spc.name + ovr.system.time.value, id: ovr._id, castRank: spc.castRank }));
+      spell_variants = Array.from(spc.spell.overlays.entries(), ([id, ovl]) => ({name: spc.name + ovl.system.time.value, id: id, castRank: spc.castRank}));
     }
     else {
-      spell_variants = Array.from(spc.spell.overlays).map(ovr => ({ name: ovr.name ?? spc.name, id: ovr._id, castRank: spc.castRank }));
+      spell_variants = Array.from(spc.spell.overlays.entries(), ([id, ovl]) => ({name: ovl.name ?? spc.name, id: id, castRank: spc.castRank}));
     }
 
     spell_variants.sort((a, b) => {
