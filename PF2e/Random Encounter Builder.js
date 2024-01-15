@@ -23,15 +23,6 @@ let amount = await Dialog.prompt({
     callback: (html) => { return html.find("#dcinput")[0].valueAsNumber }
 });
 
-const size = {
-    tiny: 1,
-    sm: 1,
-    med: 1,
-    lg: 2,
-    huge: 3,
-    grg: 4
-}
-
 const acn = [];
 do {
     const npc = npcs[Math.floor(Math.random() * npcs.length)]
@@ -40,6 +31,6 @@ do {
     if (npcs.length === 1) { random = amount }
     acn.push(npc.name);
     amount = amount - random;
-    await warpgate.spawn(npc.name, {token: {height: size[npc.size], width: size[npc.size]}}, {}, {duplicates:random});
+    await warpgate.spawn(npc.name, {token: {height: npc.prototypeToken.height, width: npc.prototypeToken.width}}, {}, {duplicates:random});
 }
 while (amount > 0);
