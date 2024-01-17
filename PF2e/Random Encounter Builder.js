@@ -13,7 +13,7 @@ if ( game.folders.filter(x => x.name ==="Random Encounter" && x.type === "Actor"
 
 if ( game.folders.filter(x => x.name ==="Random Encounter" && x.type === "Actor").length < 1 ) { return void ui.notifications.warn("You don't have a folder named Random Encounter in the Actors tab"); }
 
-const npcs = game.actors.filter(f => f.folder?.name === "Random Encounter");
+let npcs = game.actors.filter(f => f.folder?.name === "Random Encounter");
 if (npcs.length < 1) { return void ui.notifications.warn("You have no actors in the Random Ecnounter Folder")}
 
 let amount = await Dialog.prompt({
@@ -22,15 +22,23 @@ let amount = await Dialog.prompt({
     rejectClose: false,
     callback: (html) => { return html.find("#dcinput")[0].valueAsNumber }
 });
+const size = {
+    tiny: 1,
+    sm: 1,
+    med: 1,
+    lg: 2,
+    huge: 3,
+    grg: 4
+}
 
 const acn = [];
-do {
+while (amount > 0 && acn.length < npcs.length) {
     const npc = npcs[Math.floor(Math.random() * npcs.length)]
     if ( acn.includes(npc.name) ) { continue }
+    if ( amount <= 0 ) { break }
     let random = Math.floor(Math.random() * (amount - 1) + 1);
-    if (npcs.length === 1) { random = amount }
+    if (npcs.length === 1 || npcs.length - acn.length === 1) { random = amount }
     acn.push(npc.name);
     amount = amount - random;
-    await warpgate.spawn(npc.name, {token: {height: npc.prototypeToken.height, width: npc.prototypeToken.width}}, {}, {duplicates:random});
+    await warpgate.spawn(npc.name, {token: {height: size[npc.size], width: size[npc.size]}}, {}, {duplicates:random});
 }
-while (amount > 0);
