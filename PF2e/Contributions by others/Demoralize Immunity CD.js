@@ -13,6 +13,7 @@ const demEffect = {
     name: 'Demoralize Immunity',
     img: 'systems/pf2e/icons/spells/blind-ambition.webp',
     system: {
+      slug: 'demoralize-immunity',
       tokenIcon: {
           show: true
       },       
@@ -20,47 +21,65 @@ const demEffect = {
           value: 10,
           unit: 'minutes',
           sustained: false,
-          expiry: 'turn-start'
+          expiry: 'turn-end'
       },
       rules: [],
     },
   };
+/*
+const retreatEffect = {
+    type: 'effect',
+    name: 'Terrified Retreat',
+    slug: 'terrified-retreat-effect',
+    img: 'systems/pf2e/icons/conditions/fleeing.webp',
+    system: {
+      tokenIcon: {
+          show: true
+      },       
+      duration: {
+          value: 1,
+          unit: 'rounds',
+          sustained: false,
+          expiry: 'turn-end'
+      },
+      rules: [
+        {
+          "key": "GrantItem",
+          "uuid": "Compendium.pf2e.conditionitems.Item.sDPxOjQ9kx2RZE8D",
+          "onDeleteActions": {
+            "grantee": "restrict"
+          }
+        }
+      ],
+    },
+  };
+*/
+main();
 
-
-if (!token) {
-    ui.notifications.error("No token selected!");
-} else {
-    main();
-}
 
 async function main() {
-    const message = game.messages.contents.reverse().find( m => m.flags.demoralize?.id === token.id);
+    const message = game.messages.contents.reverse().find( m => m.flags.demoralize);
 
-    if (message === undefined) {
-        ui.notifications.info("Wrong token selected!");
-    } else {
-        const applicator = game.actors.get(message.flags.demoralize.demoId);
+    let {sourceTokenId, sourceName, targetTokenId, targetName, degreeOfSuccess} = message.flags.demoralize;
 
-        demEffect.name = `Demoralize by ${message.flags.demoralize.demoName}`;
-        demEffect.img = applicator.prototypeToken.texture.src;
+    let source = canvas.tokens.get(sourceTokenId);
+    let target = canvas.tokens.get(targetTokenId);
+    
+    // Check if we have permissions to edit the target actor
+    if(!target.actor.isOwner)
+        return ui.notification.warn("You don't have permissions to edit the target token");
 
-        if ( message.flags.demoralize.dos == 3 ) {
-            if (!token.actor.hasCondition("frightened") ) {
-                await token.actor.toggleCondition("frightened");
-            }
-            if (token.actor.getCondition("frightened").value < 2 ) {
-                await token.actor.increaseCondition("frightened");
-            }
-            if (message.flags.demoralize.tr && !token.actor.hasCondition("fleeing")) { 
-                await token.actor.toggleCondition("fleeing");
-            }
-        } else if (message.flags.demoralize.dos == 2) {
-            if (!token.actor.hasCondition("frightened") ) { 
-                await token.actor.toggleCondition("frightened");
-            }
-        }
+    demEffect.name = `Demoralize Immunity from ${sourceName}`;
+    demEffect.img = source.actor.prototypeToken.texture.src;
+    demEffect.flags = {demoralize: {source: source.actor.id}};
 
-        await token.actor.createEmbeddedDocuments("Item", [demEffect]);
-        ui.notifications.info(`${token.name} is now immune to Demoralize by ${message.flags.demoralize.demoName}`);
+    if(['success', 'criticalSuccess'].includes(degreeOfSuccess)){
+        let frightened = target.actor.getCondition('frightened')?.value ?? 0;
+        let newFrightened = Math.max(frightened, degreeOfSuccess == 'success' ? 1 : 2);
+        target.actor.increaseCondition('frightened', {value:newFrightened, max:newFrightened});
     }
+    await target.actor.createEmbeddedDocuments("Item", [demEffect]);
+
+    ui.notifications.info(`${targetName} is now immune to Demoralize by ${sourceName}`);
 }
+
