@@ -293,7 +293,7 @@ async function LootGenerator() {
 			const updates = await a.createEmbeddedDocuments("Item",stuff);
 			if ( picks[6] ) { await a.updateEmbeddedDocuments("Item", updates.map(u => ({_id: u.id, "system.identification.status": "unidentified" }))); }
 		}
-		a.sheet.render(true);
+		await a.sheet.render(true);
 	}
 
 	async function MyDialog(type) {
