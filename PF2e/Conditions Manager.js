@@ -110,8 +110,8 @@ const script5 = async function CConAll() {
 
 const script6 = async function TCon() {
   if (canvas.tokens.controlled.length === 0) { return void ui.notification.warn("No token selected") }
-  if (canvas.tokens.controlled.length > 1) { return void ui.notification.warn("Only one originating token can be selected at a time") }
-  if (game.user.targets.size === 0) { return void ui.notification.warn("At least one target for timed condition is required") }
+  if (canvas.tokens.controlled.length > 1 && game.combats.active?.started ) { return void ui.notification.warn("Only one originating token can be selected at a time") }
+  if (game.user.targets.size === 0 && game.combats.active?.started ) { return void ui.notification.warn("At least one target for timed condition is required") }
   const con_list = CONFIG.PF2E.conditionTypes;
   const w_V = [
 	"clumsy",
@@ -152,7 +152,7 @@ const script6 = async function TCon() {
   const pack = game.packs.get("pf2e.conditionitems");
   const index = await pack.getIndex({fields:["system.slug"]});
   const uuid = index.find(n => n.system.slug === tcon[0]).uuid;
-  const initiative = canvas.tokens.controlled[0].combatant.initiative;
+  const initiative = game.combats.active?.started ? canvas.tokens.controlled[0].combatant.initiative : null;
   const actor = canvas.tokens.controlled[0].actor.uuid;
   
   let alterations;
@@ -207,9 +207,16 @@ const script6 = async function TCon() {
   if ( tcon[4] ) {
     effect.system.duration.expiry = "turn-end";
   }
-  for ( const t of game.user.targets.ids ) {
-    const tok = canvas.tokens.placeables.find(i => i.id === t);
-    await tok.actor.createEmbeddedDocuments("Item", [effect]);
+  if (game.combats.active?.started) {
+    for ( const t of game.user.targets.ids ) {
+      const tok = canvas.tokens.placeables.find(i => i.id === t);
+      await tok.actor.createEmbeddedDocuments("Item", [effect]);
+    }
+  }
+  else { 
+    for ( const t of canvas.tokens.controlled) {
+      await t.actor.createEmbeddedDocuments("Item", [effect]);
+    }
   }
 }
 
