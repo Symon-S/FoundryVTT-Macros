@@ -8,6 +8,7 @@ The Clear a condition button is used to clear a specific condition off of a grou
 This macro is loosely adapted from the Apply Conditions macro created by cepvep.
 CSS design by websterguy
 Added the ability to add Timed Effects that grant conditions for a specific amount of time.
+Have the actor causing the effect selected and the ones the effect it being placed on targeted.
 Added the ability to clear all conditions on selected tokens.
 */
 
@@ -108,6 +109,9 @@ const script5 = async function CConAll() {
 }
 
 const script6 = async function TCon() {
+  if (canvas.tokens.controlled.length === 0) { return void ui.notification.warn("No token selected") }
+  if (canvas.tokens.controlled.length > 1) { return void ui.notification.warn("Only one originating token can be selected at a time") }
+  if (game.user.targets.size === 0) { return void ui.notification.warn("At least one target for timed condition is required") }
   const con_list = CONFIG.PF2E.conditionTypes;
   const w_V = [
 	"clumsy",
@@ -144,14 +148,16 @@ const script6 = async function TCon() {
       callback: async html => await Xtml(html),
       rejectClose: true,
   });
-  let name = `Efffect: ${game.i18n.localize(con_list[tcon[0]])} for ${tcon[2]} ${tcon[3]}`;
+  let name = `Effect: ${game.i18n.localize(con_list[tcon[0]])} for ${tcon[2]} ${tcon[3]}`;
   const pack = game.packs.get("pf2e.conditionitems");
   const index = await pack.getIndex({fields:["system.slug"]});
   const uuid = index.find(n => n.system.slug === tcon[0]).uuid;
+  const initiative = canvas.tokens.controlled[0].combatant.initiative;
+  const actor = canvas.tokens.controlled[0].actor.uuid;
   
   let alterations;
   if ( w_V.includes(tcon[0]) ) {
-    name = `Efffect: ${game.i18n.localize(con_list[tcon[0]])} for ${tcon[2]} ${tcon[3]}`;
+    name = `Effect: ${game.i18n.localize(con_list[tcon[0]])} for ${tcon[2]} ${tcon[3]}`;
     alterations = [
     {
       "mode": "override",
@@ -166,6 +172,11 @@ const script6 = async function TCon() {
     name,
     img: `systems/pf2e/icons/conditions/${tcon[0]}.webp`,
     system: {
+      context: {
+        origin: {
+          actor,
+        },
+      },
       tokenIcon: {
           show: false
       },       
@@ -183,7 +194,10 @@ const script6 = async function TCon() {
           },
           uuid,
         }
-      ]
+      ],
+      start: {
+        initiative,
+      }
     },
   };
 
@@ -193,8 +207,9 @@ const script6 = async function TCon() {
   if ( tcon[4] ) {
     effect.system.duration.expiry = "turn-end";
   }
-  for ( const t of canvas.tokens.controlled ) {
-    await t.actor.createEmbeddedDocuments("Item", [effect]);
+  for ( const t of game.user.targets.ids ) {
+    const tok = canvas.tokens.placeables.find(i => i.id === t);
+    await tok.actor.createEmbeddedDocuments("Item", [effect]);
   }
 }
 
