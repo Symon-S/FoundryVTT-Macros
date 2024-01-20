@@ -8,8 +8,10 @@ The Clear a condition button is used to clear a specific condition off of a grou
 This macro is loosely adapted from the Apply Conditions macro created by cepvep.
 CSS design by websterguy
 Added the ability to add Timed Effects that grant conditions for a specific amount of time.
-Have the actor causing the effect selected and the ones the effect it being placed on targeted.
+Have the actor causing the effect selected and the ones the effect it being placed on targeted when in combat.
+Defaults to token owner or GM targets when GM, whichever has more targeted when executed as GM.
 Added the ability to clear all conditions on selected tokens.
+Preselect targets(combat)/selected(outside of combat) tokens since the second dialog will not catch changes.
 */
 
 const condition_list = CONFIG.PF2E.conditionTypes;
@@ -31,23 +33,23 @@ const wV = [
 const nF = [];
 const script1 = async function CToggle(c) {
   for(const token of canvas.tokens.controlled) {
-   if (token.actor === null) { ui.notifications.warn(`${token.name} does not have an actor or is broken`); continue; }
-   if (token.actor.itemTypes.condition.some(p => p.slug === c && p.system.references.parent !== undefined)) { continue; }
-   if (token.actor !== null) { await token.actor.toggleCondition(c); }
+    if (token.actor === null) { ui.notifications.warn(`${token.name} does not have an actor or is broken`); continue; }
+    if (token.actor.itemTypes.condition.some(p => p.slug === c && p.system.references.parent !== undefined)) { continue; }
+    if (token.actor !== null) { await token.actor.toggleCondition(c); }
   }
 };
 
 const script2 = async function ICon(c) {
   for(const token of canvas.tokens.controlled) {
-   if (token.actor === null) { ui.notifications.warn(`${token.name} does not have an actor or is broken`); continue; }
-   if (token.actor !== null) { await token.actor.increaseCondition(c); }
+    if (token.actor === null) { ui.notifications.warn(`${token.name} does not have an actor or is broken`); continue; }
+    if (token.actor !== null) { await token.actor.increaseCondition(c); }
   }
 };
 
 const script3 = async function DCon(c) {
   for(const token of canvas.tokens.controlled) {
-   if (token.actor === null) { ui.notifications.warn(`${token.name} does not have an actor or is broken`); continue; }
-   if (token.actor !== null) { await token.actor.decreaseCondition(c); }
+    if (token.actor === null) { ui.notifications.warn(`${token.name} does not have an actor or is broken`); continue; }
+    if (token.actor !== null) { await token.actor.decreaseCondition(c); }
   }
 };
 
@@ -109,9 +111,30 @@ const script5 = async function CConAll() {
 }
 
 const script6 = async function TCon() {
-  if (canvas.tokens.controlled.length === 0) { return void ui.notification.warn("No token selected") }
-  if (canvas.tokens.controlled.length > 1 && game.combats.active?.started ) { return void ui.notification.warn("Only one originating token can be selected at a time") }
-  if (game.user.targets.size === 0 && game.combats.active?.started ) { return void ui.notification.warn("At least one target for timed condition is required") }
+  if (canvas.tokens.controlled.length === 0) { return void ui.notifications.warn("No token selected") }
+  if (canvas.tokens.controlled.length > 1 && game.combats.active?.started ) { return void ui.notifications.warn("Only one originating token can be selected at a time") }
+  const actor = canvas.tokens.controlled[0].actor;
+  let targets = game.user.targets.ids;
+  if (game.user.isGM && actor.hasPlayerOwner) {
+    const player = game.users.find(f => f.active && f.id === Object.entries(actor.ownership).find( o => o[0] !== game.userId && o[1] === 3 )[0]);
+    const playerTargets = player.targets.ids;
+    if (playerTargets.length > targets.length) {
+      targets = playerTargets;
+      ui.notifications.info(`Using ${player.name}'s targets. Targets default to the higher amount between GM and first found active owner of selected token`)
+    }
+  }
+  if (!game.user.isGM && canvas.tokens.placeables.filter(t => t.actor.isOwner && targets.includes(t.id)).length === 0) { return void ui.notifications.warn("You do not own any of the targeted tokens") }
+  else if (!game.user.isGM && canvas.tokens.placeables.filter(t => t.actor.isOwner && targets.includes(t.id)).length !== targets.length) {
+    targets = canvas.tokens.placeables.filter(t => t.actor.isOwner && targets.includes(t.id)).map(i => i.id);
+    void ui.notifications.info(`You cannot affect some targeted tokens because you do not own them`)
+  }
+  if (targets.length === 0 && game.combats.active?.started ) { 
+    if (game.user.isGM) {
+      return void ui.notifications.warn("At least one target for timed condition is required by an owner of the selected token");
+    }
+    else { return void ui.notifications.warn("At least one target for timed condition is required")}
+  }
+
   const con_list = CONFIG.PF2E.conditionTypes;
   const w_V = [
 	"clumsy",
@@ -153,7 +176,7 @@ const script6 = async function TCon() {
   const index = await pack.getIndex({fields:["system.slug"]});
   const uuid = index.find(n => n.system.slug === tcon[0]).uuid;
   const initiative = game.combats.active?.started ? canvas.tokens.controlled[0].combatant.initiative : null;
-  const actor = canvas.tokens.controlled[0].actor.uuid;
+  const actorUuid = actor.uuid;
   
   let alterations;
   if ( w_V.includes(tcon[0]) ) {
@@ -174,7 +197,7 @@ const script6 = async function TCon() {
     system: {
       context: {
         origin: {
-          actor,
+          actor: actorUuid,
         },
       },
       tokenIcon: {
@@ -208,7 +231,7 @@ const script6 = async function TCon() {
     effect.system.duration.expiry = "turn-end";
   }
   if (game.combats.active?.started) {
-    for ( const t of game.user.targets.ids ) {
+    for ( const t of targets ) {
       const tok = canvas.tokens.placeables.find(i => i.id === t);
       await tok.actor.createEmbeddedDocuments("Item", [effect]);
     }
