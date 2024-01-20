@@ -117,7 +117,7 @@ const script6 = async function TCon() {
   let targets = game.user.targets.ids;
   if (game.user.isGM && actor.hasPlayerOwner) {
     const player = game.users.find(f => f.active && f.id === Object.entries(actor.ownership).find( o => o[0] !== game.userId && o[1] === 3 )[0]);
-    const playerTargets = player.targets.ids;
+    const playerTargets = player?.targets?.ids ?? [];
     if (playerTargets.length > targets.length) {
       targets = playerTargets;
       ui.notifications.info(`Using ${player.name}'s targets. Targets default to the higher amount between GM and first found active owner of selected token`)
