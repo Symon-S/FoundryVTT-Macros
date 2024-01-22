@@ -4,8 +4,9 @@ This macro will make an intimidation check vs the target.
 
 
 This Macro works just like the system's Demoralize macro, except for the following additions:
-* Check if the target is immune
-* Check the 30ft range limit
+* Checks if the target is temporarily immune
+* Checks if the target is immune to any traits
+* Checks the 30ft range limit
 * Option to use Intimidating Glare or to select a language
 * Uses base system action with modified traits and predicates
 * Option to apply Frightened and Demoralize immnunity
@@ -13,7 +14,6 @@ This Macro works just like the system's Demoralize macro, except for the followi
 
 Current known limitations or regressions
 * Only 1 target can be selected
-* Doesn't automatically apply non-standard effects (like Terrified Retreat)
 
 original implementation by darkium
 rework by kromko
@@ -24,48 +24,46 @@ rework by kromko
 */
 
 /**
-* Wrapper for the DSN Hook. It will only use the hook if the non-buggy setting is not enabled.
+* Wrapper for the DSN Hook. If DSN is enabled, waits for the physical dice to stop rolling (unless the roll has assurance) 
 *
 * @param {Promise<Object>} rollPromise Promise of roll results
 */
 function dsnHook(rollPromise) {
-    
     if (game.modules.get("dice-so-nice")?.active){
         return rollPromise.then(async results=> {
-            await Promise.all(results.map(r=> game.dice3d.waitFor3DAnimationByMessageID(r.message.id)));
+            await Promise.all(results.map(r=> {
+                // Check if we are using assurance
+                if (r.message.getFlag('pf2e', 'context.options').includes('substitute:assurance'))
+                    return Promise.resolve(true);
+                return game.dice3d.waitFor3DAnimationByMessageID(r.message.id);
+                }
+            ));
             return results;
         });
     } else {
         rollPromise;
     }
-  }
+}
+ 
+function isImmune(actor, trait){
+    return actor.system.attributes.immunities.some(i => i.type === trait);
+}
 
 
-if (canvas.tokens.controlled.length !== 1){
+if (canvas.tokens.controlled.length != 1){
     return ui.notifications.warn('You need to select exactly one token to perform Demoralize.');
 } else if (game.user.targets.size != 1){
     return ui.notifications.warn(`You must target one token.`);
 }
 const actor = _token.actor;
-const target = game.user.targets.first();
+const targets = game.user.targets;
 
 const respectHiddenNames = !game.settings.get("pf2e", "metagame_tokenSetsNameVisibility");
 const hideActorName = respectHiddenNames && !_token.document.playersCanSeeName;
-const hideTargetName = respectHiddenNames && !target.document.playersCanSeeName;
 const actorName = !hideActorName ? _token.name : 'Unknown';
-const targetName = !hideTargetName ? target.name : 'Unknown';
 
 const actorChatName = !hideActorName ? actorName : `Unknown <span data-visibility="gm">(${_token.name})</span>`;
-const targetChatName = !hideTargetName ? targetName : `Unknown <span data-visibility="gm">(${target.name})</span>`;
 
-// check if the target has immunity
-if (target.actor.itemTypes.effect.some(e=> e.slug === 'demoralize-immunity' && e.flags?.demoralize?.source === actor.id)) 
-    return ui.notifications.warn(`${targetName} is currently immune to Demoralize by ${actorName}`);
-
-// check if the target is close enough
-// expects distance in ft
-if (token.distanceTo(target) > 30)
-        return ui.notifications.warn(`${targetName} is too far.`);
 const itemsLikeIntimidatingGlare = ['intimidating-glare', 'dark-fields-kitsune', 'elemental-embellish', 'frilled-lizardfolk'];
 const intimidatingGlare = _token.actor.items.find((item) => itemsLikeIntimidatingGlare.includes(item.slug));
 
@@ -101,11 +99,11 @@ let selectedMode = await new Promise(resolve => {
         selectLanguage.prop( "disabled", checked );
     }
     new Dialog({
-        title: `How would you like to demoralize ${targetName}?`,
+        title: `How would you like to demoralize your targets?`,
         content: content,
         buttons: {
             Select: {
-                label: 'BOO!', 
+                label: 'Boo!', 
                 callback: (html) => {
                     let result = html.find('[name="useGlare"]')[0]?.checked ? 
                     ({mode:'visual'}) : ({mode:'auditory', lang:html.find('[name="selectLanguage"]').val()});
@@ -118,63 +116,132 @@ let selectedMode = await new Promise(resolve => {
     ).render(true)
 });
 
-
 if(!selectedMode)
-    return ui.notifications.error('Demoralization was interrupted');
+    return ui.notifications.warn('Demoralize was interrupted');
 
-// We make a variant action.
 const baseAction = game.pf2e.actions.get('demoralize');
-let action;
-
-let flavor = '';
-
+// prepare traits and modifiers
+let actionOptions = {traits:baseAction.traits, modifiers:baseAction.modifiers};
 if(selectedMode.mode == 'visual'){
-    action = baseAction.toActionVariant({
-        traits: [...baseAction.traits.filter(t=> t!='auditory'), 'visual'],
-        modifiers: baseAction.modifiers.filter(m=> !m.label.includes("Unintelligible"))
-    });
-    flavor = `${actorChatName} tries to demoralize ${targetChatName} with ${intimidatingGlare.name}.`;
-} else {
-    if (!target.actor.system.details.languages.value.includes(selectedMode.lang)){
-        action = baseAction.toActionVariant({
-            rollOptions: [...baseAction.rollOptions, 'action:demoralize:unintelligible']
-        });
-        flavor = `${actorChatName} tries to demoralize ${targetChatName} in ${languages.find(l=>l.id == selectedMode.lang).name}, which they don't speak.`;
-    } else {
-        action = baseAction.toActionVariant();
-        flavor = `${actorChatName} tries to demoralize ${targetChatName} in ${languages.find(l=>l.id == selectedMode.lang).name}, which they speak.`;
-    }
+    actionOptions.traits = [...actionOptions.traits.filter(t=> t!='auditory'), 'visual'];
+    actionOptions.modifiers = actionOptions.modifiers.filter(m=> !m.label.includes("Unintelligible"));
 }
-let results = await dsnHook( action.use({actor: actor})).then(r=> r?.[0]);
 
-console.log(results);
+let rollResults = targets.map(target =>{
+    const hideTargetName = respectHiddenNames && !target.document.playersCanSeeName;
+    const targetName = !hideTargetName ? target.name : 'Unknown';
+    const targetChatName = !hideTargetName ? targetName : `Unknown <span data-visibility="gm">(${target.name})</span>`;
 
-flavor += `<br>${targetChatName} has temporary immunity to Demoralize action by ${actorChatName}.`;
-
-if (game.modules.get('xdy-pf2e-workbench')?.active) { 
-    // Extract the Macro ID from the asynomous benefactor macro compendium.
-    const macroName = `Demoralize Immunity CD`;
-    const macroId = (await game.packs.get('xdy-pf2e-workbench.asymonous-benefactor-macros')).index.find(n => n.name === macroName)?._id;
-    if(['success', 'criticalSuccess'].includes(results.outcome)){
-        flavor += `<hr>@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Click to apply Frightened and immunity}`;
-    } else{
-        flavor += `<hr>@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Click to apply immunity}`;
+    let baseResult = {
+        targetTokenId: target.id,
+        targetName: targetName,
+        targetChatName: targetChatName
     }
+
+    // check for demoralize cooldown
+    let cooldown = target.actor.itemTypes.effect.find(e=> e.slug === 'demoralize-immunity' && e.flags?.demoralize?.source === actor.id)
+    if(cooldown){
+        return new Promise(resolve => resolve({
+            ...baseResult,
+            outcome: 'invalid',
+            flavor: `${targetChatName}: Immune (${cooldown.system.remaining ?? 'temporary'})`
+        }));
+    }
+
+    // check for target distance
+    if(target.distanceTo(_token) > 30){
+        return new Promise(resolve => resolve({
+            ...baseResult,
+            outcome: 'invalid',
+            flavor: `${targetChatName}: Too far`
+        }));
+    }
+
+    // Check for trait immunity
+    let immunity = actionOptions.traits.find(trait => isImmune(target.actor, trait));
+    if(immunity){
+        return new Promise(resolve => resolve({
+            ...baseResult,
+            outcome: 'invalid',
+            flavor: `${targetChatName}: Immune to <div class="tags" style="display:inline;"><div class="tag">${game.i18n.localize(`PF2E.Trait${immunity[0].toUpperCase()+immunity.slice(1)}`)}</div></div>.`
+        }));
+    }
+
+    // We make a variant action.
+    let action;
+    if(selectedMode.mode == 'visual'){
+        action = baseAction.toActionVariant({
+            traits: actionOptions.traits,
+            modifiers: actionOptions.modifiers
+        });
+        return dsnHook( action.use({actor: actor, target:target})).then(r=> ({
+            ...baseResult,
+            outcome:r?.[0].outcome,
+            flavor: `${targetChatName}: ${game.i18n.localize(`PF2E.Check.Result.Degree.Check.${r?.[0].outcome}`)}`
+        }));
+        
+    } else {
+        if (!target.actor.system.details.languages.value.includes(selectedMode.lang)){
+            action = baseAction.toActionVariant({
+                rollOptions: [...baseAction.rollOptions, 'action:demoralize:unintelligible']
+            }); 
+            return dsnHook( action.use({actor: actor, target:target})).then(r=> ({
+                ...baseResult,
+                outcome:r?.[0].outcome,
+                flavor: `${targetChatName}: ${game.i18n.localize(`PF2E.Check.Result.Degree.Check.${r?.[0].outcome}`)} (doesn't speak the language)`
+            }));
+        } else {
+            action = baseAction.toActionVariant();
+            return dsnHook( action.use({actor: actor, target:target})).then(r=> ({
+                ...baseResult,
+                outcome:r?.[0].outcome,
+                flavor: `${targetChatName}: ${game.i18n.localize(`PF2E.Check.Result.Degree.Check.${r?.[0].outcome}`)} (speaks the language)`
+            }));
+        }
+    }
+})
+
+rollResults = await Promise.all(rollResults);
+
+let summary = '';
+if(rollResults.length == 1){
+    summary = selectedMode.mode === 'visual' ?
+        `${actorChatName} tries to demoralize ${rollResults[0].targetChatName} with ${intimidatingGlare.name}.` :
+        `${actorChatName} tries to demoralize ${rollResults[0].targetChatName} in ${languages.find(l=>l.id == selectedMode.lang).name}.`;
+    summary += `<hr>${rollResults[0].flavor.split(': ').pop()}`
 } else {
-    ui.notifications.warn(`Workbench Module not active! Linking Immunity effect Macro not possible.`);
+    summary = selectedMode.mode === 'visual' ?
+    `${actorChatName} tries to demoralize targets with ${intimidatingGlare.name}.` :
+    `${actorChatName} tries to demoralize targets in ${languages.find(l=>l.id == selectedMode.lang).name}.`;
+    summary += '<hr>';
+    summary += rollResults.map(r=>r.flavor).join('<br>');
+}
+if(rollResults.every(r=>r.outcome === 'invalid')){
+    summary += '<hr>No effects to apply';
+} else {
+    if (game.modules.get('xdy-pf2e-workbench')?.active) { 
+        // Extract the Macro ID from the asynomous benefactor macro compendium.
+        const macroName = `Demoralize Immunity CD`;
+        const macroId = (await game.packs.get('xdy-pf2e-workbench.asymonous-benefactor-macros')).index.find(n => n.name === macroName)?._id;
+        summary += `<hr>@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Click to apply effects and immunity}`;
+    } else {
+        summary += `<hr>Workbench Module not active! Effects have to be applies manually.`;
+    }
 }
 
 ChatMessage.create({
     user: game.user.id,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-    flavor: flavor,
+    content: summary,
     speaker: ChatMessage.getSpeaker(),
     flags: {demoralize:{
         sourceTokenId:_token.id,
         sourceName: actorName,
-        targetTokenId:target.id,
-        targetName: targetName,
-        degreeOfSuccess: results.outcome
+        results: rollResults.map(r => ({
+            outcome:r.outcome, 
+            targetTokenId:r.targetTokenId, 
+            targetName:r.targetName
+        })),
+        terrifiedRetreat: actor.itemTypes.feat.some(f=>f.slug === 'terrified-retreat')
     }}
 });
-
