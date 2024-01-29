@@ -242,6 +242,6 @@ ChatMessage.create({
             targetTokenId:r.targetTokenId, 
             targetName:r.targetName
         })),
-        terrifiedRetreat: actor.itemTypes.feat.some(f=>f.slug === 'terrified-retreat')
+        terrifiedRetreat: (actor.level > target.actor.level)? actor.itemTypes.feat.some(f=>f.slug === 'terrified-retreat') : false
     }}
 });
