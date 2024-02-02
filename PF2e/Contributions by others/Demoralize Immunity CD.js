@@ -34,12 +34,13 @@ main();
 async function main() {
   const message = game.messages.contents.findLast( m => m.flags.demoralize);
 
-  let {sourceTokenId, sourceName, results, terrifiedRetreat} = message.flags.demoralize;
+  let {sourceTokenId, sourceName, results} = message.flags.demoralize;
 
   let source = canvas.tokens.get(sourceTokenId);
   
-  results = results.filter(r=>r.outcome !== 'invalid');
-  // Check if we have permissions to edit the target actor
+  results = results.filter(r => r.outcome !== 'invalid');
+
+  // Check if we have permissions to edit all of the target actors
   if(!results.every(r=>canvas.tokens.get(r.targetTokenId)?.actor.isOwner))
       return ui.notification.warn("You don't have permissions to edit some of the tokens");
 
@@ -58,7 +59,7 @@ async function main() {
     }
 
     // Terrified retreat
-    if(terrifiedRetreat && outcome === 'criticalSuccess'){
+    if(source.actor.itemTypes.feat.some(f=>f.slug === 'terrified-retreat') && source.actor.level > target.actor.level && outcome === 'criticalSuccess'){
       target.actor.increaseCondition('fleeing', {max:1});
     }
 
