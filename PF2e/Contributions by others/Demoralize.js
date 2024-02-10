@@ -38,7 +38,7 @@ function dsnHook(rollPromise) {
             return results;
         });
     } else {
-        rollPromise;
+        return rollPromise;
     }
 }
  
