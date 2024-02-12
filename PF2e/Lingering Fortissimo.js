@@ -27,7 +27,7 @@ const lc_data = [
       
 if (token.actor.itemTypes.feat.some(s => s.slug === 'fortissimo-composition')) { lc_data.push( { label: `Fortissimo Composition (Rallying Anthem, Courageous Anthem, and Song of Strength Only) : `, type: `checkbox`, options: `style="margin:auto;display:block"` } ) }     
 
-const choice = await quickDialog({data: lc_data, title: `Lingering Composition`});
+const {choice, event} = await quickDialog({data: lc_data, title: `Lingering Composition`});
       
 const cast_spell = token.actor.itemTypes.spell.find(e => e.name === choice[0]);
 const slug = cast_spell.slug;
@@ -116,8 +116,8 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 	  await new Dialog({
 	    title, content,
 	    buttons : {
-		 		Ok : { label : `Ok`, callback : (html) => {
-		   		resolve(Array(data.length).fill().map((e,i)=>{
+		 		Ok : { label : `Ok`, callback : (html, event) => {
+		   		resolve({choice:Array(data.length).fill().map((e,i)=>{
 		     		let {type} = data[i];
 		     		if(type.toLowerCase() === `select`) {
 		       		return html.find(`select#${i}qd`).val();
@@ -134,7 +134,7 @@ async function quickDialog({data, title = `Quick Dialog`} = {}) {
 								return html.find(`input#${i}qd`)[0].valueAsNumber;
 		      		}
 		    		}
-		  		}));
+		  		}), event});
 				}}
 	    },
 		default: "Ok",
@@ -168,7 +168,7 @@ const roll = await game.pf2e.Check.roll(
 	new game.pf2e.CheckModifier(
 	  `<span class="pf2-icon">A</span> <b>${actionName}</b><br><i>${choice[0]}</i> - <p class="compact-text">${skillName } Skill Check</p>`,
 	  token.actor.skills.performance, modifiers 
-	), { actor: token.actor, type: 'skill-check', options, notes, dc: { value: DC }, skipDialog: true }, null);
+	), { actor: token.actor, type: 'skill-check', options, notes, dc: { value: DC }}, event);
 
 if (roll.options.degreeOfSuccess === 3) {
 	if(choice[2] && effect !== undefined) {
