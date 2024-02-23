@@ -42,7 +42,7 @@ async function main() {
 
   // Check if we have permissions to edit all of the target actors
   if(!results.every(r=>canvas.tokens.get(r.targetTokenId)?.actor.isOwner))
-      return ui.notification.warn("You don't have permissions to edit some of the tokens");
+      return ui.notifications.warn("You don't have permissions to edit some of the tokens");
 
   demEffect.name = `Demoralize Immunity from ${sourceName}`;
   demEffect.img = source.actor.prototypeToken.texture.src;
