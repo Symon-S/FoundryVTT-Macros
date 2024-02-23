@@ -105,7 +105,7 @@ let loreDialog = new SkillActionDialog({
   buttons: {
     performAction: {
       label: "Select lore",
-      callback: () => unspecifiedActivity(selectedLore, true),
+      callback: () => recallKnowledge(selectedLore),
     },
     cancel: {
       label: "Cancel",
@@ -277,6 +277,11 @@ function coreAction(whatAction, skill = "") {
   game.pf2e.actions[whatAction](actionProperties);
 }
 
+function recallKnowledge(skill) {
+  if (skill) game.pf2e.actions.get("recall-knowledge").use({ statistic: skill });
+}
+
+
 function loreSkill(whatAction) {
   if (loreKeys.length < 1) {
     return ui.notifications.error("Selected token does not have a lore skill");
@@ -418,7 +423,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            unspecifiedActivity("arcana");
+            recallKnowledge("arcana");
           },
         },
         {
@@ -598,7 +603,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            unspecifiedActivity("crafting");
+            recallKnowledge("crafting");
           },
         },
         {
@@ -853,7 +858,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            unspecifiedActivity("medicine");
+            recallKnowledge("medicine");
           },
         },
         {
@@ -918,7 +923,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            unspecifiedActivity("nature");
+            recallKnowledge("nature");
           },
         },
         {
@@ -963,7 +968,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            unspecifiedActivity("occultism");
+            recallKnowledge("occultism");
           },
         },
         {
@@ -1088,7 +1093,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            unspecifiedActivity("religion");
+            recallKnowledge("religion");
           },
         },
         {
@@ -1143,7 +1148,7 @@ function getSkillActionDirectory() {
           prerequisite: null,
           actionCost: 1,
           command: () => {
-            unspecifiedActivity("society");
+            recallKnowledge("society");
           },
         },
         {
