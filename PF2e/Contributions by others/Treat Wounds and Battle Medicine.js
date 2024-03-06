@@ -634,6 +634,7 @@ const renderDialogContent = ({
  hasHealersToolsHeld,
  batonUsed,
  hasBattleMedicsBatonHeld,
+ inCombat,
 }) => `
  <div>
    Attempt to heal the target by 2d8 hp.<br>You have to hold healer's toolkit, or you are wearing them and have a hand free!<br>
@@ -682,7 +683,7 @@ const renderDialogContent = ({
              <option value="0">Treat Wounds</option>
              ${
                hasBattleMedicine
-                 ? '<option value="1">Battle Medicine</option>'
+                 ? `<option value="1" ${inCombat ? 'selected' : ''}>Battle Medicine</option>`
                  : ''
              }
          </select>
@@ -840,6 +841,7 @@ if (canvas.tokens.controlled.length !== 1){
    const batonUsed = token.actor.itemTypes.effect.find(obj => {
       return obj.name === `Battle Medic's Baton used`
    })
+   const inCombat = game.combats.active?.started;
    const level = token.actor.system.details.level.value;
    const totalAssurance = 10 + (bmtw_skill.rank * 2 + level);
    const dialog = new Dialog({
@@ -855,6 +857,7 @@ if (canvas.tokens.controlled.length !== 1){
        hasHealersToolsHeld,
        batonUsed,
        hasBattleMedicsBatonHeld,
+       inCombat,
      }),
      buttons: {
        yes: {
