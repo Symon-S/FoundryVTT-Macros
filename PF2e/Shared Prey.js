@@ -28,6 +28,9 @@ const sPTId = await Dialog.prompt({
   rejectClose: false,
   callback: (html) => { return html.find("#exampleSelect").val(); }
 });
+
+if (sPTId === null) { return }
+
 const uuids = [
   "@UUID[Compendium.pf2e.feat-effects.Item.uXCU8GgriUjuj5FV]", //flurry effect
   "@UUID[Compendium.pf2e.feat-effects.Item.4UNQfMrwfWirdwoV]", //masterful flurry effect
