@@ -119,14 +119,14 @@ const getHealSuccess = ({
      break;
    case 2:
      if (isRiskySurgery) {
-       healFormula = useMagicHands ? `32${bonusString}` : `4d8${bonusString}`;
+       healFormula = useMagicHands ? `4d10${bonusString}` : `4d8${bonusString}`;
        successLabel = 'Success with risky surgery';
      } else if (useMortalHealing) {
        // Mortal Healing (can't have a deity) + Magic Hands (must have a deity) is not possible.
        healFormula = `4d8${bonusString}`;
        successLabel = 'Success with mortal healing';
      } else {
-       healFormula = useMagicHands ? `16${bonusString}` : `2d8${bonusString}`;
+       healFormula = useMagicHands ? `2d10${bonusString}` : `2d8${bonusString}`;
        successLabel = 'Success';
      }
      if (spellStitcherBonus > 0) {
@@ -134,7 +134,7 @@ const getHealSuccess = ({
      }
      break;
    case 3:
-     healFormula = useMagicHands ? `32${bonusString}` : `4d8${bonusString}`;
+     healFormula = useMagicHands ? `4d10${bonusString}` : `4d8${bonusString}`;
      if (spellStitcherBonus > 0) {
        healFormula += `+${2 * spellStitcherBonus}`;
      }
@@ -458,6 +458,7 @@ async function applyChanges($html) {
    }
    const medicBonus = hasMedicDedication ? (usedProf - 1) * 5 : 0;
    const useBattleMedicineBonus = useBattleMedicine * level * forensicMedicine;
+   const magicHandsBonus = useMagicHands * level;
 
    const showIcons = true;
    const immunityEffect = (await fromUuid(immunityEffectUUID)).toObject();
@@ -537,7 +538,7 @@ async function applyChanges($html) {
        case 1:
          rollTreatWounds({
            DC: 15 + mod,
-           bonus: 0 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
+           bonus: 0 + medicBonus + godlessHealingBonus + useBattleMedicineBonus + magicHandsBonus,
            med,
            isRiskySurgery,
            useMortalHealing,
@@ -554,7 +555,7 @@ async function applyChanges($html) {
        case 2:
          rollTreatWounds({
            DC: 20 + mod,
-           bonus: 10 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
+           bonus: 10 + medicBonus + godlessHealingBonus + useBattleMedicineBonus + magicHandsBonus,
            med,
            isRiskySurgery,
            useMortalHealing,
@@ -571,7 +572,7 @@ async function applyChanges($html) {
        case 3:
          rollTreatWounds({
            DC: 30 + mod,
-           bonus: 30 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
+           bonus: 30 + medicBonus + godlessHealingBonus + useBattleMedicineBonus + magicHandsBonus,
            med,
            isRiskySurgery,
            useMortalHealing,
@@ -588,7 +589,7 @@ async function applyChanges($html) {
        case 4:
          rollTreatWounds({
            DC: 40 + mod,
-           bonus: 50 + medicBonus + godlessHealingBonus + useBattleMedicineBonus,
+           bonus: 50 + medicBonus + godlessHealingBonus + useBattleMedicineBonus + magicHandsBonus,
            med,
            isRiskySurgery,
            useMortalHealing,
