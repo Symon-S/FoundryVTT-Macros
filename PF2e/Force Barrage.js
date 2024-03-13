@@ -158,25 +158,10 @@ for (const a of fmm) {
 		{
 			flavor: `<strong>${a.num} Force Barrage(s) targeting ${a.name}</strong><br>${mmch.link}`,
 			speaker: ChatMessage.getSpeaker(),
-			flags: {
-				"pf2e-target-damage": {
-					targets: [targets[targetNum]].map((target) => {
-						return {
-							id: target.id,
-							tokenUuid: target.document.uuid,
-							actorUuid: target.actor.uuid,
-						}
-					})
-				}
-			}
 		}
 	);
-	if (!(typeof args === 'undefined' || args === null)) {
-		expend = args[2] ?? true;
-	}
-	if (game.modules.get("autoanimations")?.active) {
-		await AutomatedAnimations.playAnimation(token, mmch.spell, { targets: [targets[targetNum]], hitTargets: [targets[targetNum]] })
-	} else if (game.modules.get("sequencer")?.active && (game.modules.get("JB2A_DnD5e")?.active || game.modules.get("jb2a_patreon")?.active)) {
+
+	if (game.modules.get("sequencer")?.active && (game.modules.get("JB2A_DnD5e")?.active || game.modules.get("jb2a_patreon")?.active)) {
 		new Sequence()
 		.effect()
 		.file(`jb2a.magic_missile`)
