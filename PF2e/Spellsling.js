@@ -60,7 +60,7 @@ async function Spellsling() {
   });
 
 
-  if (spells.length === 0) { return ui.notifications.info("You have no spells available"); }
+  if (spells.length === 0) { return void ui.notifications.info("You have no spells available"); }
 
   /* Get them guns baby */
   const weapons = token.actor.itemTypes.weapon.filter(i => i.isEquipped && i.system.group === 'firearm');
@@ -77,12 +77,13 @@ async function Spellsling() {
   /* Run dialog and alot data */
   const spell_choice = await quickDialog({ data: es_data, title: `Spellsling` });
 
-  let last;
+  let last, mes;
   if (spell_choice[2]) {
-    if (actor.system.resources.heroPoints.value === 0) { return ui.notifications.warn("You have no hero points left")}
-    last = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined ).getFlag("world","macro.spellUsed");
+    mes = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined );
+    if (mes === undefined) return void ui.notifications.warn("There are no previously cast spells or strike has already been rerolled");
+    if (actor.system.resources.heroPoints.value === 0) { return void ui.notifications.warn("You have no hero points left")}
+    last = mes.getFlag("world","macro.spellUsed");
     last.spell = actor.itemTypes.spell.find(s => s.slug === last.slug);
-    if (last === undefined) { return ui.notifications.warn("There are no previously cast spells") }
   }
 
   /* Get the strike actions and roll strike */
@@ -124,19 +125,15 @@ async function Spellsling() {
     const variant = spc.spell.loadVariant({ castRank: spc.castRank, overlayIds: [vrId] });
     spc.spell = variant;
   }
-  const hook = Hooks.on("renderChatMessage", async function UpdateMessage(message) {
-    if (message.speaker.token === token.id) {
-      if (message.getFlag("pf2e", "modifierName") === "strike") {
-        await message.setFlag("world", "macro.spellUsed", spc);
-      }
-      if (message.getFlag("pf2e", "origin.type") === "spell" && doit) {
-        await message.update({ flavor: message.flavor + flavor });
-      }
-    }
-  });
-
-  let pers;
-  const critt = (await strike.attack({ event })).degreeOfSuccess;
+  
+  let pers, critt;
+  if ( !spell_choice[2] ) {
+    critt = (await strike.attack({ event, callback: async(x) =>  { await(game.messages.contents.findLast(m => m.speaker.token === _token.id)).setFlag("world","macro.spellUsed", spc); }})).degreeOfSuccess;
+  }
+  else {
+    await game.pf2e.Check.rerollFromMessage(mes,{heroPoint:1});
+    critt = game.messages.contents.findLast(r => r.isReroll).rolls[0].degreeOfSuccess;
+  }
 
   let ttags = '';
   for (const t of spc.traits) {
@@ -273,11 +270,9 @@ async function Spellsling() {
     }
   }
 
-  let doit = true;
   const { item } = await spc.spell.getRollData({ castRank: spc.castRank });
   if (critt >= 2) {
     if (spc.slug !== "chromatic-ray" && spc.roll === undefined && spc.formula === undefined) {
-      doit = false;
       await item.toMessage(null, { speaker: ChatMessage.getSpeaker(), flags: { "world.macro.spellUsed": spc } })
     }
     if (critt === 3 && spc.slug !== "chromatic-ray") { ui.notifications.info('Spell damage will need to be doubled when applied'); }
@@ -289,12 +284,6 @@ async function Spellsling() {
     }
   }
 
-  setTimeout(() => { Hooks.off("renderChatMessage", hook) });
-
-  if (spell_choice[2]) {
-    await ChatMessage.create({ speaker: ChatMessage.getSpeaker(), content: `Rerolled using a hero point` });
-    await actor.update({ "system.resources.heroPoints.value": actor.system.resources.heroPoints.value - 1 })
-  }
   /* Expend slots */
   if (spc.isCantrip || spell_choice[2]) { return; }
   await s_entry.cast(spc.spell, { slotId: spc.index, rank: spc.castRank, message: false });
