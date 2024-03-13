@@ -68,7 +68,7 @@ async function Eldritch_shot()
     return a.lvl - b.lvl;
   });
 
-  if(spells.length === 0) { return ui.notifications.info("You have no spells available"); }
+  if(spells.length === 0) { return void ui.notifications.info("You have no spells available"); }
   /* Get them bows baby */
   const weapons = token.actor.itemTypes.weapon.filter(i => i.isEquipped && i.system.group === 'bow');
   const map_weap = weapons.map(p => p.name);
@@ -85,7 +85,7 @@ async function Eldritch_shot()
 
   let last, mes;
   if (spell_choice[2]) {
-    mes = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined );
+    mes = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined && lus.token.id === token.id);
     if (mes === undefined) return void ui.notifications.warn("There are no previously cast spells or strike has already been rerolled");
     if (actor.system.resources.heroPoints.value === 0) { return void ui.notifications.warn("You have no hero points left")}
     last = mes.getFlag("world","macro.spellUsed");
