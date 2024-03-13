@@ -264,7 +264,7 @@ async function Spellstrike() {
       
   // Automated Animations insertion by MrVauxs
   if (game.modules.get("autoanimations")?.active) {
-    AutomatedAnimations.playAnimation(token, spc.castRank, { targets: [Array.from(game.user.targets)[0]], hitTargets: hit ? [Array.from(game.user.targets)[0]] : []})
+    AutomatedAnimations.playAnimation(token, {name: spc.name}, { targets: [Array.from(game.user.targets)[0]], hitTargets: hit ? [Array.from(game.user.targets)[0]] : []})
   }
 
   let flavName = ` cast at Rank ${spc.castRank}`;
