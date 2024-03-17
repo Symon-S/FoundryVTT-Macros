@@ -9,7 +9,7 @@ This macro is loosely adapted from the Apply Conditions macro created by cepvep.
 CSS design by websterguy
 Added the ability to add Timed Effects that grant conditions for a specific amount of time.
 Have the actor causing the effect selected and the ones the effect it being placed on targeted when in combat.
-Defaults to token owner or GM targets when GM, whichever has more targeted when executed as GM.
+Added a checkbox to use Player's targets if in an active combat and the selected token is playerOwned.
 Added the ability to clear all conditions on selected tokens.
 Preselect targets(combat)/selected(outside of combat) tokens since the second dialog will not catch changes.
 */
@@ -115,13 +115,10 @@ const script6 = async function TCon() {
   if (canvas.tokens.controlled.length > 1 && game.combats.active?.started ) { return void ui.notifications.warn("Only one originating token can be selected at a time") }
   const actor = canvas.tokens.controlled[0].actor;
   let targets = game.user.targets.ids;
+  let player, playerTargets = [];
   if (game.user.isGM && actor.hasPlayerOwner) {
-    const player = game.users.find(f => f.active && f.id === Object.entries(actor.ownership).find( o => o[0] !== game.userId && o[1] === 3 )[0]);
-    const playerTargets = player?.targets?.ids ?? [];
-    if (playerTargets.length > targets.length) {
-      targets = playerTargets;
-      ui.notifications.info(`Using ${player.name}'s targets. Targets default to the higher amount between GM and first found active owner of selected token`)
-    }
+    player = game.users.find(f => f.active && f.id === Object.entries(actor.ownership).find( o => o[0] !== game.userId && o[1] === 3 )[0]);
+    playerTargets = player?.targets?.ids ?? [];
   }
   if (!game.user.isGM && canvas.tokens.placeables.filter(t => t.actor.isOwner && targets.includes(t.id)).length === 0) { return void ui.notifications.warn("You do not own any of the targeted tokens") }
   else if (!game.user.isGM && canvas.tokens.placeables.filter(t => t.actor.isOwner && targets.includes(t.id)).length !== targets.length) {
@@ -129,10 +126,7 @@ const script6 = async function TCon() {
     void ui.notifications.info(`You cannot affect some targeted tokens because you do not own them`)
   }
   if (targets.length === 0 && game.combats.active?.started ) { 
-    if (game.user.isGM) {
-      return void ui.notifications.warn("At least one target for timed condition is required by an owner of the selected token");
-    }
-    else { return void ui.notifications.warn("At least one target for timed condition is required")}
+    return void ui.notifications.warn("At least one target for timed condition is required");
   }
 
   const con_list = CONFIG.PF2E.conditionTypes;
@@ -148,15 +142,20 @@ const script6 = async function TCon() {
 	"stupefied",
   ];
 
-  async function Xtml(html) { return [html.find("#condition")[0].value, html.find("#conval")[0].valueAsNumber, html.find("#time")[0].valueAsNumber, html.find("#times")[0].value, html.find("#check")[0].checked] }
+  async function Xtml(html) { 
+    const values = [html.find("#condition")[0].value, html.find("#conval")[0].valueAsNumber, html.find("#time")[0].valueAsNumber, html.find("#times")[0].value, html.find("#check")[0].checked];
+    if (game.user.isGM && playerTargets.length > 0 && game.combats.active?.started) {
+      values.push(html.find("#check2")[0].checked)
+    }
+    return values;
+  }
 
   let conditions;
   for ( const l in con_list ) {
     conditions += `<option value=${l}>${game.i18n.localize(con_list[l])}</option>`;
   }
-  const tcon = await Dialog.prompt({
-      title: "Timed condition to place on tokens",
-      content: `<div class="timetable1"><table>
+
+  let content = `<div class="timetable1"><table>
                   <tr><td>Choose condition:</td> <td><select id="condition" autofocus>${conditions}</select></td> <td style="text-align:center">Value(If applicable)</td><td width="8%"><input id="conval" type="number" value=1 style="text-align:center"></input></td></tr></table>
                   <table><tr><td>Choose duration:</td> <td width="8%"><input id="time" type="number" style="text-align:center" value=1></input></td>
                       <td><select id="times">
@@ -165,12 +164,24 @@ const script6 = async function TCon() {
                         <option value=hours>Hours</option>
                         <option value=days>Days</option>
                       </select></td>
-                      <td style="text-align:center">End of Turn?</td><td><input id="check" type="checkbox"></td>
-                  </tr>
-                </table></div>`,
+                      <td style="text-align:center">End of Turn?</td><td><input id="check" type="checkbox"></td>`
+  if (game.user.isGM && playerTargets.length > 0 && game.combats.active?.started) {
+      content += `<td style="text-align:center">Use Player's Targets?</td><td><input id="check2" type="checkbox"></td>`; 
+    }
+  content += `</tr></table></div>`;
+
+  const tcon = await Dialog.prompt({
+      title: "Timed condition to place on tokens",
+      content,
       callback: async html => await Xtml(html),
       rejectClose: true,
   });
+
+  if (tcon[5]) {
+      targets = playerTargets;
+      ui.notifications.info(`Using ${player.name}'s targets.`)
+  }
+
   let name = `Effect: ${game.i18n.localize(con_list[tcon[0]])} for ${tcon[2]} ${tcon[3]}`;
   const pack = game.packs.get("pf2e.conditionitems");
   const index = await pack.getIndex({fields:["system.slug"]});
@@ -255,7 +266,6 @@ let content = `
 
   .cond-buttons-pd, .cond-buttons-pd:focus {
     margin: 1px auto;
-    width: 70%;
     height: fit-content;
     background: var(--secondary);
     box-shadow: inset 0 0 0 1px rgb(0 0 0 / 50%);
@@ -321,6 +331,7 @@ await new Promise(async (resolve) => {
  await new Dialog({
     title:"Conditions Manager",
     content,
+    close: () => { return },
     buttons:{ Close: { label: "Close" } },
     },{width: 600}).render(true);
 });
