@@ -110,7 +110,6 @@ let spells = [];
     if ( picks[2] !== "any" ) { index = index.filter(r => r.system.traits.rarity === picks[2]) }
 		if ( picks[5] !== "all" ) { index = index.filter(r => r.system.traits.traditions.includes(picks[5])) }
     for (const x of index){
-            x.compendium = s.collection;
             spells.push({ level: x.system.level.value, name: `Scroll of ${x.name} (Rank ${x.system.level.value})`, uuid: x.uuid, suuid: scrollUuids[x.system.level.value]});
     };
 }
