@@ -1,6 +1,7 @@
 /*
     This Macro creates random encounters using a folder in the actor's tab named "Random Encounter".
-    Simply Populate the folder with actors, run the macro and select the amount of enemies.
+    Simply Populate the folder with actors, run the macro and select the NPCs.
+    Or create subfolders and populate those with NPCs.
     Place the enemies where you want to spawn them as groups.
     This Macro requires the WarpGate Module.
     It is recommended to only use this with lower level enemies than the party.
@@ -13,8 +14,33 @@ if ( game.folders.filter(x => x.name ==="Random Encounter" && x.type === "Actor"
 
 if ( game.folders.filter(x => x.name ==="Random Encounter" && x.type === "Actor").length < 1 ) { return void ui.notifications.warn("You don't have a folder named Random Encounter in the Actors tab"); }
 
-let npcs = game.actors.filter(f => f.folder?.name === "Random Encounter");
-if (npcs.length < 1) { return void ui.notifications.warn("You have no actors in the Random Ecnounter Folder")}
+let folder = game.folders.find(x => x.name ==="Random Encounter" && x.type === "Actor");
+if (folder.children.length > 0) {
+    const folders = folder.children;
+    if ( folders.length > 1 ) {
+        let content = `<div class="form-group">
+            <label for="exampleSelect">Choose subfolder containing NPCs:&nbsp</label>
+            <select id="exampleSelect" autofocus>
+        `;
+        for ( const f of folders ) {
+            content += `<option value=${(f.folder.id)}>${f.folder.name}</option>`
+        }
+        content += "</select></div>"
+        folder = await Dialog.prompt({
+            title: "Select Folder with NPCs",
+            content,
+            callback: (html) => { return game.folders.get(html.find("#exampleSelect").val()); },
+            rejectClose: false
+        },{width:"auto"});
+    }
+    else {
+        folder = folders[0].folder;
+    }
+}
+
+let npcs = game.actors.filter(f => f.folder?.id === folder.id);
+if (folder.name === "Random Encounter" && npcs.length < 1) { return void ui.notifications.warn("You have no actors in the Random Ecnounter Folder")}
+if (folder.name !== "Random Encounter" && npcs.length < 1) { return void ui.notifications.warn(`You have no actors in the subfolder ${folder.name} within the Random Ecnounter Folder`)}
 
 let amount = await Dialog.prompt({
     title: "Random Encounter Builder",
@@ -37,7 +63,7 @@ while (amount > 0 && acn.length < npcs.length) {
     if ( acn.includes(npc.name) ) { continue }
     if ( amount <= 0 ) { break }
     let random = Math.floor(Math.random() * (amount - 1) + 1);
-    if (npcs.length === 1 || npcs.length - acn.length === 1) { random = amount }
+    if (npcs.length === 1 || acn.length === npcs.length) { random = amount }
     acn.push(npc.name);
     amount = amount - random;
     await warpgate.spawn(npc.name, {token: {height: size[npc.size], width: size[npc.size]}}, {}, {duplicates:random});
