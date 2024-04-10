@@ -22,7 +22,7 @@ const diff = await new Promise((resolve) => {
 });
 
 let level;
-if (canvas.tokens.controlled.length === 1) { level = canvas.tokens.controlled[0].actor.level }
+if (canvas.tokens.controlled.length === 1) { level = canvas.tokens.controlled[0].actor.level + 1 }
 
 else {
   level = await new Promise((resolve) => {
