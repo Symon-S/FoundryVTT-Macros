@@ -242,7 +242,7 @@ async function Spellstrike() {
   
   let pers, critt;
   if ( !spell_choice[3] ) {
-    critt = (await strike.attack({ event, callback: async(x) =>  { await(game.messages.contents.findLast(m => m.speaker.token === _token.id)).setFlag("world","macro.spellUsed", spc); }})).degreeOfSuccess;
+    critt = (await strike.variants[spell_choice[2]].roll({ event, callback: async(x) =>  { await(game.messages.contents.findLast(m => m.speaker.token === _token.id)).setFlag("world","macro.spellUsed", spc); }})).degreeOfSuccess;
   }
   else {
     await game.pf2e.Check.rerollFromMessage(mes,{heroPoint:1});
