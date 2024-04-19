@@ -63,8 +63,8 @@ while (amount > 0 && acn.length < npcs.length) {
     if ( acn.includes(npc.name) ) { continue }
     if ( amount <= 0 ) { break }
     let random = Math.floor(Math.random() * (amount - 1) + 1);
-    if (npcs.length === 1 || acn.length === npcs.length) { random = amount }
     acn.push(npc.name);
+    if (npcs.length === 1 || acn.length === npcs.length) { random = amount }
     amount = amount - random;
     await warpgate.spawn(npc.name, {token: {height: size[npc.size], width: size[npc.size]}}, {}, {duplicates:random});
 }
