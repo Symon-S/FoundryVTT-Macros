@@ -32,7 +32,7 @@ const {choice, event} = await quickDialog({data: lc_data, title: `Lingering Comp
 const cast_spell = token.actor.itemTypes.spell.find(e => e.name === choice[0]);
 const slug = cast_spell.slug;
 
-let cs,suc, csLink, sucLink;
+let cs,suc;
 const effectcom = game.packs.find(sp => sp.collection === "pf2e.spell-effects");
 const effects = await effectcom.getIndex({fields:["system.slug"]});
 let effect = effects.some(e => e.system.slug.includes(slug)) ? effects.find(e => e.system.slug.includes(slug)) : "";
@@ -56,13 +56,17 @@ if (choice[2]) {
 		if (effect !== ''){
 			notes.push({"outcome":["success"], "selector":"performance", "text":`<p>@UUID[${suc}]</p>`});
     		notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p>@UUID[${cs}]</p>`});
-    		notes.push({"outcome":["failure"], "selector":"performance", "text":`<p>${effect.link} You don't spend the Focus Point for casting the spell</p>`});
-			notes.push({"outcome":["criticalFailure"], "selector":"performance", "text":`<p>${effect.link}</p>`});
+    		notes.push({"outcome":["failure","criticalFailure"], "selector":"performance", "text":`<p>@UUID[${effect.uuid}] You don't spend the Focus Point for casting the spell</p>`});
 		}
 	}
 	else { 
-		ui.notifications.warn('Fortissimo Composition is only applicable to Inspire Courage, Rallying Anthem, or Song of Strength'); return; 
+		return void ui.notifications.warn('Fortissimo Composition is only applicable to Inspire Courage, Rallying Anthem, or Song of Strength');
 	}
+}
+else {
+	notes.push({"outcome":["success"], "selector":"performance", "text":`The composition lasts 3 rounds`});
+    notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`The composition lasts 4 rounds`});
+	notes.push({"outcome":["failure","criticalFailure"], "selector":"performance", "text":`The composition lasts 1 round, but you don't spend the Focus Point for casting this spell`});
 }
       
 let DCbyLevel = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50]
