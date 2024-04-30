@@ -5,8 +5,11 @@ This will need to be run by a GM or someone with the ability to create items in 
 Look for the created class item in the items tab.
 */
 
-const classesPack = game.packs.find(n => n.collection === "pf2e.classes");
-const classes = classesPack.index.contents.map(n => n.name);
+const packKeys = ["pf2e.classes"] //array of pack key strings
+const classesData = [] //array of classData that will be built from the array of packs
+const clPacks = game.packs.filter( p => packKeys.includes(p.collection) )
+for ( const pack of clPacks ) { classesData.push(...(await pack.getDocuments())) }
+const classes = classesData.map( n => n.name );
 const qDData = [
   { label: `Choose your 1st Class : `, type: `select`, options: classes },
   { label: `Choose your 2nd Class : `, type: `select`, options: classes }
@@ -14,8 +17,8 @@ const qDData = [
 
 const chosenClasses = await quickDialog({ data: qDData, title: `Dual Class item creator` });
 
-const class1 = await classesPack.getDocument(classesPack.index.find(n => n.name === chosenClasses[0])._id);
-const class2 = await classesPack.getDocument(classesPack.index.find(n => n.name === chosenClasses[1])._id);
+const class1 = await fromUuid(classesData.find(n => n.name === chosenClasses[0]).uuid);
+const class2 = await fromUuid(classesData.find(n => n.name === chosenClasses[1]).uuid);
 
 if (class1 === class2) { return ui.notifications.warn("You cannot select the same class twice"); }
 
