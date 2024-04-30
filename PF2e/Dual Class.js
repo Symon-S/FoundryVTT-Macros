@@ -8,7 +8,9 @@ Look for the created class item in the items tab.
 const packKeys = ["pf2e.classes"] //array of pack key strings
 const classesData = [] //array of classData that will be built from the array of packs
 const clPacks = game.packs.filter( p => packKeys.includes(p.collection) )
-for ( const pack of clPacks ) { classesData.push(...(await pack.getDocuments())) }
+for ( const pack of clPacks ) { classesData.push(...(await pack.getIndex())) }
+if ( classesData.some(t => t.type !== "class") ) return void ui.notifications.warn("One of the inputted packKeys is not a classes Compendium");
+console.log(classesData);
 const classes = classesData.map( n => n.name );
 const qDData = [
   { label: `Choose your 1st Class : `, type: `select`, options: classes },
