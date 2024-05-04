@@ -1,12 +1,14 @@
 /*
-To use this macro, you need to have the lingering composition feat on your character sheet.
+!!THIS MACRO DOES BOTH LINGERING COMPOSITION AND/OR FORTISSIMO COMPOSITION WHEN THE APPROPRIATE FEATS ARE PRESENT!!
+To use this macro, you need to have the lingering composition feat on your character sheet or have Bard Dedication with the fortissimo composition feat.
 To use fortissimo composition, you must have the fortissimo composition feat on your character sheet.
-This macro requires Workbench module., the macro will automatically use the effects in the workbench compendium.
+If you do not have lingering composition due to taking the bard dedication and skipping the feat, the checkbox will be permanently enabled and the spells will be filtered only to those that can be used by Fortissimo Composition.
+This macro requires Workbench module. The macro will automatically use the effects in the workbench compendium.
 */
 
 if(!game.modules.get("xdy-pf2e-workbench")?.active) { return ui.notifications.error("This Macro requires PF2e Workbench module")}
 if (!actor || token.actor.type !== 'character') { return ui.notifications.warn("You must have a PC token selected"); }
-if (!token.actor.itemTypes.feat.some(lc => lc.slug === "lingering-composition")) { return ui.notifications.warn("The actor does not possess the Lingering Composition feat"); }
+if (!token.actor.itemTypes.feat.some(lc => lc.slug === "lingering-composition") && ( !token.actor.itemTypes.feat.some(s => s.slug === 'fortissimo-composition') && !token.actor.itemTypes.feat.some(s => s.slug === 'bard-dedication') ) ) { return ui.notifications.warn("The actor does not possess the Lingering Composition feat or does not have the Bard dedication with Lingering or Fortissimo Composition feats."); }
 if (actor.system.resources.focus.value === 0 || actor.system.resources.focus.value === undefined) { return ui.notifications.warn("You have no focus points"); }
 
 const modifiers = [];
@@ -18,14 +20,19 @@ let actionName = "Lingering Composition";
 const options = token.actor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
       
 let cantrips = token.actor.itemTypes.spell.filter(s=> s.isFocusSpell === true && s.isCantrip === true && s.traits.has('composition') && s.system.duration.value === '1 round');
-            
+
+if (!token.actor.itemTypes.feat.some(lc => lc.slug === "lingering-composition")) { cantrips = cantrips.filter(s => ["rallying-anthem", "courageous-anthem", "song-of-strength"].includes(s.slug)) }   
       
 const lc_data = [
 	{ label: `Choose a Spell : `, type: `select`, options: cantrips.map(p=> p.name) },
 	{ label: `Custom DC : `, type: `number`}
 ];
-      
-if (token.actor.itemTypes.feat.some(s => s.slug === 'fortissimo-composition')) { lc_data.push( { label: `Fortissimo Composition (Rallying Anthem, Courageous Anthem, and Song of Strength Only) : `, type: `checkbox`, options: `style="margin:auto;display:block"` } ) }     
+
+if (token.actor.itemTypes.feat.some(s => s.slug === 'fortissimo-composition')) {
+	let options = `style="margin:auto;display:block"`
+	if (!token.actor.itemTypes.feat.some(lc => lc.slug === "lingering-composition")) { options += ' checked disabled' }
+	lc_data.push( { label: `Fortissimo Composition (Rallying Anthem, Courageous Anthem, and Song of Strength Only) : `, type: `checkbox`, options } ) 
+}     
 
 const {choice, event} = await quickDialog({data: lc_data, title: `Lingering Composition`});
       
