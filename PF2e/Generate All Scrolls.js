@@ -3,6 +3,7 @@ This will generate all scrolls from the inputted criteria and place them into a 
 an existing loot actor, or in a party actor.
 */
 
+const stuff = [];
 const scrollUuids = {
   1: 'Compendium.pf2e.equipment-srd.Item.RjuupS9xyXDLgyIr',
   2: 'Compendium.pf2e.equipment-srd.Item.Y7UD64foDbDMV9sx',
@@ -139,21 +140,9 @@ if ( picks[3] === "Existing Loot Actor" ) {
 	}
 	else { 
 		a = game.actors.find(p => p.type === "loot" );
-	}const scrollUuids = {
-  1: 'Compendium.pf2e.equipment-srd.Item.RjuupS9xyXDLgyIr',
-  2: 'Compendium.pf2e.equipment-srd.Item.Y7UD64foDbDMV9sx',
-  3: 'Compendium.pf2e.equipment-srd.Item.ZmefGBXGJF3CFDbn',
-  4: 'Compendium.pf2e.equipment-srd.Item.QSQZJ5BC3DeHv153',
-  5: 'Compendium.pf2e.equipment-srd.Item.tjLvRWklAylFhBHQ',
-  6: 'Compendium.pf2e.equipment-srd.Item.4sGIy77COooxhQuC',
-  7: 'Compendium.pf2e.equipment-srd.Item.fomEZZ4MxVVK3uVu',
-  8: 'Compendium.pf2e.equipment-srd.Item.iPki3yuoucnj7bIt',
-  9: 'Compendium.pf2e.equipment-srd.Item.cFHomF3tty8Wi1e5',
-…  scroll.system.traits.rarity = spell.system.traits.rarity;
-  scroll.system.quantity = picks[1];
-  scroll.system.traits.value = [...new Set(scroll.system.traits.value.concat(spell.system.traits.traditions).concat(spell.system.traits.value))];
-  return scroll;
+	}
 }
+
 for ( const s of spells ) {
   stuff.push(await createSpellScrollWand(s.suuid, s.uuid, s.level, s.name))
 }
