@@ -6,8 +6,7 @@ When using rarity:
 and available (rare spells not available at each rank), if not available another item will be generated in its place.**
 **Unique = There are no unique spells in the game, so this will only push unique items if available.**
 
-When Generated Loot Actor is selected it will create a loot actor named Generated Loot if not available then populate this actor. If the actor is already available, it will populate the actor.
-When Party Actor or Existing Loot Actor are selected, if only one actor of that type is available, it will populate that actor. If more are available another dialog will prompt for an actor choice.
+
 
 Modded by LebombJames to use getIndex for faster loading.
 Special thanks to Idle for scroll/wand creation function.
@@ -183,7 +182,7 @@ async function LootGenerator() {
 				const level = parseInt(slug.substr(11,1));
 				const spells = spellS.filter(l => l.system.level.value === level);
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)] ?? spells[Math.floor(Math.random() * spells.length)];
-				output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `Wand of ${randomSpell.name} (Rank ${level})`, uuid: randomSpell.uuid, sid: r.id, sc: r.compendium, level, scrollUUID: r.uuid});
+				output.push({ name: `Wand of ${randomSpell.name} (Rank ${level})`, uuid: randomSpell.uuid, sid: r.id, sc: r.compendium, level, scrollUUID: r.uuid});
 			}
 			else if(slug !== null && slug.includes("scroll-of-")){
 				let level = parseInt(r.slug.substr(10,1));
@@ -192,7 +191,7 @@ async function LootGenerator() {
 				}
 				const spells = spellS.filter(l => l.system.level.value === level);
 				const randomSpell = spells[Math.floor(Math.random() * spells.length)] ?? spells[Math.floor(Math.random() * spells.length)];
-				output.push({ compendium: randomSpell.compendium, id: randomSpell._id, name: `Scroll of ${randomSpell.name} (Rank ${level})`, uuid: randomSpell.uuid, sid: r.id, sc: r.compendium, level, scrollUUID: r.uuid});
+				output.push({ name: `Scroll of ${randomSpell.name} (Rank ${level})`, uuid: randomSpell.uuid, sid: r.id, sc: r.compendium, level, scrollUUID: r.uuid});
 			}
 			else if (slug !== null && slug.includes("wand-of-continuation-")) {
 				const level = parseInt(r.slug.substr(21,1));
@@ -203,7 +202,7 @@ async function LootGenerator() {
 				else {
 					const specWand = "cont";
 					const rSpell = spells[Math.floor(Math.random() * spells.length)];
-            		output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Continuation ${rSpell.name} (Rank ${level})`, uuid: rSpell.uuid, sid: wandIds[level], sc: "pf2e.equipment-srd", level, scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[level]}`, sWUUID: r.uuid, specWand });
+            		output.push({ name: `Wand of Continuation ${rSpell.name} (Rank ${level})`, uuid: rSpell.uuid, sid: wandIds[level], sc: "pf2e.equipment-srd", level, scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[level]}`, sWUUID: r.uuid, specWand });
 				}
 			}
 
@@ -212,7 +211,7 @@ async function LootGenerator() {
 				const specWand = "leger";
 				const spells = spellS.filter(l => l.system.level.value === level);
 				const rSpell = spells[Math.floor(Math.random() * spells.length)];
-            	output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Legerdemain ${rSpell.name} (Rank ${level})`, uuid: rSpell.uuid, sid: wandIds[level], sc: "pf2e.equipment-srd", level, scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[level]}`, sWUUID: r.uuid, specWand });
+            	output.push({ name: `Wand of Legerdemain ${rSpell.name} (Rank ${level})`, uuid: rSpell.uuid, sid: wandIds[level], sc: "pf2e.equipment-srd", level, scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[level]}`, sWUUID: r.uuid, specWand });
 			}
 
 			else if (slug !== null && slug.includes("wand-of-reaching-")) {
@@ -224,7 +223,7 @@ async function LootGenerator() {
 				else {
 					const specWand = "reach";
 					const rSpell = spells[Math.floor(Math.random() * spells.length)];
-            		output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Reaching ${rSpell.name} (Rank ${level})`, uuid: rSpell.uuid, sid: wandIds[level], sc: "pf2e.equipment-srd", level, scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[level]}`, sWUUID: r.uuid, specWand });
+            		output.push({ name: `Wand of Reaching ${rSpell.name} (Rank ${level})`, uuid: rSpell.uuid, sid: wandIds[level], sc: "pf2e.equipment-srd", level, scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[level]}`, sWUUID: r.uuid, specWand });
 				}
 			}
 
@@ -237,7 +236,7 @@ async function LootGenerator() {
 				else {
 					const specWand = "wide";
 					const rSpell = spells[Math.floor(Math.random() * spells.length)];
-            		output.push({ compendium: rSpell.compendium, id: rSpell._id, name: `Wand of Widening ${rSpell.name} (Rank ${level})`, uuid: rSpell.uuid, sid: wandIds[level], sc: "pf2e.equipment-srd", level, scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[level]}`, sWUUID: r.uuid, specWand });
+            		output.push({ name: `Wand of Widening ${rSpell.name} (Rank ${level})`, uuid: rSpell.uuid, sid: wandIds[level], sc: "pf2e.equipment-srd", level, scrollUUID: `Compendium.pf2e.equipment-srd.Item.${wandIds[level]}`, sWUUID: r.uuid, specWand });
 				}
 			}
 			else { output.push(r) }
@@ -247,7 +246,7 @@ async function LootGenerator() {
 	if ( picks[5] === "Message" ) {
 		let content = "";
 		for ( const o of output ) {
-			content += `<p>@Compendium[${o.compendium}.${o.id}]{${o.name}}</p>`
+			content += `<p>@UUID[${o.uuid}]{${o.name}}</p>`
 		}
 		await ChatMessage.create({flavor: `<strong>Random ${picks[0]}</strong><br>`,content, speaker: {alias:'GM'}, whisper:[game.user.id]});
 		ui.notifications.info("Check chat message. Hold alt when dragging and dropping to mystify items");
@@ -286,14 +285,14 @@ async function LootGenerator() {
 				stuff.push(rI);
 			}
 			else {
-				stuff.push(await createSpellScrollWand(o.compendium, o.id, o.scrollUUID, o.uuid, o.level, o.name, o.sWUUID, o.specWand));
+				stuff.push(await createSpellScrollWand(o.scrollUUID, o.uuid, o.level, o.name, o.sWUUID, o.specWand));
 			}
 		}
 		if (stuff.length > 0) {
 			const updates = await a.createEmbeddedDocuments("Item",stuff);
 			if ( picks[6] ) { await a.updateEmbeddedDocuments("Item", updates.map(u => ({_id: u.id, "system.identification.status": "unidentified" }))); }
 		}
-		await a.sheet.render(true);
+		a.sheet.render(true);
 	}
 
 	async function MyDialog(type) {
@@ -317,7 +316,7 @@ async function LootGenerator() {
 		return game.actors.get(myac);
 	}
 
-	async function createSpellScrollWand(compendium, id, scrollUUID, uuid, level, name, sWUUID, specWand, temp = false ) {
+	async function createSpellScrollWand(scrollUUID, uuid, level, name, sWUUID, specWand, temp = false ) {
         const spell = (await fromUuid(uuid))?.toObject();
         if (!spell) return null;
         if ( specWand === "reach" ) {
@@ -363,12 +362,12 @@ async function LootGenerator() {
         scroll.system.traits.value = [...new Set(scroll.system.traits.value.concat(spell.system.traits.traditions).concat(spell.system.traits.value))];
             
         const sourceId = spell.flags.core?.sourceId;
-        if (sourceId && sWUUID === undefined) scroll.system.description.value = `@Compendium[${compendium}.${id}]{${spell.name}}\n<hr />${scroll.system.description.value}`;
+        if (sourceId && sWUUID === undefined) scroll.system.description.value = `@UUID[${uuid}]\n<hr />${scroll.system.description.value}`;
         if ( sWUUID !== undefined ) {
             const w = (await fromUuid(sWUUID)).toObject();
 			scroll.system.price = w.system.price;
+			scroll.system.description.value = `@UUID[${uuid}]\n<hr />${w.system.description.value}`;
 			if ( specWand !== "leger" ) {
-				scroll.system.description.value = `@Compendium[${compendium}.${id}]{${spell.name}}\n<hr />${w.system.description.value}`;
 				if ( scroll.system.spell.system.time.value === "2" ) { scroll.system.spell.system.time.value = "3" }
 				if ( scroll.system.spell.system.time.value === "1" ) { scroll.system.spell.system.time.value = "2" }
 			}
