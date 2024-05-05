@@ -180,6 +180,7 @@ async function createSpellScrollWand(scrollUUID, uuid, level, name) {
   if (!scroll) return null;
 	spell.system.location.heightenedLevel = level;
   scroll.name = name;
+  scroll.system.description.value = `@UUID[${uuid}]\n<hr />${scroll.system.description.value}`;
   scroll.system.spell = spell;
   scroll.system.traits.rarity = spell.system.traits.rarity;
   scroll.system.quantity = picks[1];
