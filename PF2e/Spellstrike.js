@@ -24,20 +24,16 @@ async function Spellstrike() {
   const ess = token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike');
 
   const DamageRoll = CONFIG.Dice.rolls.find(((R) => R.name === "DamageRoll"));
-  let entries = token.actor.itemTypes.spellcastingEntry.filter(r => !r.isRitual || r.system.prepared?.value !== "items");
+  let entries = token.actor.itemTypes.spellcastingEntry.filter(r => r.system.prepared?.value !== "items");
 
   /*Standby Spells*/
   let standby = false;
   if (token.actor.itemTypes.feat.some(f => f.slug === 'standby-spell')) {
-    standby = await new Promise((resolve) => {
-      new Dialog({
+    standby = await Dialog.confirm({
         title: 'Use Standby Spell?',
-        buttons: {
-          yes: { label: 'Yes', callback: async () => { resolve(true); } },
-          no: { label: 'No', callback: async () => { resolve(false); } },
-        },
-        default: 'no',
-      }, { width: "auto" }).render(true);
+        yes: () => { return true },
+        no: () => { return false },
+        defaultYes: false
     });
     if (standby) {
       if (token.actor.itemTypes.spellcastingEntry.some(sb => sb.flags.pf2e.magusSE) && token.actor.itemTypes.spell.some(s => s.flags.pf2e.standbySpell)) {
@@ -103,7 +99,7 @@ async function Spellstrike() {
         const index = i++
         if (active === null) { continue; }
         const spell = active.spell;
-        if(standby && (spell.name === token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).name || group.rank < token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).baseRank)) { continue; }
+        if(standby && (isCantrip || spell.name === token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).name || group.rank < token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).baseRank)) { continue; }
         if (!spell.traits.has('attack') && !ess && !standby) { continue; }
         if (!spell.traits.has('attack') && ess && !exceptions.includes(spell) && !standby) {
           const isSave = (await spell.getChatData()).isSave;
@@ -204,7 +200,7 @@ async function Spellstrike() {
   let pers, critt;
   if (!choices.reroll) {
     const roll = await choices.action.variants[choices.variant].roll(
-      {event: choices.event, callback: (roll, res, msg) => msg.setFlag("world","macro.spellUsed", spc) }
+      {event: choices.event, callback: async (roll, res, msg) => { msg.setFlag("world","macro.spellUsed", spc); await msg.update({flavor: msg.flavor + "Chosen Spell: " + spc.spell.link}) }}
     );
     critt = roll.degreeOfSuccess;
   }
@@ -416,7 +412,7 @@ async function SSDialog(actor, spells, standby) {
   }`}
   </style>
 
-  ${standby ? `<p>Casting Standby Spell: ${token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).name}</p>` : ""}
+  ${standby ? `<p align="center">Casting Standby Spell: ${token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).name}</p>` : ""}
   <p align="center"><label>${label}</label></p>
   <p><select style="width:100%; font-size:12px" id="spell">${spellOptions.join('')}</select></p>
   <div class="actor sheet character"><section class="window-content"><div class="tab actions active attack-popout">
