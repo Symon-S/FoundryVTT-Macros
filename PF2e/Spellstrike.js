@@ -120,70 +120,32 @@ async function Spellstrike() {
         }
         let lvl = castRank+1;
         const name = spell.name;
-        if(isCantrip) { 
+        if(isCantrip) {
           rank = `Cantrip ${castRank}`
           lvl = 0;
         }
-        if(spellData.isFocusPool) { 
+        if(spellData.isFocusPool) {
           rank = `Focus ${castRank}`
           lvl = 1;
         }
-				const sname = `${name} ${rank} (${e.name})`;
+        const sname = `${name} ${rank} (${e.name})`;
         spells.push({name: sname, castRank, sEId: spellData.id, slug, description, DC: save.value, spell, index, isSave, isAttack, basic: spell.system.defense?.save?.basic ?? false, isCantrip, isFocus: spellData.isFocusPool, traits, save: save.type ?? "", lvl, formula, isExpended: active.expended ? true : false , isUseless: group.uses?.value < 1 ? true : false});
       }
     }
-	};
-	spells.sort((a, b) => {
+  };
+  spells.sort((a, b) => {
     if (a.lvl === b.lvl)
-      return a.name
-      .toUpperCase()
-      .localeCompare(b.name.toUpperCase(), undefined, {
-        sensitivity: "base",
-      });
+      return a.name.toUpperCase().localeCompare(b.name.toUpperCase(), undefined, {sensitivity: "base"});
     return a.lvl - b.lvl;
   });
 
-
-
   if (spells.length === 0) { return void ui.notifications.info("You have no spells available"); }
-  /* Get them weapons baby */
-  let weapons = [];
-  if (token.actor.itemTypes.feat.some(f => f.slug === 'starlit-span')) {
-    weapons = actor.system.actions.filter(i => i.visible && i.type === "strike" && i.item.isEquipped);
-    weapons.forEach((w, index) => {
-      if (w.label.includes("Thrown") || w.item.isRanged) { return; }
-      if (w.item.system.traits.value.some(v => v.includes("thrown"))) {
-        let tw = deepClone(w.altUsages[0]);
-        if (!tw.label.includes("Thrown")) {
-          tw.label = `Thrown ${tw.label}`
-        }
-        weapons.splice(index + 1, 0, tw);
-      }
-    });
-  }
-  else {
-    weapons = token.actor.system.actions.filter(i => i.visible && i.type === "strike" && !i.item.isRanged && i.item.isEquipped && !i.item.system.traits.value.includes("ranged"));
-  }
-  const map_weap = weapons.map(p => p.label);
 
-  /* Build dialog data */
-  let label = "Choose a Spell : "
-  let title = "Spellstrike";
-  if (standby) {
-    label = "Choose a Spell to Expend : ";
-    title = `Spellstrike Standby Spell ${token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).name}`;
-  }
-  let es_data = [
-    { label, type: `select`, options: spells.filter(s => !s.isExpended && !s.isUseless).map(p => p.name) },
-    { label: `Weapon : `, type: `select`, options: map_weap },
-    { label: `MAP`, type: `select`, options: [0, 1, 2] },
-  ];
-  if(!standby) { es_data.push({ label : `Reroll using hero point?`, type : `checkbox` }); }
-  /* Run dialog and alot data */
-  const spell_choice = await quickDialog({ data: es_data, title });
-  if (standby) { spell_choice[3] = false }
+  const choices = await SSDialog(actor, spells.filter(s => !s.isExpended && !s.isUseless), standby);
+
+  if (standby) { choices.reroll = false }
   let last, mes;
-  if (spell_choice[3]) {
+  if (choices.reroll) {
     mes = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined && lus.token.id === token.id);
     if (mes === undefined) return void ui.notifications.warn("There are no previously cast spells or strike has already been rerolled");
     if (actor.system.resources.heroPoints.value === 0) { return void ui.notifications.warn("You have no hero points left")}
@@ -192,8 +154,7 @@ async function Spellstrike() {
   }
 
   /* Get the strike actions and roll strike */
-  const strike = weapons.find(a => a.label === spell_choice[1]);
-  let spc = last ??= spells.find(sp => sp.name === spell_choice[0]);
+  let spc = last ?? choices.spell;
   let sbsp;
   if (standby) {
     const sbs = token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell);
@@ -211,10 +172,10 @@ async function Spellstrike() {
     if (spc.spell.overlays.contents[0].system?.time !== undefined){
       spell_variants = Array.from(spc.spell.overlays.entries(), ([id, ovl]) => ({name: spc.name + ovl.system.time.value, id: id, castRank: spc.castRank}));
     }
-    else { 
+    else {
       spell_variants = Array.from(spc.spell.overlays.entries(), ([id, ovl]) => ({name: ovl.name ?? spc.name, id: id, castRank: spc.castRank}));
     }
-      
+
     spell_variants.sort((a, b) => {
       if (a.lvl === b.lvl)
         return a.name
@@ -224,29 +185,32 @@ async function Spellstrike() {
         });
         return a.lvl - b.lvl;
     });
-          
-          
+
+
     // Build dialog data
     const ovr_data = [
       { label : `Choose a Spell Variant : `, type : `select`, options : spell_variants.map(p => p.name) }
     ];
-                 
+
     // Query user for variant choice
     const variant_choice = await quickDialog({data : ovr_data, title : `Variants Detected`});
-        
+
     // Obtain the ID of the chosen variant, then use that ID to fetch the modified spell
     const vrId = spell_variants.find(x => x.name === variant_choice[0]).id;
     const variant = spc.spell.loadVariant({castRank:spc.castRank, overlayIds:[vrId]});
     spc.spell = variant;
   }
-  
+
   let pers, critt;
-  if ( !spell_choice[3] ) {
-    critt = (await strike.variants[spell_choice[2]].roll({ event, callback: async(x) =>  { await(game.messages.contents.findLast(m => m.speaker.token === _token.id)).setFlag("world","macro.spellUsed", spc); }})).degreeOfSuccess;
+  if (!choices.reroll) {
+    const roll = await choices.action.variants[choices.variant].roll(
+      {event: choices.event, callback: (roll, res, msg) => msg.setFlag("world","macro.spellUsed", spc) }
+    );
+    critt = roll.degreeOfSuccess;
   }
   else {
     await game.pf2e.Check.rerollFromMessage(mes,{heroPoint:1});
-    critt = game.messages.contents.findLast(r => r.isReroll).rolls[0].degreeOfSuccess;
+    critt = game.messages.contents.findLast(r => r.isReroll && r.speaker.token === mes.speaker.token).rolls[0].degreeOfSuccess;
   }
   let ttags = '';
   for (const t of spc.traits) {
@@ -257,7 +221,7 @@ async function Spellstrike() {
 
   if (critt === 2) { dos = 'Success'; hit = true }
   if (critt === 3) { dos = 'Critical Success'; hit = true}
-      
+
   // Automated Animations insertion by MrVauxs
   if (game.modules.get("autoanimations")?.active) {
     AutomatedAnimations.playAnimation(token, {name: spc.name}, { targets: [Array.from(game.user.targets)[0]], hitTargets: hit ? [Array.from(game.user.targets)[0]] : []})
@@ -317,13 +281,10 @@ async function Spellstrike() {
     }
   }
 
-  if (game.modules.get('xdy-pf2e-workbench')?.active && !game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike")) { 
-    if (critt === 2) { await strike.damage({ event }); }
-    if (critt === 3){ await strike.critical({ event }); }
-  }
-  if(!game.modules.has('xdy-pf2e-workbench') || !game.modules.get('xdy-pf2e-workbench')?.active) { 
-    if (critt === 2) { await strike.damage({ event }); }
-    if (critt === 3){ await strike.critical({ event }); }
+  // Auto roll damage unless the workbench setting exists and is on, in which case workbench will do it
+  if (!(game.modules.get('xdy-pf2e-workbench')?.active && game.settings.get("xdy-pf2e-workbench","autoRollDamageForStrike"))) {
+    if (critt === 2) await choices.action.damage({ event: choices.event });
+    if (critt === 3) await choices.action.critical({ event: choices.event });
   }
 
   /* Chromatic Ray */
@@ -331,8 +292,8 @@ async function Spellstrike() {
     flavor = `<div class="tags">${ttags}`;
     let ds = '';
     let dsc = '';
-    if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery')) { 
-      ds = ` + ${spc.castRank}`; 
+    if (token.actor.itemTypes.feat.some(s => s.slug === 'dangerous-sorcery')) {
+      ds = ` + ${spc.castRank}`;
       dsc = ` + ${spc.castRank * 2}`
     }
     const chroma = [
@@ -346,7 +307,7 @@ async function Spellstrike() {
       {f:`</div><hr><strong>Spellstrike</strong><br>${spc.spell.link}${flavName} (${dos})<br><p class='compact-text'>8.<strong>Intense Color</strong> The target is @Compendium[pf2e.conditionitems.Dazzled]{Dazzled} until the end of your next turn, or @Compendium[pf2e.conditionitems.Blinded]{Blinded} if your attack roll was a critical hit. Roll again and add the effects of another color (rerolling results of 8).</p>`},
     ];
     let chromaD = '1d4';
-    if (spc.castRank > 5) { 
+    if (spc.castRank > 5) {
       chromaD = '1d8';
       chroma[0].d = `(40${ds})[fire]`;
       chroma[0].dd = `(80${dsc})[fire]`;
@@ -362,9 +323,9 @@ async function Spellstrike() {
       chroma[3].f = chroma[3].f.replace('25','35');
     }
     const chromaR = new Roll(chromaD).evaluate({async:false}).total;
-    if (chromaR < 5) { 
-      ddice = chroma[chromaR-1].dd; 
-      flavor = flavor + chroma[chromaR-1].f; 
+    if (chromaR < 5) {
+      ddice = chroma[chromaR-1].dd;
+      flavor = flavor + chroma[chromaR-1].f;
       spc.roll = new DamageRoll(chroma[chromaR-1].d);
       if (critt === 3) {
         spc.roll = new DamageRoll(chroma[chromaR-1].dd);
@@ -394,15 +355,130 @@ async function Spellstrike() {
     if ( spc.roll !== undefined ) {
       await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker(), flags: { "world.macro.spellUsed": spc } });
     }
-    else { 
-      await item.rollDamage({event});
+    else {
+      await item.rollDamage({event: choices.event});
     }
   }
 
   /* Expend slots */
-  if (spc.isCantrip || spell_choice[3]) { return; }
+  if (spc.isCantrip || choices.reroll) { return; }
   await s_entry.cast(spc.spell,{slotId: spc.index,rank: spc.castRank,message: false});
 }
+
+// Show the SpellStrike dialog, return a promise of a result object:
+// { spell: Entry of "spells" that was chosen
+//   action: StatisticModifier, attack to use
+//   variant: Integer, action's variant, i.e. MAP
+//   reroll: Boolean, do a hero point reroll?
+//   event: PointerEvent, from the attack button click (i.e. shift-click vs normal)
+// }
+async function SSDialog(actor, spells, standby) {
+  const starlit = actor.itemTypes.feat.some(f => f.slug === 'starlit-span');
+  const template = "systems/pf2e/templates/actors/character/partials/strike.hbs";
+  const base = await actor.sheet.getData();
+  const filter = (a) => starlit || a.item.isMelee || a.altUsages.some(aa => aa.item.isMelee);
+  // Need to perserve original index value from the actor action list
+  const actions = new Map(base.data.actions.map((a, i) => [i, a]).filter(
+    a => a[1].visible && a[1].type === "strike" && a[1].item.isEquipped && filter(a[1])));
+  const attacksHtml = await Promise.all(Array.from(actions, ([index, action]) => renderTemplate(template, {...base, index, action})));
+
+  // Build dialog data
+  const label = `Choose a Spell ${standby ? "to Expend ":""}: `;
+  const spellOptions = spells.map((s, i) => `<option value="${i}">${s.name}</option>`);
+  const content = `
+  <style>
+  .app.dialog div.dialog-content
+  .actor.sheet.character section.window-content .attack-popout.actions ol.strikes-list li.strike
+  .item-name {
+    align-items: center;
+  }
+  .app.dialog div.dialog-content
+  .actor.sheet.character section.window-content .attack-popout.actions ol.strikes-list li.strike
+  div.auxiliary-actions {
+    display: none;
+  }
+  .app.dialog div.dialog-content
+  .actor.sheet.character section.window-content .attack-popout.actions ol.strikes-list li.strike
+  button.damage.tag {
+    display: none;
+  }
+  .app.dialog div.dialog-content
+  .actor.sheet.character section.window-content .attack-popout.actions ol.strikes-list li.strike
+  button.tag:disabled {
+    background-color: var(--color-text-dark-inactive);
+    cursor: not-allowed;
+    pointer-events: initial;
+  }
+  ${starlit ? "" : `
+  .app.dialog div.dialog-content
+  ol.strikes-list li.strike div.alt-usage:has(button[data-alt-usage="thrown"]) {
+    display: none;
+  }`}
+  </style>
+
+  ${standby ? `<p>Casting Standby Spell: ${token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).name}</p>` : ""}
+  <p align="center"><label>${label}</label></p>
+  <p><select style="width:100%; font-size:12px" id="spell">${spellOptions.join('')}</select></p>
+  <div class="actor sheet character"><section class="window-content"><div class="tab actions active attack-popout">
+  <ol class="actions-list item-list directory-list strikes-list" data-strikes>
+    ${attacksHtml.join("\n")}
+  </ol>
+  </div></section></div>
+  <p><label>Reroll using Hero Point:</label><input type="checkbox" id="reroll"/></p>
+  `;
+
+  const result = new Promise(async (resolve) => {
+    const dialog = new Dialog({
+      title: "Spellstrike",
+      content,
+      buttons : { },
+      render: (html) => {
+        const strikes = html.find("ol.strikes-list > li.strike.ready[data-strike]:not(.hidden)")
+        // Disable ranged primary usage when !starlit.
+        if (!starlit) {
+          actions.forEach((a, i) => {
+            if (!a.item.isMelee) {
+              strikes.filter(`[data-action-index=${i}]`).find("div.item-name [data-action=strike-attack]").
+                prop('disabled', true).click(e => e.stopImmediatePropagation()).
+                attr("data-tooltip", "Ranged strikes not allowed");
+            }
+          });
+        }
+        // Handler for all the attack buttons to do a "submit" of the dialog
+        strikes.find("[data-action=strike-attack]").on("click", (event) => {
+          const button = $(event.delegateTarget);
+          const index = Number(button.parents('[data-action-index]').data('action-index'));
+          const variant = Number(button.data('variant-index'));
+          const altp = ({thrown: "isThrown", melee: "isMelee"})[button.data('alt-usage')];
+          const action = altp ? actions.get(index).altUsages.find(a => a.item?.[altp]) : actions.get(index);
+          const spell = spells[Number(html.find('#spell :selected').val())];
+          const reroll = html.find('#reroll')[0].checked;
+          dialog.close();
+          resolve({spell, action, variant, reroll, event: event.originalEvent});
+        });
+        // Handler for toggle buttons, only versatile is supported
+        strikes.find("[data-action=toggle-weapon-trait]").on("click", async (event) => {
+          const button = $(event.delegateTarget);
+          const index = Number(button.parents('[data-action-index]').data('action-index'));
+          const action = actions.get(index);
+          const trait = button.data('trait');
+          if (trait === "versatile") {
+            const selected = button.val() === action.item.system.damage.damageType ? null : button.val();
+            await action.item.system.traits.toggles.update({trait, selected});
+            const toggles = button.parents("div.toggles");
+            // actions is the data the dialog was made with, it doesn't update, but the actor does
+            actor.system.actions[index]?.versatileOptions.forEach(trait =>
+              toggles.find(`button.${trait.value}`).toggleClass("selected", trait.selected).prop('disabled', trait.selected)
+            );
+          }
+        });
+      }
+    }, {width: "auto"});
+    await dialog.render(true);
+  });
+  return result;
+};
+
 /* Dialog box */
 async function quickDialog({data, title = `Quick Dialog`} = {}) {
   data = data instanceof Array ? data : [data];
