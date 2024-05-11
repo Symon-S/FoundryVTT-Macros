@@ -47,93 +47,13 @@ if (token.actor.itemTypes.feat.some(f => f.slug === 'standby-spell')) {
     }
   }
 }
+const sbs = token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell);
 
-/* New Spell getter*/
-const blacklist = [
-  "celestial-accord",
-  "shattering-gem",
-  "entangle-fate",
-  "behold-the-weave",
-  "compel-true-name",
-  "lift-natures-caul",
-  "foul-miasma",
-  "invoke-the-harrow",
-  "rewrite-memory",
-  "subconscious-suggestion",
-  "excise-lexicon",
-  "enthrall",
-  "mind-reading",
-	"mirecloak",
-	"mask-of-terror",
-  "hallucination",
-  "hyperfocus",
-  "pact broker",
-  "death-knell",
-  "sudden-recollection",
-  "favorable-review",
-  "litany-of-self-interest",
-  "suggestion",
-  "command",
-  "déjà-vu",
-  "charming-touch",
-  "charm",
-  "possession"
-];
-
-const exceptions = ['force-barrage', 'force-fang'];
-let ttraits = [];
-if (game.user.targets.ids.length === 1) { canvas.tokens.placeables.find(t => t.id === game.user.targets.ids[0]).actor.system.traits.value.forEach(p => { ttraits.push(p) }); }
-if (ttraits.includes('undead')) { exceptions.push('heal'); }
-
-const spells = [];
-for (const e of entries) {
-  const spellData = await e.getSheetData();
-  for(const group of spellData.groups) {
-    const isCantrip = group.id === "cantrips" ? true : false;
-    let i = 0;
-    for (const active of group.active) {
-      const index = i++
-      if (active === null) { continue; }
-      const spell = active.spell;
-      if(standby && (isCantrip || spell.name === token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).name || group.rank < token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).baseRank)) { continue; }
-      if (!spell.traits.has('attack') && !ess && !standby) { continue; }
-      if (!spell.traits.has('attack') && ess && !exceptions.includes(spell) && !standby) {
-        const isSave = (await spell.getChatData()).isSave;
-        if (blacklist.includes(spell.slug) || !isSave || !["1", "2", "2 or 3", "1 to 3"].includes(spell.system.time?.value)) { continue; }
-        if (!spell.system.target.value.includes("creature") && spell.system.area?.type === "emanation") { continue; }
-        if (spell.system.target.value.includes("willing")) { continue; }
-      }
-      const castRank = active.castRank ?? (await spell.getChatData()).castRank;
-      const {isAttack, isSave, description, save, slug, traits, formula} = await spell.getChatData({},{castRank});
-      if(ess && !isAttack && !isSave) { continue; }
-      let rank = `Rank ${castRank}`
-      if(spellData.isPrepared) {
-        rank += ` |Slot: ${index + 1}|`
-      }
-      let lvl = castRank+1;
-      const name = spell.name;
-      if(isCantrip) {
-        rank = `Cantrip ${castRank}`
-        lvl = 0;
-      }
-      if(spellData.isFocusPool) {
-        rank = `Focus ${castRank}`
-        lvl = 1;
-      }
-      const sname = `${name} ${rank} (${e.name})`;
-      spells.push({name: sname, castRank, sEId: spellData.id, slug, description, DC: save.value, spell, index, isSave, isAttack, basic: spell.system.defense?.save?.basic ?? false, isCantrip, isFocus: spellData.isFocusPool, traits, save: save.type ?? "", lvl, formula, isExpended: active.expended ? true : false , isUseless: group.uses?.value < 1 ? true : false});
-    }
-  }
-};
-spells.sort((a, b) => {
-  if (a.lvl === b.lvl)
-    return a.name.toUpperCase().localeCompare(b.name.toUpperCase(), undefined, {sensitivity: "base"});
-    return a.lvl - b.lvl;
-});
-
+let spells = await spellList(actor, sbs, ess);
+spells = spells.filter(s => !s.isExpended && !s.isUseless && (standby ? s.standbyExpendable : s.isStrikeable));
 if (spells.length === 0) { return void ui.notifications.info("You have no spells available"); }
 
-const choices = await SSDialog(actor, spells.filter(s => !s.isExpended && !s.isUseless), standby);
+const choices = await SSDialog(actor, spells, standby);
 
 if (standby) { choices.reroll = false }
 let last, mes;
@@ -149,7 +69,6 @@ if (choices.reroll) {
 let spc = last ?? choices.spell;
 let sbsp;
 if (standby) {
-  const sbs = token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell);
   const castRank = spc.castRank;
   if (sbs.baseRank > castRank) { return ui.notifications.warn(`The chosen spell rank is below the base rank of your standby spell ${sbs.name}, please try again.`); }
   const {isAttack, isSave, description, save, slug, traits, formula} = await sbs.getChatData({},{castRank});
@@ -198,7 +117,7 @@ let pers, critt;
 if (!choices.reroll) {
   const roll = await choices.action.variants[choices.variant].roll({
     event: choices.event,
-    callback: async (roll, res, msg) => { 
+    callback: async (roll, res, msg) => {
       msg.setFlag("world","macro.spellUsed", spc);
       await msg.update({flavor: msg.flavor + "Chosen Spell: " + spc.spell.link});
     }
@@ -474,6 +393,115 @@ async function SSDialog(actor, spells, standby) {
   });
   return result;
 };
+
+// Return list of actor's spells.  Each object has a bunch of fields, which include:
+// isStrikeable: Can be used with spellstrike
+// standbyExpendable: Slot can be expended when using StandbySpell
+async function spellList(actor, sbs, ess) {
+  // A bunch of these should be excluded because they are not AoE spells, but there area bunch of AoE spells
+  // with multiple area choices and the system encodes these as no area, so we consider no area as AoE and then
+  // fix the mistakes with this list.
+  const blacklist = new Set([
+    "celestial-accord",
+    "shattering-gem",
+    "entangle-fate",
+    "behold-the-weave",
+    "compel-true-name",
+    "foul-miasma",
+    "invoke-the-harrow",
+    "rewrite-memory",
+    "subconscious-suggestion",
+    "excise-lexicon",
+    "enthrall",
+    "mind-reading",
+    "mirecloak",
+    "mask-of-terror",
+    "hallucination",
+    "hyperfocus",
+    "pact-broker",
+    "death-knell",
+    "sudden-recollection",
+    "favorable-review",
+    "litany-of-self-interest",
+    "suggestion",
+    "command",
+    "déjà-vu",
+    "charming-touch",
+    "charm",
+    "possession",
+    "cornucopia",
+    "delay-affliction",
+    "heal-companion",
+    "natures-bounty",
+    "rebuke-death",
+    "wholeness-of-body",
+    "revival"
+  ]);
+
+  // ESS, in addition to AoE spells, extends "spell attacks" to "harmful spells that target a creature".
+  // Most harmful spells that target a creature are attacks, but some aren't.  These are they:
+  const harmfulNonAttacks = new Set(['force-barrage', 'force-fang']);
+  const undead = [...game.user.targets.values()].some(t => t.actor.traits.has('undead'));
+  if (undead) harmfulNonAttacks.add('heal');
+  // Don't allow healing damage spells, unless they are also vitality and there is an undead target
+  const healing = (spell, data) => data.damage?.[0]?.kinds.has('healing') &&
+    !(undead && spell.traits.has('vitality'));
+
+  // Spells that ESS allows us to use, beyond spell attacks
+  const essAllowed = (spell, data) => harmfulNonAttacks.has(data.slug) || (
+    !data.target.value.includes('willing') && !healing(spell, data) && (
+      (data.target.value.includes("creature") && data.hasDamage) ||
+      (["line", "cone", "burst", undefined].includes(data.area?.type) && (data.hasDamage || data.isSave))
+    )
+  );
+  // "1", "2", "2 to 2 rounds", "1 or 2", etc.
+  const actionsAllowed = /^[12]( (or|to) .*)?$/;
+
+  const spells = [];
+  for (const e of actor.itemTypes.spellcastingEntry.filter(r => r.system.prepared?.value !== "items")) {
+    const spellData = await e.getSheetData();
+    for(const group of spellData.groups) {
+      let i = 0;
+      for (const active of group.active) {
+        const index = i++
+        if (active === null) { continue; }
+        const spell = active.spell;
+        const spellChatData = await spell.getChatData({}, {groupId: group.id});
+        const isStrikeable = (spell.isAttack || (ess && essAllowed(spell, spellChatData))) &&
+          actionsAllowed.test(spell.system.time?.value) && !blacklist.has(spell.slug);
+        const {castRank, isAttack, isSave, description, save, slug, traits, formula} = spellChatData;
+
+        let rank = `Rank ${castRank}`
+        if(spellData.isPrepared) {
+          rank += ` |Slot: ${index + 1}|`
+        }
+        let lvl = castRank+1;
+        const name = spell.name;
+        if (spell.isCantrip) {
+          rank = `Cantrip ${castRank}`
+          lvl = 0;
+        }
+        if (spellData.isFocusPool) {
+          rank = `Focus ${castRank}`
+          lvl = 1;
+        }
+        const sname = `${name} ${rank} (${e.name})`;
+        spells.push({name: sname, castRank, sEId: spellData.id, slug, description, DC: save.value, spell, index, isSave, isAttack,
+          basic: spell.system.defense?.save?.basic ?? false, isCantrip: spell.isCantrip, isFocus: spellData.isFocusPool, traits,
+          save: save.type ?? "", lvl, formula, isExpended: active.expended ?? false , isUseless: group.uses?.value < 1,
+          isStrikeable, standbyExpendable: !spell.isCantrip && castRank >= sbs?.baseRank
+        });
+      }
+    }
+  };
+  spells.sort((a, b) => {
+    if (a.lvl === b.lvl)
+      return a.name.toUpperCase().localeCompare(b.name.toUpperCase(), undefined, {sensitivity: "base"});
+      return a.lvl - b.lvl;
+  });
+
+  return spells;
+}
 
 /* Dialog box */
 async function quickDialog({data, title = `Quick Dialog`} = {}) {
