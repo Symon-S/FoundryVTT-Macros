@@ -2,9 +2,9 @@
 To use this macro, you just have to target someone and use it.
 Added ability to reroll using a hero point when available.
 Standby Spell now supported, if you have the feat it will:
-1. Ask if you are using Standby Spell.
-2. Set a Standby Spell by calling to the Standby Spell macro, if one hasn't been set yet.
-3. Filter the drop down list to only include spells you can substitute
+1. Set a Standby Spell by calling to the Standby Spell macro, if one hasn't been set yet.
+2. Dynamically filter the drop down list to only include spells you can substitute or spells you can spellstrike with,
+depending on the current state of the use standby spell toggle.
 */
 
 /* Throw warning if token is not selected*/
@@ -20,42 +20,39 @@ if (!token.actor.itemTypes.feat.some(e => ["spellstriker","spellstrike"].include
 const ess = token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike');
 
 const DamageRoll = CONFIG.Dice.rolls.find(((R) => R.name === "DamageRoll"));
-let entries = token.actor.itemTypes.spellcastingEntry.filter(r => r.system.prepared?.value !== "items");
 
-/*Standby Spells*/
-let standby = false;
+/* Standby Spells */
+let sbs = null;
 if (token.actor.itemTypes.feat.some(f => f.slug === 'standby-spell')) {
-  standby = await Dialog.confirm({
-    title: 'Use Standby Spell?',
-    yes: () => { return true },
-    no: () => { return false },
-    defaultYes: false
-  });
-  if (standby) {
-    if (token.actor.itemTypes.spellcastingEntry.some(sb => sb.flags.pf2e.magusSE) && token.actor.itemTypes.spell.some(s => s.flags.pf2e.standbySpell)) {
-      entries = token.actor.itemTypes.spellcastingEntry.filter(sb => sb.flags.pf2e.magusSE);
+  sbs = actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell);
+  if (!sbs) {
+    // Have feat, spell not set, use macro to set it
+    let macro = game.macros.find(n => n.name === "Assign Standby Spell");
+    if (!macro && game.modules.get('xdy-pf2e-workbench')?.active) {
+      macro = (await game.packs.get("xdy-pf2e-workbench.asymonous-benefactor-macros-internal")?.getDocuments({name: 'XDY DO_NOT_IMPORT Assign Standby Spell'}))?.[0]?.toObject();
+      if (macro) {
+        macro = new Macro(macro);
+        macro.ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+      }
+    }
+    if (macro) {
+      await macro.execute();
+      sbs = actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell);
     }
     else {
-      if (game.modules.get('xdy-pf2e-workbench')?.active && (await game.packs.get("xdy-pf2e-workbench.asymonous-benefactor-macros-internal").getDocuments()).some(x => x.name === 'XDY DO_NOT_IMPORT Assign Standby Spell')) {
-        const temp_macro = new Macro((await game.packs.get("xdy-pf2e-workbench.asymonous-benefactor-macros-internal").getDocuments()).find(x => x.name === 'XDY DO_NOT_IMPORT Assign Standby Spell')?.toObject());
-        temp_macro.ownership.default = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-        await temp_macro.execute();
-      }
-      else if (game.macros.some(n => n.name === "Assign Standby Spell")) { await game.macros.find(n => n.name === "Assign Standby Spell").execute(); }
-      else { return void ui.notifications.warn("You do not have the latest workbench version or it is not active, or the Assign Standby Spell macro"); }
-      entries = token.actor.itemTypes.spellcastingEntry.filter(sb => sb.flags.pf2e.magusSE);
+      // They won't be able to use standby spell, but the rest of spellstrike works fine
+      ui.notifications.warn("You have not chosen your Standby Spell and will not be able to cast it.");
+      ui.notifications.warn("Cannot choose Standby Spell. You do not have the latest workbench version or it is not active, or the Assign Standby Spell macro.");
     }
   }
 }
-const sbs = token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell);
 
 let spells = await spellList(actor, sbs, ess);
-spells = spells.filter(s => !s.isExpended && !s.isUseless && (standby ? s.standbyExpendable : s.isStrikeable));
+spells = spells.filter(s => !s.isExpended && !s.isUseless);
 if (spells.length === 0) { return void ui.notifications.info("You have no spells available"); }
 
-const choices = await SSDialog(actor, spells, standby);
+const choices = await SSDialog(actor, spells, sbs);
 
-if (standby) { choices.reroll = false }
 let last, mes;
 if (choices.reroll) {
   mes = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined && lus.token.id === token.id);
@@ -67,13 +64,14 @@ if (choices.reroll) {
 
 /* Get the strike actions */
 let spc = last ?? choices.spell;
-let sbsp;
-if (standby) {
-  const castRank = spc.castRank;
-  if (sbs.baseRank > castRank) { return ui.notifications.warn(`The chosen spell rank is below the base rank of your standby spell ${sbs.name}, please try again.`); }
+
+// Combine spell slot from dialog with standby spell's spell data. Reroll data from a message has already had this done, skip for rerolls.
+if (choices.standby && !choices.reroll) {
   const {isAttack, isSave, description, save, slug, traits, formula} = await sbs.getChatData({},{castRank});
-  sbsp = { name: `${sbs.name}`, sEId: spc.sEId, castRank, spId: sbs.id, slug, description, DC: save.value, spell: sbs, index:spc.index, isSave, isAttack, basic: sbs.system.defense?.save?.basic ?? false, isCantrip: false, isFocus: false, traits, save: save.type ?? "", formula}
-  spc = sbsp;
+  spc = mergeObject(spc, {
+    name: sbs.name, spId: sbs.id, slug, description, DC: save.value, spell: sbs, isSave, isAttack,
+    basic: sbs.system.defense?.save?.basic ?? false, traits, save: save.type ?? "", formula
+  });
 }
 const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);
 
@@ -87,7 +85,7 @@ if(spc.spell.hasVariants && spc.isAttack){
     spell_variants = Array.from(spc.spell.overlays.entries(), ([id, ovl]) => ({name: ovl.name ?? spc.name, id: id, castRank: spc.castRank}));
   }
 
-	spell_variants.sort((a, b) => {
+  spell_variants.sort((a, b) => {
     if (a.lvl === b.lvl)
       return a.name
       .toUpperCase()
@@ -285,9 +283,10 @@ await s_entry.cast(spc.spell,{slotId: spc.index,rank: spc.castRank,message: fals
 //   action: StatisticModifier, attack to use
 //   variant: Integer, action's variant, i.e. MAP
 //   reroll: Boolean, do a hero point reroll?
+//   standby: Boolean, standby spell to be used
 //   event: PointerEvent, from the attack button click (i.e. shift-click vs normal)
 // }
-async function SSDialog(actor, spells, standby) {
+async function SSDialog(actor, spells, sbs) {
   const starlit = actor.itemTypes.feat.some(f => f.slug === 'starlit-span');
   const template = "systems/pf2e/templates/actors/character/partials/strike.hbs";
   const base = await actor.sheet.getData();
@@ -298,7 +297,7 @@ async function SSDialog(actor, spells, standby) {
   const attacksHtml = await Promise.all(Array.from(actions, ([index, action]) => renderTemplate(template, {...base, index, action})));
 
   // Build dialog data
-  const label = `Choose a Spell ${standby ? "to Expend ":""}: `;
+  const label = (useSBS) => `Choose a Spell ${useSBS ? "Slot to expend" : " to Cast"}`;
   const spellOptions = spells.map((s, i) => `<option value="${i}">${s.name}</option>`);
   const content = `
   <style>
@@ -331,8 +330,8 @@ async function SSDialog(actor, spells, standby) {
   }`}
   </style>
 
-  ${standby ? `<p align="center">Casting Standby Spell: ${token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell).name}</p>` : ""}
-  <p align="center"><label>${label}</label></p>
+  ${sbs ? `<p>Cast Standby Spell: <input type="checkbox" id="standby"> ${sbs.name}</p>` : ""}
+  <p align="center"><label id="spell-choice-label">${label(false)}</label></p>
   <p><select style="width:100%; font-size:12px" id="spell">${spellOptions.join('')}</select></p>
   <div class="actor sheet character"><section class="window-content"><div class="tab actions active attack-popout">
   <ol class="actions-list item-list directory-list strikes-list" data-strikes>
@@ -368,8 +367,9 @@ async function SSDialog(actor, spells, standby) {
           const action = altp ? actions.get(index).altUsages.find(a => a.item?.[altp]) : actions.get(index);
           const spell = spells[Number(html.find('#spell :selected').val())];
           const reroll = html.find('#reroll')[0].checked;
+          const standby = html.find("#standby")[0]?.checked ?? false;
           dialog.close();
-          resolve({spell, action, variant, reroll, event: event.originalEvent});
+          resolve({spell, action, variant, reroll, standby, event: event.originalEvent});
         });
         // Handler for toggle buttons, only versatile is supported
         strikes.find("[data-action=toggle-weapon-trait]").on("click", async (event) => {
@@ -387,6 +387,22 @@ async function SSDialog(actor, spells, standby) {
             );
           }
         });
+        // Update spell choices for standby slot to expend vs casting for spellstrike
+        const updateChoices = (useSBS) => {
+          html.find("#spell-choice-label").text(label(useSBS));
+          const choice = html.find("#spell");
+          // Hide/unhide the spells that are standby expendable slots or strikeable spells
+          spells.forEach((s, i) => choice.find(`option[value=${i}]`).prop("hidden", useSBS ? !s.standbyExpendable : !s.isStrikeable));
+          // If non-legal slot was picked, switch to the first legal one
+          const spell = spells[Number(choice.val())];
+          if (useSBS && !spell?.standbyExpendable) choice.val(spells.findIndex(s => s.standbyExpendable)).change();
+          if (!useSBS && !spell?.isStrikeable) choice.val(spells.findIndex(s => s.isStrikeable)).change();
+        };
+        updateChoices(false);
+        // Handler for standby checkbox
+        if (sbs) {
+          html.find("#standby").on("click", (event) => updateChoices(html.find("#standby")[0].checked));
+        }
       }
     }, {width: "auto"});
     await dialog.render(true);
