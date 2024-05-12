@@ -42,7 +42,7 @@ if (token.actor.itemTypes.feat.some(f => f.slug === 'standby-spell')) {
     else {
       // They won't be able to use standby spell, but the rest of spellstrike works fine
       ui.notifications.warn("You have not chosen your Standby Spell and will not be able to cast it.");
-      ui.notifications.warn("Cannot choose Standby Spell. You do not have the latest workbench version or it is not active, or the Assign Standby Spell macro.");
+      ui.notifications.warn("Cannot choose a Standby Spell. You do not have the latest workbench version or it is not active, or the Assign Standby Spell macro is not available.");
     }
   }
 }
