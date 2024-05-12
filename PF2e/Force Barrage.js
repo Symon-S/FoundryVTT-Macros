@@ -102,31 +102,47 @@ if (mmdiag[2] === true) {
 
 const mmch = mm.find(n => n.name === mmdiag[0]);
 if (mmch.entryId === null) { mmdiag[1] = 1 }
-console.log(mmch);
 
 const multi = parseInt(mmdiag[1]) * Math.floor((1 + mmch.rank) / 2);
 
 const targetIds = game.user.targets.ids;
-const targets = canvas.tokens.placeables.filter(t => targetIds.includes(t.id));
+const targets = game.user.targets.values().toArray();
+
+const script1 = function THoverIn(event) {
+	const tok = game.user.targets.find(x => x.id === event.id);
+	tok._onHoverIn(event)
+}
+
+const script2 = function THoverOut(event) {
+	const tok = game.user.targets.find(x => x.id === event.id);
+	tok._onHoverOut(event)
+}
 
 const tdata = [];
+let i = 0;
 for (const t of targets) {
+	++i
 	if (t.actor.hasPlayerOwner) { ui.notifications.info(`${t.name} is most likely an ally`); }
-	tdata.push({ label: t.name, type: 'number', options: [1] });
+	const label = t.document.displayName <= 20 && !t.actor.isOwner && t.name.includes(t.actor.name) ? `<script>${script1}${script2}</script><img src=${t.document.texture.src} style="width:50px; height:50px" onmouseover="THoverIn(this)" onmouseout="THoverOut(this)" id=${t.id}><figcaption>Target #${i}</figcaption>` : t.name;
+	tdata.push({ label, type: 'number', options: [1] });
 };
+
 
 if (targetIds.length === 1) { tdata[0].options = [multi]; }
 
 const tdiag = await quickDialog({ data: tdata, title: `Distribute ${multi} Barrages` });
 
 let tot = 0;
-let i;
+i = undefined;
+let c = 1;
 const fmm = [];
 for (const m of tdiag) {
 	tot = tot + m
 	if (i !== undefined) { i++ }
 	if (i === undefined) { i = 0 }
-	fmm.push({ name: targets[i].name, num: m })
+	const name = targets[i].document.displayName <= 20 && !targets[i].actor.isOwner && targets[i].name.includes(targets[i].actor.name) ? `<img src=${targets[i].document.texture.src} style="width:50px; height:50px"><figcaption>Target #${c}</figcaption>` : targets[i].name;
+	c++
+	fmm.push({ name, num: m , uuid: targets[i].document.uuid })
 };
 
 if (tot > multi) { return ui.notifications.warn(`You have entered ${tot - multi} too many missiles. Please try again`) }
@@ -156,7 +172,8 @@ for (const a of fmm) {
 	const droll = new DamageRoll(dam);
 	droll.toMessage(
 		{
-			flavor: `<strong>${a.num} Force Barrage(s) targeting ${a.name}</strong><br>${mmch.link}`,
+			flags: {"pf2e-toolbelt.targetHelper.targets": [a.uuid]},
+			flavor: `<strong>${a.name} was targeted by ${a.num} Force Barrage(s)</strong><br>${mmch.link}`,
 			speaker: ChatMessage.getSpeaker(),
 		}
 	);
@@ -282,5 +299,5 @@ async function quickDialog({ data, title = `Quick Dialog` } = {}) {
 			default: 'Ok'
 		})._render(true);
 		document.getElementById("0qd").focus();
-	},{width:"auto"});
+	},{width:"auto",height:"auto"});
 }
