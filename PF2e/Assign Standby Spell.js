@@ -1,8 +1,8 @@
 /*
 This Macro is to be used in conjunction with the Spellstrike Macro.
-You simply run this macro with the token selected and it will prompt you for your magus spellcasting entry if more than one prepared
-intelligence, and arcane, based spellcasting entry is available and flag that entry as your magus spellcasting entry.
-It will then prompt you for a spell in that entry to be your Standby Spell.
+You simply run this macro with the token selected.
+It will then prompt you for a spell in a Spellcasting Entry based off of intelligence to be your Standby Spell.
+Certain exceptions will need to be monitored.
 If you would like to change the Standby Spell, simply run the macro again.
 You can clear your Standby Spell and Entry by choosing 'Clear Standby Spell' entry in the dropdown.
 */
@@ -12,97 +12,34 @@ if (token.actor.class.slug !== "magus" && token.actor.flags.pf2e.rollOptions.all
 if (token.actor.itemTypes.feat.some(f => f.slug === "magus-dedication") && !token.actor.itemTypes.feat.some(f => f.slug === "spellstriker")) { return void ui.notifications.warn("Token with Magus Dedication does not possess the Spellstriker feat!"); }
 if (!token.actor.itemTypes.feat.some(f => f.slug === "standby-spell")) { return void ui.notifications.warn("Selected token does not possess the Standby Spell feat!"); }
 
+const ess = token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike');
 
-let entry = token.actor.itemTypes.spellcastingEntry.find(sce => sce.flags.pf2e.magusSE);
-
-//If you accidentally chose the wrong spellcasting entry just remove the comments from the following lines, then add the comments back after switching your spellcasting entry:
-//entry.unsetFlag("pf2e","magusSE");
-//entry = undefined;
-
-if (entry === undefined) {
-  if (token.actor.itemTypes.spellcastingEntry.filter(sce => sce.attribute === 'int' && sce.isPrepared && sce.tradition === 'arcane').length > 1) {
-    const options = token.actor.itemTypes.spellcastingEntry.filter(sce => sce.attribute === 'int' && sce.isPrepared && sce.tradition === 'arcane').map(n => n.name);
-    const choice1 = await choose(options, prompt = `Choose your Magus Spellcasting entry : `);
-    entry = token.actor.itemTypes.spellcastingEntry.find(n => n.name === choice1);
-    await entry.setFlag("pf2e","magusSE",true);
-  }
-  else {
-    entry = token.actor.itemTypes.spellcastingEntry.find(sce => sce.attribute === 'int' && sce.isPrepared && sce.tradition === 'arcane');
-    await entry.setFlag("pf2e","magusSE",true);
-  }
-}
-
-const spells = [];
-for (const spell of entry.spells.contents) {
-    const blacklist = [
-    "celestial-accord",
-    "shattering-gem",
-    "entangle-fate",
-    "behold-the-weave",
-    "compel-true-name",
-    "lift-natures-caul",
-    "foul-miasma",
-    "invoke-the-harrow",
-    "rewrite-memory",
-    "subconscious-suggestion",
-    "excise-lexicon",
-    "enthrall",
-    "mind-reading",
-    "mirecloak",
-    "mask-of-terror",
-    "hallucination",
-    "hyperfocus",
-    "pact broker",
-    "death-knell",
-    "sudden-recollection",
-    "favorable-review",
-    "litany-of-self-interest",
-    "suggestion",
-    "command",
-    "déjà-vu",
-    "charming-touch",
-    "charm",
-    "possession"
-    ];
-    const exceptions = ['force-barrage','force-fang'];
-    const ess = token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike');
-    if ( spell.isCantrip ) { continue }
-    if (!spell.traits.has("attack") && !ess) { continue; }
-    if (!spell.traits.has('attack') && ess && !exceptions.includes(spell)) {
-        const isSave = (await spell.getChatData()).isSave;
-        if (blacklist.includes(spell.slug) || !isSave || !["1", "2", "2 or 3", "1 to 3"].includes(spell.system.time?.value)) { continue; }
-        if (!spell.system.target.value.includes("creature") && spell.system.area?.type === "emanation") { continue; }
-        if (spell.system.target.value.includes("willing")) { continue; }
-    }
-  spells.push(spell);
-};
+const spells = await spellList(actor, ess);
 
 if (spells.length === 0) { return void ui.notifications.warn("You have no spells that can be assigned as a standby spell.") }
 
-if (spells.some(s => s.flags.pf2e.standbySpell === true)) {
-  const options = spells.filter(c => !c.isCantrip && c.flags.standbySpell !== true).map(n => n.name);
-  options.sort();
-  options.push(`Clear Standby Spell`);
-  const flagged = spells.find(s => s.flags.pf2e.standbySpell === true);
-  const choice3 = await choose( options, prompt = `Replace your Standby Spell (${flagged.name}) : `);
-  if (choice3 === `Clear Standby Spell`) {
-    const flagged1 = token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell === true);
+if (spells.some(s => s.flags.pf2e.standbySpell)) {
+  const options = spells.filter(c => !c.flags.standbySpell).map(n => [n.slug, `${n.name} (${n.spellcasting.name})`] );
+  options.push(["clear", "Clear Standby Spell"]);
+  const flagged = spells.find(s => s.flags.pf2e.standbySpell);
+  const choice = await choose( options, prompt = `Replace your Standby Spell (${flagged.name}) : `);
+  if (choice === "clear") {
+    const flagged1 = token.actor.itemTypes.spell.find(s => s.flags.pf2e.standbySpell);
     await flagged1.unsetFlag("pf2e","standbySpell");
-    await entry.unsetFlag("pf2e","magusSE");
-    return ui.notifications.info(`Standby Spell and Standby Spell Entry cleared`);
+    return ui.notifications.info(`Standby Spell cleared`);
   }
-  const spell = spells.find(f => f.name === choice3);
+  const spell = spells.find(f => f.slug === choice);
   await flagged.unsetFlag("pf2e","standbySpell");
   await spell.setFlag("pf2e","standbySpell",true);
 }
 
 else {
-  const options = spells.filter(c => !c.isCantrip).map(n => n.name);
-  options.sort();
-  const choice2 = await choose( options, prompt = `Choose your Standby Spell : `);
-  const spell = spells.find(f => f.name === choice2);
+  const options = spells.map(n => [n.slug, `${n.name} (${n.spellcasting.name})`] );
+  const choice1 = await choose( options, prompt = `Choose your Standby Spell : `);
+  const spell = spells.find(f => f.slug === choice1);
   await spell.setFlag("pf2e","standbySpell",true);
 }
+
 
 /*
   Choose
@@ -120,7 +57,7 @@ async function choose(options = [], prompt = ``){
     let content = `
     <table style="width=100%">
       <tr><th>${prompt}</th></tr>
-      <tr><td><select id="choice">${dialog_options}</select></td></tr>
+      <tr><td><select id="choice" autofocus>${dialog_options}</select></td></tr>
     </table>`;
   
     new Dialog({
@@ -129,3 +66,81 @@ async function choose(options = [], prompt = ``){
     },{width:"auto"}).render(true);
   });
 }
+
+async function spellList(actor, ess) {
+  // A bunch of these should be excluded because they are not AoE spells, but there area bunch of AoE spells
+  // with multiple area choices and the system encodes these as no area, so we consider no area as AoE and then
+  // fix the mistakes with this list.
+  const blacklist = new Set([
+    "celestial-accord",
+    "shattering-gem",
+    "entangle-fate",
+    "behold-the-weave",
+    "compel-true-name",
+    "foul-miasma",
+    "invoke-the-harrow",
+    "rewrite-memory",
+    "subconscious-suggestion",
+    "excise-lexicon",
+    "enthrall",
+    "mind-reading",
+    "mirecloak",
+    "mask-of-terror",
+    "hallucination",
+    "hyperfocus",
+    "pact-broker",
+    "death-knell",
+    "sudden-recollection",
+    "favorable-review",
+    "litany-of-self-interest",
+    "suggestion",
+    "command",
+    "déjà-vu",
+    "charming-touch",
+    "charm",
+    "possession",
+    "cornucopia",
+    "delay-affliction",
+    "heal-companion",
+    "natures-bounty",
+    "rebuke-death",
+    "wholeness-of-body",
+    "revival"
+  ]);
+
+  // ESS, in addition to AoE spells, extends "spell attacks" to "harmful spells that target a creature".
+  // Most harmful spells that target a creature are attacks, but some aren't.  These are they:
+  const harmfulNonAttacks = new Set(['force-barrage', 'force-fang']);
+  const undead = [...game.user.targets.values()].some(t => t.actor.traits.has('undead'));
+  if (undead) harmfulNonAttacks.add('heal');
+  // Don't allow healing damage spells, unless they are also vitality and there is an undead target
+  const healing = (spell, data) => data.damage?.[0]?.kinds.has('healing') &&
+    !(undead && spell.traits.has('vitality'));
+
+  // Spells that ESS allows us to use, beyond spell attacks
+  const essAllowed = (spell, data) => harmfulNonAttacks.has(data.slug) || (
+    !data.target.value.includes('willing') && !healing(spell, data) && (
+      (data.target.value.includes("creature") && data.hasDamage) ||
+      (["line", "cone", "burst", undefined].includes(data.area?.type) && (data.hasDamage || data.isSave))
+    )
+  );
+  // "1", "2", "2 to 2 rounds", "1 or 2", etc.
+  const actionsAllowed = /^[12]( (or|to) .*)?$/;
+
+  const spells = [];
+  for (const e of actor.itemTypes.spellcastingEntry.filter(r => r.system.prepared?.value !== "items" && r.isPrepared && r.attribute === "int")) {
+    for (const spell of e.spells) {
+      const spellChatData = await spell.getChatData();
+      const isStrikeable = (spell.isAttack || (ess && essAllowed(spell, spellChatData))) && actionsAllowed.test(spell.system.time?.value) && !blacklist.has(spell.slug) && !spell.isCantrip;
+      if (!isStrikeable) continue;
+      spells.push(spell)
+    }
+  }
+  spells.sort((a, b) => {
+    if (a.lvl === b.lvl)
+      return a.name.toUpperCase().localeCompare(b.name.toUpperCase(), undefined, {sensitivity: "base"});
+      return a.lvl - b.lvl;
+  });
+
+  return spells;
+};
