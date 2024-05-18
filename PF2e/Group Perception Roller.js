@@ -19,7 +19,7 @@ for ( const t of canvas.tokens.placeables) {
 	if ( !exceptions.includes(t.actor.type) && t.actor.hasPlayerOwner ) {
 		const {result,total,dice} = await new Roll(`1d20 + ${t.actor.perception.mod}`).evaluate();
 		const userId = Object.keys(t.actor.ownership).find(f => f !== "default" && !game.users.get(f).isGM);
-		const userColor = game.users.get(userId).color;
+		const userColor = game.users.get(userId)?.color ?? "grey";
 		let color = "";
 		if ( dice[0].total === 1 ) {
 			color = `;font-size:115%;color:red`;
