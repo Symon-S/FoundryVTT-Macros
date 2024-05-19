@@ -7,7 +7,7 @@ This macro will roll several knowledge checks if no target is selected.
 If one ore more targets are selected it will only roll the relevant knowledge skills and compare the result to the DC.
 Handles lore skills (as far as possible)
 Handles Cognitive Mutagen and other Bonus effects
-
+Should pick up most single target trait based mods automatically now if predicates are set properly.
 
 Limitations:
 * Does not handle assurance.
@@ -71,24 +71,30 @@ const appliedModifiers = [];
 for (const skill in actor.skills) {
     let fakeRoll;
     const rank = actor.skills[skill].rank;
+    const rollOptions = [
+        ...actor.getRollOptions(["all", "skill-check"]),
+        "action:recall-knowledge",
+        `action:recall-knowledge:${skill}`,
+        "skill-check",
+        `skill:rank:${rank}`,
+    ];
+    if (game.user.targets.size === 1) {
+        const traits = game.user.targets.first().actor.traits;
+        traits.forEach(t => { rollOptions.push(`target:traits:${t}`) });
+    }
+
     await actor.skills[skill].roll({
         callback: (res) => {
             fakeRoll = res;
         },
         createMessage: false,
         skipDialog: true,
-        extraRollOptions: ["action:recall-knowledge", "skill-check", `skill:rank:${rank}`],
+        extraRollOptions: rollOptions,
     });
     const fakeRollDieResult = fakeRoll.dice[0].values[0];
 
     // find conditional RK modifiers
     const conditionalModifiers = [];
-    const rollOptions = [
-        ...actor.getRollOptions(["all", "skill-check"]),
-        "action:recall-knowledge",
-        "skill-check",
-        `skill:rank:${rank}`,
-    ];
     const coreSkill = actor.skills[skill];
     const recallKnowledgeModifiers =
         coreSkill?.modifiers.filter((mod) => mod.predicate.includes("action:recall-knowledge")) ?? [];
