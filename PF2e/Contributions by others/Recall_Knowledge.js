@@ -80,7 +80,7 @@ for (const skill in actor.skills) {
     ];
     if (game.user.targets.size === 1) {
         const traits = game.user.targets.first().actor.traits;
-        traits.forEach(t => { rollOptions.push(`target:traits:${t}`) });
+        traits.forEach(t => { rollOptions.push(`target:trait:${t}`) });
     }
 
     await actor.skills[skill].roll({
