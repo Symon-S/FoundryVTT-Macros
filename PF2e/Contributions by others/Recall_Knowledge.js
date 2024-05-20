@@ -14,6 +14,18 @@ Limitations:
 * Does not handle things like bardic knowledge.
 */
 
+/**
+ * Check wether the current actor has a feature.
+ *
+ * @param {string} slug
+ * @returns {boolean} true if the feature exists, false otherwise
+ */
+const checkFeat = (slug) =>
+    token.actor.items
+      .filter((item) => item.type === 'feat')
+      .some((item) => item.slug === slug);
+   
+
 actor = token?.actor ?? actor;
 if (!actor) {
     return ui.notifications.error("No selected token or assigned character");
@@ -23,6 +35,7 @@ if (!game.modules.get("xdy-pf2e-workbench")?.active) {
     return ui.notifications.error("This Macro requires PF2e Workbench module");
 }
 
+const HAS_DUBIOUS_KNOWLEDGE = checkFeat('dubious-knowledge');
 const SKILL_OPTIONS = ["arcana", "crafting", "medicine", "nature", "occultism", "religion", "society"];
 
 const IDENTIFY_SKILLS = {
@@ -250,6 +263,9 @@ if (game.user.targets.size < 1) {
 
         output += skillListOutput("Lore Skill", loreSkills);
         output += conditionalModifiersOutput([...primarySkills, ...loreSkills]);
+        if (HAS_DUBIOUS_KNOWLEDGE) {
+            output += `<br>${token?.name ?? actor.name} has @UUID[Compendium.pf2e.feats-srd.Item.1Bt7uCW2WI4sM84P]{Dubious Knowledge}`
+        }
     }
 }
 
