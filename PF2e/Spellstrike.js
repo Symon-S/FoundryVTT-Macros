@@ -301,22 +301,26 @@ async function SSDialog(actor, spells, sbs) {
   const spellOptions = spells.map((s, i) => `<option value="${i}">${s.name}</option>`);
   const content = `
   <style>
-  .app.dialog div.dialog-content
+  .spellstrike-macro
+  .actor.sheet.character section.window-content .attack-popout.actions {
+    margin: 0 0 0 0;
+  }
+  .spellstrike-macro
   .actor.sheet.character section.window-content .attack-popout.actions ol.strikes-list li.strike
   .item-name {
     align-items: center;
   }
-  .app.dialog div.dialog-content
+  .spellstrike-macro
   .actor.sheet.character section.window-content .attack-popout.actions ol.strikes-list li.strike
   div.auxiliary-actions {
     display: none;
   }
-  .app.dialog div.dialog-content
+  .spellstrike-macro
   .actor.sheet.character section.window-content .attack-popout.actions ol.strikes-list li.strike
   button.damage.tag {
     display: none;
   }
-  .app.dialog div.dialog-content
+  .spellstrike-macro
   .actor.sheet.character section.window-content .attack-popout.actions ol.strikes-list li.strike
   button.tag:disabled {
     background-color: var(--color-text-dark-inactive);
@@ -324,7 +328,7 @@ async function SSDialog(actor, spells, sbs) {
     pointer-events: initial;
   }
   ${starlit ? "" : `
-  .app.dialog div.dialog-content
+  .spellstrike-macro
   ol.strikes-list li.strike div.alt-usage:has(button[data-alt-usage="thrown"]) {
     display: none;
   }`}
@@ -404,7 +408,7 @@ async function SSDialog(actor, spells, sbs) {
           html.find("#standby").on("click", (event) => updateChoices(html.find("#standby")[0].checked));
         }
       }
-    }, {width: "auto"});
+    }, { classes: ["dialog", "spellstrike-macro", "dui-limited-scope"]});
     await dialog.render(true);
   });
   return result;
