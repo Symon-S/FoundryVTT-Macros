@@ -67,50 +67,40 @@ let spc = last ?? choices.spell;
 
 // Combine spell slot from dialog with standby spell's spell data. Reroll data from a message has already had this done, skip for rerolls.
 if (choices.standby && !choices.reroll) {
-  const {isAttack, isSave, description, save, slug, traits, formula} = await sbs.getChatData({},{castRank});
+  const {isAttack, isSave, description, save, slug, traits, hasDamage} = await sbs.getChatData({},{castRank});
   spc = mergeObject(spc, {
     name: sbs.name, spId: sbs.id, slug, description, DC: save.value, spell: sbs, isSave, isAttack,
-    basic: sbs.system.defense?.save?.basic ?? false, traits, save: save.type ?? "", formula
+    basic: sbs.system.defense?.save?.basic ?? false, traits, save: save.type ?? "", hasDamage
   });
 }
 const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);
 
-// Check for spell variants
-if(spc.spell.hasVariants && spc.isAttack){
-  let spell_variants;
-  if (spc.spell.overlays.contents[0].system?.time !== undefined){
-    spell_variants = Array.from(spc.spell.overlays.entries(), ([id, ovl]) => ({name: spc.name + ovl.system.time.value, id: id, castRank: spc.castRank}));
-  }
-  else {
-    spell_variants = Array.from(spc.spell.overlays.entries(), ([id, ovl]) => ({name: ovl.name ?? spc.name, id: id, castRank: spc.castRank}));
-  }
+// spc.spell is the base spell, turn it into the exact variant spell here.
+// This includes both heightening (always) and selecting an action cost, damage type, etc. variant (sometimes)
+const variantParams = {castRank: spc.castRank};
+if (spc.spell.hasVariants) {
+  let toName = spc.spell.overlays.contents[0].system?.time !== undefined ?
+    (vs) => `${vs.name} (${vs.actionGlyph} actions)` :
+    (vs) => vs.name;
 
-  spell_variants.sort((a, b) => {
-    if (a.lvl === b.lvl)
-      return a.name
-      .toUpperCase()
-      .localeCompare(b.name.toUpperCase(), undefined, {
-        sensitivity: "base",
-      });
-      return a.lvl - b.lvl;
-  });
-
+  const spell_variants = spc.spell.overlays.overrideVariants.map((spell) => ({name: toName(spell), spell}))
+  spell_variants.sort((a, b) => a.spell.sort - b.spell.sort);
 
   // Build dialog data
   const ovr_data = [
-    { label : `Choose a Spell Variant : `, type : `select`, options : spell_variants.map(p => p.name) }
+    { label: "Choose a Spell Variant: ", type: "select", options: spell_variants.map(p => p.name) }
   ];
 
   // Query user for variant choice
   const variant_choice = await quickDialog({data : ovr_data, title : `Variants Detected`});
 
-  // Obtain the ID of the chosen variant, then use that ID to fetch the modified spell
-  const vrId = spell_variants.find(x => x.name === variant_choice[0]).id;
-  const variant = spc.spell.loadVariant({castRank:spc.castRank, overlayIds:[vrId]});
-  spc.spell = variant;
-} else {
-  spc.spell = spc.spell.loadVariant({castRank: spc.castRank}) ?? spc.spell;
+  // Get the overlayIds value for the selected variant
+  const variantId = spell_variants.find(x => x.name === variant_choice[0]).spell.variantId;
+  variantParams.overlayIds = [variantId];
 }
+// Both castRank and overlayIds (if used) must be specified in one call to loadVariant()
+spc.spell = spc.spell.loadVariant(variantParams) ?? spc.spell;
+spc.hasDamage = !!await spc.spell.getDamage(); // May have changed due to variant selected
 
 // Roll Strike and set/get applicable data
 let pers, critt;
@@ -263,7 +253,7 @@ if (critt === 1 && !spc.isAttack) {
   await spc.spell.toMessage(null);
 }
 if (critt >= 2) {
-  if (spc.slug !== "chromatic-ray" && spc.roll === undefined && spc.formula === undefined) {
+  if (spc.slug !== "chromatic-ray" && !spc.hasDamage && !spc.roll) {
     await spc.spell.toMessage(null);
   }
   if (critt === 3 && spc.slug !== "chromatic-ray" && spc.isAttack) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }
@@ -490,7 +480,7 @@ async function spellList(actor, sbs, ess) {
         const spellChatData = await spell.getChatData({}, {groupId: group.id});
         const isStrikeable = (spell.isAttack || (ess && essAllowed(spell, spellChatData))) &&
           actionsAllowed.test(spell.system.time?.value) && !blacklist.has(spell.slug);
-        const {castRank, isAttack, isSave, description, save, slug, traits, formula} = spellChatData;
+        const {castRank, isAttack, isSave, description, save, slug, traits, hasDamage} = spellChatData;
 
         let rank = `Rank ${castRank}`
         if(spellData.isPrepared) {
@@ -509,7 +499,7 @@ async function spellList(actor, sbs, ess) {
         const sname = `${name} ${rank} (${e.name})`;
         spells.push({name: sname, castRank, sEId: spellData.id, slug, description, DC: save.value, spell, index, isSave, isAttack,
           basic: spell.system.defense?.save?.basic ?? false, isCantrip: spell.isCantrip, isFocus: spellData.isFocusPool, traits,
-          save: save.type ?? "", lvl, formula, isExpended: active.expended ?? false , isUseless: group.uses?.value < 1,
+          save: save.type ?? "", lvl, hasDamage, isExpended: active.expended ?? false , isUseless: group.uses?.value < 1,
           isStrikeable, standbyExpendable: !spell.isCantrip && castRank >= sbs?.baseRank
         });
       }
