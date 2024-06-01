@@ -108,6 +108,8 @@ if(spc.spell.hasVariants && spc.isAttack){
   const vrId = spell_variants.find(x => x.name === variant_choice[0]).id;
   const variant = spc.spell.loadVariant({castRank:spc.castRank, overlayIds:[vrId]});
   spc.spell = variant;
+} else {
+  spc.spell = spc.spell.loadVariant({castRank: spc.castRank}) ?? spc.spell;
 }
 
 // Roll Strike and set/get applicable data
@@ -257,26 +259,25 @@ if(spc.slug === 'chromatic-ray' && critt >= 2) {
   }
 }
 
-const {item} = await spc.spell.getRollData({castRank: spc.castRank});
 if (critt === 1 && !spc.isAttack) {
-  await item.toMessage(null, {speaker: ChatMessage.getSpeaker(), flags: { "world.macro.spellUsed": spc } });
+  await spc.spell.toMessage(null);
 }
 if (critt >= 2) {
   if (spc.slug !== "chromatic-ray" && spc.roll === undefined && spc.formula === undefined) {
-    await item.toMessage(null, {speaker: ChatMessage.getSpeaker(), flags: { "world.macro.spellUsed": spc } });
+    await spc.spell.toMessage(null);
   }
   if (critt === 3 && spc.slug !== "chromatic-ray" && spc.isAttack) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }
   if ( spc.roll !== undefined ) {
     await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker(), flags: { "world.macro.spellUsed": spc } });
   }
   else {
-    await item.rollDamage({event: choices.event});
+    await spc.spell.rollDamage(choices.event, choices.variant);
   }
 }
 
 /* Expend slots */
 if (spc.isCantrip || choices.reroll) { return; }
-await s_entry.cast(spc.spell,{slotId: spc.index,rank: spc.castRank,message: false});
+await s_entry.cast(spc.spell, {slotId: spc.index, message: false});
 
 // Show the SpellStrike dialog, return a promise of a result object:
 // { spell: Entry of "spells" that was chosen
