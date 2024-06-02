@@ -63,7 +63,7 @@ else if (game.user.targets.size > 1 && !demoralizeMultitarget){
 const actor = _token.actor;
 const targets = game.user.targets;
 
-const respectHiddenNames = !game.settings.get("pf2e", "metagame_tokenSetsNameVisibility");
+const respectHiddenNames = game.settings.get("pf2e", "metagame_tokenSetsNameVisibility");
 const hideActorName = respectHiddenNames && !_token.document.playersCanSeeName;
 const actorName = !hideActorName ? _token.name : 'Unknown';
 
