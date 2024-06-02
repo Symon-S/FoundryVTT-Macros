@@ -70,7 +70,7 @@ async function Eldritch_shot()
 
   if(spells.length === 0) { return void ui.notifications.info("You have no spells available"); }
   /* Get them bows baby */
-  const weapons = token.actor.itemTypes.weapon.filter(i => i.isEquipped && i.system.group === 'bow');
+  const weapons = token.actor.itemTypes.weapon.filter(i => i.isEquipped && ['bow','crossbow'].includes(i.system.group) );
   const map_weap = weapons.map(p => p.name);
 
   /* Build dialog data */
