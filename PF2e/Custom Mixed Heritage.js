@@ -3,14 +3,15 @@ Macro to generate a custom mixed heritage item.
 Macro only needs to be run once per world or when new ancestries are added to the world.
 */
 
-const packs = game.packs.filter( p => p.metadata.type === "Item" && p.index.some((e) => e.type === "ancestry") );
+const packs = game.packs.filter( p => p.metadata.type === "Item" && p.index.some(e => e.type === "ancestry") && p.metadata.packageName !== "pf2e-animal-companions");
 const indexData = [];
 for (const p of packs) {
     indexData.push(await p.getIndex({fields:["system.vision", "system.slug"]}));
 }
 const worldAncestries = game.items.filter(x => x.type === "ancestry").flatMap(d => [{slug: d.system.slug === "" || d.system.slug === null || d.system.slug === undefined ? game.pf2e.system.sluggify(d.name) : d.system.slug, vision: d.system.vision}]);
-const ancestries = indexData.flatMap(v => v.contents).flatMap(d => [{slug: d.system.slug === "" || d.system.slug === null || d.system.slug === undefined ? game.pf2e.system.sluggify(d.name) : d.system.slug, vision: d.system.vision}]).concat(worldAncestries);
+const ancestries = indexData.flatMap(v => v.contents).filter(x => x.type === "ancestry").flatMap(d => [{slug: d.system.slug === "" || d.system.slug === null || d.system.slug === undefined ? game.pf2e.system.sluggify(d.name) : d.system.slug, vision: d.system.vision}]).concat(worldAncestries);
 const lowLightVisionExclusions = ancestries.filter(v => v.vision === "normal").map(llve => { return `heritage:${llve.slug}`});
+
 const itemData = {
     "img": "systems/pf2e/icons/spells/chromatic-image.webp",
     "name": "Custom Mixed Heritage",
@@ -26,17 +27,35 @@ const itemData = {
         },
         "rules": [
             {
-                "choices": {
-                    "filter": [
-                        "item:type:ancestry"
-                    ],
-                    "itemType": "ancestry",
-                    "slugsAsValues": true
-                },
-                "flag": "heritage",
-                "key": "ChoiceSet",
-                "prompt": "Select an Ancestry",
-                "rollOption": "heritage"
+            "choices": {
+                "filter": [
+                "item:type:ancestry",
+                {
+                    "nor": [
+                    "item:trait:minion",
+                    "item:trait:eidolon",
+                    "item:trait:animal",
+                    "item:trait:elemental",
+                    "item:trait:zombie",
+                    "item:trait:fungus",
+                    "item:slug:arboreal-sapling",
+                    "item:slug:zombie",
+                    "item:slug:gibtas",
+                    "item:slug:riding-drake",
+                    "item:slug:shotalashu",
+                    "item:slug:skeletal-mount",
+                    "item:slug:skeletal-servant",
+                    "item:slug:vampiric-animal"
+                    ]
+                }
+                ],
+                "itemType": "ancestry",
+                "slugsAsValues": true
+            },
+            "flag": "heritage",
+            "key": "ChoiceSet",
+            "prompt": "Select an Ancestry",
+            "rollOption": "heritage"
             },
             {
                 "add": [
