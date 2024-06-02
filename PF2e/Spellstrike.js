@@ -166,18 +166,7 @@ if (spc.slug === 'produce-flame' && critt === 3) {
 if (spc.slug === 'ray-of-frost' && critt === 3) {
   flavor += `@UUID[Compendium.pf2e.spell-effects.I4PsUAaYSUJ8pwKC]{Spell Effect: Ray of Frost}`
 }
-if (spc.slug === 'gouging-claw' && critt === 3) {
-  pers = Math.ceil(actor.level / 2) + "d4";
-  flavor += `[[/r ${pers}[persistent,bleed]]]`
-}
-if(spc.slug === 'holy-light' || spc.slug === 'moonlight-ray'){
-  if (game.user.targets.first().actor.traits.has('undead') || game.user.targets.first().actor.traits.has('fiend')) {
-    const spRD = spc.spell.getRollData({castRank: spc.castRank});
-    spc.roll = (await spRD.item.getDamage()).template.damage.roll;
-    spc.roll = new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],(${(spc.castRank-3)*2 + 5}d6)[spirit]}`);
-    flavor = `<div class="tags">${ttags}<br><hr><strong>Spellstrike</strong><br>${spc.spell.link}${flavName} (${dos})`;
-  }
-}
+
 if(spc.slug === 'chilling-darkness'){
   if (game.user.targets.first().actor.traits.has('holy')) {
     const spRD = spc.spell.getRollData({castRank: spc.castRank});
