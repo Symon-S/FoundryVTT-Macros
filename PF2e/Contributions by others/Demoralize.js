@@ -20,8 +20,11 @@ rework by kromko
 
 */
 
+// Save event macro invoked with, e.g. shift click for the slow roll dialog
+const initialEvent = event;
+
 /**
-* Wrapper for the DSN Hook. If DSN is enabled, waits for the physical dice to stop rolling (unless the roll has assurance) 
+* Wrapper for the DSN Hook. If DSN is enabled, waits for the physical dice to stop rolling (unless the roll has assurance)
 *
 * @param {Promise<Object>} rollPromise Promise of roll results
 */
@@ -41,7 +44,7 @@ function dsnHook(rollPromise) {
         return rollPromise;
     }
 }
- 
+
 function isImmune(actor, trait){
     return actor.system.attributes.immunities.some(i => i.type === trait);
 }
@@ -56,7 +59,7 @@ const demoralizeMultitarget = _token.actor.items.find(item => multitargetFeats.i
 
 if (game.user.targets.size == 0){
     return ui.notifications.warn('You must target at least one token.');
-} 
+}
 else if (game.user.targets.size > 1 && !demoralizeMultitarget){
     return ui.notifications.warn('You don\'t have an ability that lets you target more than one token, or the macro doesn\'t recognize it');
 }
@@ -116,10 +119,10 @@ let selectedMode = await new Promise(resolve => {
         content: content,
         buttons: {
             Select: {
-                label: 'Boo!', 
+                label: 'Boo!',
                 callback: (html) => {
                     let skill = html.find('[name="usePerformance"]')?.[0]?.checked ? 'performance' : 'intimidation';
-                    let result = html.find('[name="useGlare"]')[0]?.checked ? 
+                    let result = html.find('[name="useGlare"]')[0]?.checked ?
                     ({mode:'visual', skill}) : ({mode:'auditory', skill, lang:html.find('[name="selectLanguage"]').val(), });
                     resolve(result)
                     }
@@ -184,38 +187,30 @@ let rollResults = targets.map(target =>{
 
     // We make a variant action.
     let action;
+    let flavor = "";
     if(selectedMode.mode == 'visual'){
         action = baseAction.toActionVariant({
             traits: actionOptions.traits,
             modifiers: actionOptions.modifiers,
             statistic: actionOptions.statistic
         });
-        return dsnHook( action.use({actor: actor, target:target})).then(r=> ({
-            ...baseResult,
-            outcome:r?.[0].outcome,
-            flavor: `${targetChatName}: ${game.i18n.localize(`PF2E.Check.Result.Degree.Check.${r?.[0].outcome}`)}`
-        }));
-        
     } else {
         if (!target.actor.system.details.languages.value.includes(selectedMode.lang)){
             action = baseAction.toActionVariant({
                 rollOptions: [...baseAction.rollOptions, 'action:demoralize:unintelligible'],
                 statistic: actionOptions.statistic
-            }); 
-            return dsnHook( action.use({actor: actor, target:target})).then(r=> ({
-                ...baseResult,
-                outcome:r?.[0].outcome,
-                flavor: `${targetChatName}: ${game.i18n.localize(`PF2E.Check.Result.Degree.Check.${r?.[0].outcome}`)} (doesn't speak the language)`
-            }));
+            });
+            flavor = " (doesn't speak the language)";
         } else {
             action = baseAction.toActionVariant({statistic: actionOptions.statistic});
-            return dsnHook( action.use({actor: actor, target:target})).then(r=> ({
-                ...baseResult,
-                outcome:r?.[0].outcome,
-                flavor: `${targetChatName}: ${game.i18n.localize(`PF2E.Check.Result.Degree.Check.${r?.[0].outcome}`)} (speaks the language)`
-            }));
+            flavor = " (speaks the language)";
         }
     }
+    return dsnHook(action.use({event: initialEvent, actor, target})).then(r => ({
+        ...baseResult,
+        outcome: r?.[0].outcome,
+        flavor: `${targetChatName}: ${game.i18n.localize(`PF2E.Check.Result.Degree.Check.${r?.[0].outcome}`)}${flavor}`
+    }));
 })
 
 rollResults = await Promise.all(rollResults);
@@ -233,7 +228,7 @@ if(rollResults.length == 1){
     summary += '<hr>';
     summary += rollResults.map(r=>r.flavor).join('<br>');
 }
-if (game.modules.get('xdy-pf2e-workbench')?.active) { 
+if (game.modules.get('xdy-pf2e-workbench')?.active) {
     // Extract the Macro ID from the asynomous benefactor macro compendium.
     const macroName = `Demoralize Immunity CD`;
     const macroId = (await game.packs.get('xdy-pf2e-workbench.asymonous-benefactor-macros')).index.find(n => n.name === macroName)?._id;
@@ -251,8 +246,8 @@ ChatMessage.create({
         sourceTokenId:_token.id,
         sourceName: actorName,
         results: rollResults.map(r => ({
-            outcome:r.outcome, 
-            targetTokenId:r.targetTokenId, 
+            outcome:r.outcome,
+            targetTokenId:r.targetTokenId,
             targetName:r.targetName
         })),
     }}
