@@ -67,11 +67,11 @@ let spc = last ?? choices.spell;
 
 // Combine spell slot from dialog with standby spell's spell data. Reroll data from a message has already had this done, skip for rerolls.
 if (choices.standby && !choices.reroll) {
-  const {isAttack, isSave, description, save, slug, traits, hasDamage} = await sbs.getChatData({},{castRank:spc.castRank});
+  const {isAttack, isSave, description, save, slug, traits, hasDamage} = await sbs.getChatData({},{castRank: spc.castRank});
   spc = mergeObject(spc, {
     name: sbs.name, spId: sbs.id, slug, description, DC: save.value, spell: sbs, isSave, isAttack,
     basic: sbs.system.defense?.save?.basic ?? false, traits, save: save.type ?? "", hasDamage
-  });
+  }, {recursive: false});
 }
 const s_entry = token.actor.itemTypes.spellcastingEntry.find(e => e.id === spc.sEId);
 
