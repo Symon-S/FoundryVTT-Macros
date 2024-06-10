@@ -85,7 +85,7 @@ const effect = {
 
 const sharing = sp ? Object.values(chosen).join(" & ") : "";
 const effect2 = duplicate(effect);
-mergeObject(effect2, {name: `Sharing Prey with: ${sharing}`, img:"systems/pf2e/icons/spells/contact-friends.webp", "system.slug": "sharing-prey-macro"},{recursive: false});
+foundry.utils.mergeObject(effect2, {name: `Sharing Prey with: ${sharing}`, img: "systems/pf2e/icons/spells/contact-friends.webp", "system.slug": "sharing-prey-macro"});
 
 let updates = sp ? [effect, effect2] : [effect];
 if (actor.itemTypes.effect.some(x => x.system.slug === "hunt-prey-macro")) {
