@@ -108,6 +108,9 @@ if (!choices.reroll) {
   const roll = await choices.action.variants[choices.variant].roll({
     event: choices.event,
     callback: async (roll, res, msg) => {
+      await new Promise(async (resolve) => {
+        setTimeout(resolve,100);
+      });
       msg.setFlag("world","macro.spellUsed", spc);
       await msg.update({flavor: msg.flavor + "Chosen Spell: " + spc.spell.link});
     }
