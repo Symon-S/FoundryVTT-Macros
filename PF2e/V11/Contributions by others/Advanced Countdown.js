@@ -234,7 +234,7 @@ const effect = {
   
     const ITEM_UUID = "Compendium.pf2e.other-effects.I9lfZUiCwMiGogVi"; // Effect: Cover
     const source = (await fromUuid(ITEM_UUID)).toObject();
-    foundry.utils.mergeObject(source, {"flags.core.sourceId": ITEM_UUID});
+    source.flags = mergeObject(source.flags ?? {}, { core: { sourceId: ITEM_UUID } });
     
     for (const actor of actors) {
         const existing = actor.itemTypes.effect.find((e) => e.flags.core?.sourceId === ITEM_UUID);
