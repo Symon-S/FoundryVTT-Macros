@@ -31,7 +31,7 @@ async function main() {
         ui.notifications.info("Wrong token selected!");
     } else {
         const twEffect = (await fromUuid(tw_UUID)).toObject();
-        twEffect.data.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
+        twEffect.system.tokenIcon.show = showIcons; //Potential for lots of effects to be on a token. Don't show icon to avoid clutter
         twEffect.flags.core ??= {};
         twEffect.flags.core.sourceId = tw_UUID;
 
@@ -41,8 +41,8 @@ async function main() {
         const useContinualRecovery = CheckFeat('continual-recovery', applicator);
 
         if (useContinualRecovery) {
-            twEffect.data.duration.unit = "minutes";
-            twEffect.data.duration.value = 10;
+            twEffect.system.duration.unit = "minutes";
+            twEffect.system.duration.value = 10;
         }
         if ( message.flags.treat_wounds_battle_medicine.dos >= 2 ) {
             if (token.actor.hasCondition("wounded") ) { 
@@ -51,6 +51,6 @@ async function main() {
         }
 
         await token.actor.createEmbeddedDocuments("Item", [twEffect]);
-        ui.notifications.info(token.actor.name + " is now immune to Treat Wounds for " + twEffect.data.duration.value + " " + twEffect.data.duration.unit + ".");
+        ui.notifications.info(token.actor.name + " is now immune to Treat Wounds for " + twEffect.system.duration.value + " " + twEffect.system.duration.unit + ".");
     }
 }
