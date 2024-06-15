@@ -51,11 +51,11 @@ let spells = await spellList(actor, sbs, ess);
 spells = spells.filter(s => !s.isExpended && !s.isUseless);
 if (spells.length === 0) { return void ui.notifications.info("You have no spells available"); }
 
-const choices = await SSDialog(actor, spells, sbs);
+let last, mes = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined && lus.token.id === token.id);
 
-let last, mes;
+const choices = await SSDialog(actor, spells, sbs, mes);
+
 if (choices.reroll) {
-  mes = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined && lus.token.id === token.id);
   if (mes === undefined) return void ui.notifications.warn("There are no previously cast spells or strike has already been rerolled");
   if (actor.system.resources.heroPoints.value === 0) { return void ui.notifications.warn("You have no hero points left")}
   last = mes.getFlag("world","macro.spellUsed");
@@ -325,7 +325,7 @@ async function SSDialog(actor, spells, sbs) {
     ${attacksHtml.join("\n")}
   </ol>
   </div></section></div>
-  <p><label>Reroll using Hero Point:</label><input type="checkbox" id="reroll"/></p>
+  ${mes ? `<p><label>Reroll using Hero Point:</label><input type="checkbox" id="reroll"/></p>` : "" }
   `;
 
   const result = new Promise(async (resolve) => {
@@ -353,7 +353,7 @@ async function SSDialog(actor, spells, sbs) {
           const altp = ({thrown: "isThrown", melee: "isMelee"})[button.data('alt-usage')];
           const action = altp ? actions.get(index).altUsages.find(a => a.item?.[altp]) : actions.get(index);
           const spell = spells[Number(html.find('#spell :selected').val())];
-          const reroll = html.find('#reroll')[0].checked;
+          const reroll = html.find('#reroll')[0]?.checked;
           const standby = html.find("#standby")[0]?.checked ?? false;
           dialog.close();
           resolve({spell, action, variant, reroll, standby, event: event.originalEvent});
@@ -389,6 +389,15 @@ async function SSDialog(actor, spells, sbs) {
         // Handler for standby checkbox
         if (sbs) {
           html.find("#standby").on("click", (event) => updateChoices(html.find("#standby")[0].checked));
+        }
+        //disable spell choices and standby spell
+        const heroPointUpdate = (useHP) => {
+          html.find("#spell")[0].disabled = useHP;
+          html.find("#standby")[0].disabled = useHP;
+        }
+        // Handler for reroll checkbox
+        if (mes){
+          html.find("#reroll").on("click", (event) => heroPointUpdate(html.find("#reroll")[0].checked));
         }
       }
     }, { classes: ["dialog", "spellstrike-macro", "dui-limited-scope"]});
