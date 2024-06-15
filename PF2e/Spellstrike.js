@@ -393,7 +393,7 @@ async function SSDialog(actor, spells, sbs) {
         //disable spell choices and standby spell
         const heroPointUpdate = (useHP) => {
           html.find("#spell")[0].disabled = useHP;
-          html.find("#standby")[0].disabled = useHP;
+          sbs ? html.find("#standby")[0].disabled = useHP : "";
         }
         // Handler for reroll checkbox
         if (mes){
