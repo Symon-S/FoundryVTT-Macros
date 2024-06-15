@@ -51,7 +51,7 @@ let spells = await spellList(actor, sbs, ess);
 spells = spells.filter(s => !s.isExpended && !s.isUseless);
 if (spells.length === 0) { return void ui.notifications.info("You have no spells available"); }
 
-let last, mes = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined && lus.token.id === token.id);
+let last, mes = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined && lus.token.id === token.id), lastA = mes ? mes.getFlag("world","macro.actionUsed") : undefined;
 
 const choices = await SSDialog(actor, spells, sbs, mes);
 
@@ -111,7 +111,8 @@ if (!choices.reroll) {
       await new Promise(async (resolve) => {
         setTimeout(resolve,100);
       });
-      msg.setFlag("world","macro.spellUsed", spc);
+      await msg.setFlag("world","macro.spellUsed", spc);
+      await msg.setFlag("world","macro.actionUsed", choices.action)
       await msg.update({flavor: msg.flavor + "Chosen Spell: " + spc.spell.link});
     }
   });
@@ -390,10 +391,16 @@ async function SSDialog(actor, spells, sbs) {
         if (sbs) {
           html.find("#standby").on("click", (event) => updateChoices(html.find("#standby")[0].checked));
         }
-        //disable spell choices and standby spell
+        //disable spell choices, unapplicable strikes, and standby spell
         const heroPointUpdate = (useHP) => {
           html.find("#spell")[0].disabled = useHP;
           sbs ? html.find("#standby")[0].disabled = useHP : "";
+          actions.forEach((a, i) => {
+            if (a.slug !== lastA.slug) {
+              strikes.filter(`[data-action-index=${i}]`).find("div.item-name [data-action=strike-attack]").
+                prop('disabled', useHP);
+            }
+          });
         }
         // Handler for reroll checkbox
         if (mes){
