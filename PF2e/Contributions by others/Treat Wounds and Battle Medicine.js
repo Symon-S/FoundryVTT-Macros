@@ -258,11 +258,10 @@ const rollTreatWounds = async ({
   } else {
     if (isRiskySurgery) await actor.toggleRollOption("medicine","risky-surgery",actor.items.find(x => x.slug === "risky-surgery").id,true);
     const extraRollOptions = getRollOptions({isRiskySurgery});
-    med.roll({
+    await med.roll({
       dc: dc,
       event: event,
       extraRollOptions,
-      skipDialog:true,
       callback: async (roll) => {
         const { healFormula, successLabel } = getHealSuccess({
           success: roll.options.degreeOfSuccess,
