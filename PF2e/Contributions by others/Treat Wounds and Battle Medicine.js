@@ -68,20 +68,13 @@ function dsnHook(code) {
   }
 }
 
-/**
-* Get the available roll options
-*
-* @param {Object} options
-* @param {boolean} options.isRiskySurgery Is this a risky surgery?
-* @returns {string[]} All available roll options
-*/
 const getRollOptions = ({ isRiskySurgery } = {}) => [
  ...token.actor.getRollOptions(['all', 'skill-check', 'medicine']),
  'action:treat-wounds',
  // This conditionally adds some elements to the available options
  // If there are more cases like this, it might be good to rewrite this with
  // if(...){....push(...)}
- ...(isRiskySurgery ? ['risky-surgery'] : []),
+ isRiskySurgery ? 'risky-surgery' : "",
 ];
 
 /* Get DamageRoll */
@@ -196,7 +189,7 @@ const rollTreatWounds = async ({
   if (assurance) {
     const aroll = await new CheckRoll(
       `10 + ${med.modifiers.find((m) => m.type === 'proficiency').modifier}`
-    ).roll({ async: true });
+    ).roll();
     ChatMessage.create({
       user: game.user.id,
       type: CONST.CHAT_MESSAGE_TYPES.ROLL,
@@ -221,20 +214,15 @@ const rollTreatWounds = async ({
     });
 
     if (isRiskySurgery) {
-      ChatMessage.create({
-        user: game.user.id,
-        type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-        flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
-        roll: await new DamageRoll('{1d8}[slashing]').roll({ async: true }),
+        await new DamageRoll('1d8[slashing]').toMessage({
         speaker: ChatMessage.getSpeaker(),
+        flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
       });
     }
     let healRoll = 0;
     if (healFormula !== undefined) {
       const rollType = success > 1 ? 'Healing' : 'Damage';
-      healRoll = await new DamageRoll(`(${healFormula})[${rollType.toLowerCase()}]`).roll({
-        async: true,
-      });
+      healRoll = await new DamageRoll(`(${healFormula})[${rollType.toLowerCase()}]`).roll();
       my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`;
 
       healRoll.toMessage({
@@ -268,10 +256,13 @@ const rollTreatWounds = async ({
       });
     }
   } else {
-    med.check.roll({
+    if (isRiskySurgery) await actor.toggleRollOption("medicine","risky-surgery",actor.items.find(x => x.slug === "risky-surgery").id,true);
+    const extraRollOptions = getRollOptions({isRiskySurgery});
+    med.roll({
       dc: dc,
       event: event,
-      extraRollOptions: getRollOptions({ isRiskySurgery: isRiskySurgery }),
+      extraRollOptions,
+      skipDialog:true,
       callback: async (roll) => {
         const { healFormula, successLabel } = getHealSuccess({
           success: roll.options.degreeOfSuccess,
@@ -282,21 +273,16 @@ const rollTreatWounds = async ({
           spellStitcherBonus,
         });
         if (isRiskySurgery) {
-          ChatMessage.create({
-            user: game.user.id,
-            type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-            flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
-            roll: await new DamageRoll('1d8[slashing]').roll({ async: true }),
-            speaker: ChatMessage.getSpeaker(),
-          });
+          await new DamageRoll('1d8[slashing]').toMessage({
+        speaker: ChatMessage.getSpeaker(),
+        flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
+      });
         }
         let healRoll = 0;
         if (healFormula !== undefined) {
           const rollType = roll.options.degreeOfSuccess > 1 ? 'Healing' : 'Damage';
           const my_message = `<strong>${rollType} Roll: ${bmtw}</strong> (${successLabel})`;
-          healRoll = await new DamageRoll(`(${healFormula})[${rollType.toLowerCase()}]`).roll(
-            { async: true }
-          );
+          healRoll = await new DamageRoll(`(${healFormula})[${rollType.toLowerCase()}]`).roll();
 
           dsnHook(() => {
             healRoll.toMessage({
@@ -334,6 +320,7 @@ const rollTreatWounds = async ({
         }
       },
     });
+    if (isRiskySurgery) await actor.toggleRollOption("medicine","risky-surgery",actor.items.find(x => x.slug === "risky-surgery").id,false);
   }
 };
 
@@ -871,9 +858,22 @@ if (canvas.tokens.controlled.length !== 1){
          icon: `<i class="fas fa-times"></i>`,
          label: 'Cancel',
        },
-     },
-     default: 'yes',
+      },
+      render: (html) => {
+       html.find("#useBattleMedicine").on("change", function(){EnableDisable(html)});
+      },
+      default: 'yes',
    });
    dialog.render(true);
  }
+}
+
+function EnableDisable(html) {
+  if (html.find("#risky_surgery_bool").length !== 0) {
+    if(html.find("#useBattleMedicine")[0].value === "1") {
+      html.find("#risky_surgery_bool")[0].checked = false;
+      html.find("#risky_surgery_bool")[0].disabled = true;
+    }
+    else html.find("#risky_surgery_bool")[0].disabled = false;
+  }
 }
