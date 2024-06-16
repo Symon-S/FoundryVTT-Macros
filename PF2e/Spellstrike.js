@@ -396,7 +396,7 @@ async function SSDialog(actor, spells, sbs) {
           html.find("#spell")[0].disabled = useHP;
           sbs ? html.find("#standby")[0].disabled = useHP : "";
           actions.forEach((a, i) => {
-            if (a.slug !== lastA.slug) {
+            if (lastA && a.slug !== lastA.slug) {
               strikes.filter(`[data-action-index=${i}]`).find("div.item-name [data-action=strike-attack]").
                 prop('disabled', useHP);
             }
