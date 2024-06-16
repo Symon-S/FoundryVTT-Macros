@@ -51,7 +51,7 @@ let spells = await spellList(actor, sbs, ess);
 spells = spells.filter(s => !s.isExpended && !s.isUseless);
 if (spells.length === 0) { return void ui.notifications.info("You have no spells available"); }
 
-let last, mes = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined && lus.token.id === token.id), lastA = mes ? mes.getFlag("world","macro.actionUsed") : undefined;
+let last, mes = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined && lus.token?.id === token.id), lastA = mes ? mes.getFlag("world","macro.actionUsed") ?? undefined : undefined;
 
 const choices = await SSDialog(actor, spells, sbs, mes);
 
