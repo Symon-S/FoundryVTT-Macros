@@ -14,22 +14,18 @@ Limitations:
 * Does not handle things like bardic knowledge.
 */
 
+actor = token?.actor ?? actor;
+if (!actor) {
+    return ui.notifications.error("No selected token or assigned character");
+}
+
 /**
  * Check wether the current actor has a feature.
  *
  * @param {string} slug
  * @returns {boolean} true if the feature exists, false otherwise
  */
-const checkFeat = (slug) =>
-    token.actor.items
-      .filter((item) => item.type === 'feat')
-      .some((item) => item.slug === slug);
-   
-
-actor = token?.actor ?? actor;
-if (!actor) {
-    return ui.notifications.error("No selected token or assigned character");
-}
+const checkFeat = (slug) => actor.itemTypes.feat.some((item) => item.slug === slug);
 
 if (!game.modules.get("xdy-pf2e-workbench")?.active) {
     return ui.notifications.error("This Macro requires PF2e Workbench module");
@@ -127,7 +123,7 @@ for (const skill in actor.skills) {
 // Global d20 roll used for all skills
 // ===================================
 
-const globalRoll = (await new Roll("1d20").roll({ async: true })).total;
+const globalRoll = (await new Roll("1d20").roll()).total;
 const rollColor = globalRoll == 20 ? "green" : globalRoll == 1 ? "red" : "royalblue";
 
 // Skill list output
@@ -275,7 +271,7 @@ if (game.user.targets.size < 1) {
 ui.notifications.info(`${token?.name ?? actor.name} tries to remember if they've heard something related to this.`);
 await ChatMessage.create({
     user: game.userId,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     content: output,
     whisper: game.users.contents.flatMap((user) => (user.isGM ? user.id : [])),
     visible: false,
