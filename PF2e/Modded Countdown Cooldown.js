@@ -72,7 +72,7 @@ async function main(html) {
     effect.system.unidentified = html.find("#visible")[0].checked;
     let countdownNumber = "";
     if (duration.includes("d")) {
-        countdownNumber = new Roll(duration).roll({ async : false }).total;
+        countdownNumber = (await new Roll(duration).evaluate()).total;
     } else {
         countdownNumber = duration;
     }
