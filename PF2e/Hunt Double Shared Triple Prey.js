@@ -31,7 +31,7 @@ else if (actor.items.some(sp => sp.slug === "double-prey") && game.user.targets.
     hp = game.user.targets.values().toArray().map(x => x.name);
 }
 else hp = hp.push(game.user.targets.first().name);
-const spp = canvas.tokens.placeables.filter(x => ["character","npc"].includes(x.actor.type) && x.actor.alliance === actor.alliance && x.id !== token.id);
+const spp = canvas.tokens.placeables.filter(x => ["character","npc"].includes(x.actor?.type) && x.actor?.alliance === actor.alliance && x.id !== token.id);
 
 let spa = "";
 for ( const p of spp ) {
