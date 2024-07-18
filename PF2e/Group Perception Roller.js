@@ -16,6 +16,10 @@ let content = `<strong>Group Perception Roller</strong>
 			<th style="text-align:center">Total</th>
 		</tr>`;
 for ( const t of canvas.tokens.placeables) {
+    if ( !t.actor ) {
+        ui.notifications.error(`Token named '${t.name}' with id '${t.id}' has no actor data!`);
+        continue;
+    }
 	if ( !exceptions.includes(t.actor.type) && t.actor.hasPlayerOwner ) {
 		const {result,total,dice} = await new Roll(`1d20 + ${t.actor.perception.mod}`).evaluate();
 		const userId = Object.keys(t.actor.ownership).find(f => f !== "default" && !game.users.get(f).isGM);
