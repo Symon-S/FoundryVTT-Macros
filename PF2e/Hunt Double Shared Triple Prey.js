@@ -17,10 +17,10 @@ if (actor.items.some(sp => sp.slug === "triple-threat")) {
         dp = true
     }
     else if (game.user.targets.size === 2) {
-        hp = game.user.targets.values().toArray().map(x => x.name);
+        hp = [...game.user.targets].map(x => x.name);
         sp = true;
     }
-    else if (game.user.targets.size === 3) hp = game.user.targets.values().toArray().map(x => x.name);
+    else if (game.user.targets.size === 3) hp = [...game.user.targets].map(x => x.name);
     else { return void ui.notifications.warn("You cannot target more than 3 targets.") }
 } 
 else if (actor.items.some(sp => sp.slug === "shared-prey" && game.user.targets.size === 1)) {
@@ -28,7 +28,7 @@ else if (actor.items.some(sp => sp.slug === "shared-prey" && game.user.targets.s
     sp = true;
 }
 else if (actor.items.some(sp => sp.slug === "double-prey") && game.user.targets.size === 2 ){
-    hp = game.user.targets.values().toArray().map(x => x.name);
+    hp = [...game.user.targets].map(x => x.name);
 }
 else hp = hp.push(game.user.targets.first().name);
 const spp = canvas.tokens.placeables.filter(x => ["character","npc"].includes(x.actor?.type) && x.actor?.alliance === actor.alliance && x.id !== token.id);
