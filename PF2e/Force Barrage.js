@@ -106,7 +106,7 @@ if (mmch.entryId === null) { mmdiag[1] = 1 }
 const multi = parseInt(mmdiag[1]) * Math.floor((1 + mmch.rank) / 2);
 
 const targetIds = game.user.targets.ids;
-const targets = game.user.targets.values().toArray();
+const targets = [...game.user.targets];
 
 const script1 = function THoverIn(event) {
 	const tok = game.user.targets.find(x => x.id === event.id);
@@ -124,7 +124,7 @@ for (const t of targets) {
 	++i
 	if (t.actor.hasPlayerOwner) { ui.notifications.info(`${t.name} is most likely an ally`); }
 	const label = t.document.displayName <= 20 && !t.actor.isOwner && t.name.includes(t.actor.name) ? `<script>${script1}${script2}</script><img src=${t.document.texture.src} style="width:50px; height:50px" onmouseover="THoverIn(this)" onmouseout="THoverOut(this)" id=${t.id}><figcaption>Target #${i}</figcaption>` : t.name;
-	tdata.push({ label, type: 'number', options: [1] });
+	tdata.push({ label, type: 'number', options: 1 });
 };
 
 
@@ -266,7 +266,7 @@ async function quickDialog({ data, title = `Quick Dialog` } = {}) {
 			} else if (type.toLowerCase() === `checkbox`) {
 				return `<tr><th style="width:50%"><label>${label}</label></th><td style="width:50%"><input type="${type}" id="${i}qd" ${options || ``}/></td></tr>`;
 			} else {
-				return `<tr><th style="width:90%"><label>${label}</label></th><td style="width:10%"><input type="${type}" style="text-align:center" autofocus id="${i}qd" value="${options instanceof Array ? options[0] : options}"/></td></tr>`;
+				return `<tr><th style="width:90%"><label>${label}</label></th><td style="width:10%"><input type="${type}" style="text-align:center" id="${i}qd" value="${options instanceof Array ? options[0] : options}"/></td></tr>`;
 			}
 		}).join(``)}
 			</table>`;
