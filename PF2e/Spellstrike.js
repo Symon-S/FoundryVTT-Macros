@@ -286,26 +286,26 @@ async function SSDialog(actor, spells, sbs) {
   const content = `
   <style>
   .spellstrike-macro
-  .actor.sheet.character section.window-content .attack-popout.actions {
+  .actor.sheet.attack-popout section.window-content .tab.actions {
     margin: 0 0 0 0;
   }
   .spellstrike-macro
-  .actor.sheet.character section.window-content .attack-popout.actions ol.strikes-list li.strike
+  .actor.sheet.attack-popout section.window-content .tab.actions ol.strikes-list li.strike
   .item-name {
     align-items: center;
   }
   .spellstrike-macro
-  .actor.sheet.character section.window-content .attack-popout.actions ol.strikes-list li.strike
+  .actor.sheet.attack-popout section.window-content .tab.actions ol.strikes-list li.strike
   div.auxiliary-actions {
     display: none;
   }
   .spellstrike-macro
-  .actor.sheet.character section.window-content .attack-popout.actions ol.strikes-list li.strike
+  .actor.sheet.attack-popout section.window-content .tab.actions ol.strikes-list li.strike
   button.damage.tag {
     display: none;
   }
   .spellstrike-macro
-  .actor.sheet.character section.window-content .attack-popout.actions ol.strikes-list li.strike
+  .actor.sheet.attack-popout section.window-content .tab.actions ol.strikes-list li.strike
   button.tag:disabled {
     background-color: var(--color-text-dark-inactive);
     cursor: not-allowed;
@@ -321,7 +321,7 @@ async function SSDialog(actor, spells, sbs) {
   ${sbs ? `<p>Cast Standby Spell: <input type="checkbox" id="standby"> ${sbs.name}</p>` : ""}
   <p align="center"><label id="spell-choice-label">${label(false)}</label></p>
   <p><select style="width:100%; font-size:12px" id="spell">${spellOptions.join('')}</select></p>
-  <div class="actor sheet character"><section class="window-content"><div class="tab actions active attack-popout">
+  <div class="actor sheet attack-popout"><section class="window-content"><div class="tab actions active">
   <ol class="actions-list item-list directory-list strikes-list" data-strikes>
     ${attacksHtml.join("\n")}
   </ol>
@@ -340,7 +340,7 @@ async function SSDialog(actor, spells, sbs) {
         if (!starlit) {
           actions.forEach((a, i) => {
             if (!a.item.isMelee) {
-              strikes.filter(`[data-action-index=${i}]`).find("div.item-name [data-action=strike-attack]").
+              strikes.filter(`[data-action-index=${i}]`).find("div.item-image, button.variant-strike:not([data-alt-usage])").
                 prop('disabled', true).click(e => e.stopImmediatePropagation()).
                 attr("data-tooltip", "Ranged strikes not allowed");
             }
@@ -394,11 +394,10 @@ async function SSDialog(actor, spells, sbs) {
         //disable spell choices, unapplicable strikes, and standby spell
         const heroPointUpdate = (useHP) => {
           html.find("#spell")[0].disabled = useHP;
-          sbs ? html.find("#standby")[0].disabled = useHP : "";
+          if (sbs) html.find("#standby")[0].disabled = useHP;
           actions.forEach((a, i) => {
             if (lastA && a.slug !== lastA.slug) {
-              strikes.filter(`[data-action-index=${i}]`).find("div.item-name [data-action=strike-attack]").
-                prop('disabled', useHP);
+              strikes.filter(`[data-action-index=${i}]`).find("[data-action=strike-attack]").prop('disabled', useHP);
             }
           });
         }
