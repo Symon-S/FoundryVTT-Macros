@@ -51,19 +51,19 @@ let spells = await spellList(actor, sbs, ess);
 spells = spells.filter(s => !s.isExpended && !s.isUseless);
 if (spells.length === 0) { return void ui.notifications.info("You have no spells available"); }
 
-let last, mes = game.messages.contents.findLast( lus => lus.getFlag("world","macro.spellUsed") !== undefined && lus.token?.id === token.id), lastA = mes ? mes.getFlag("world","macro.actionUsed") ?? undefined : undefined;
-
-const choices = await SSDialog(actor, spells, sbs, mes);
-
-if (choices.reroll) {
-  if (mes === undefined) return void ui.notifications.warn("There are no previously cast spells or strike has already been rerolled");
-  if (actor.system.resources.heroPoints.value === 0) { return void ui.notifications.warn("You have no hero points left")}
-  last = mes.getFlag("world","macro.spellUsed");
-  last.spell = actor.itemTypes.spell.find(s => s.slug === last.slug);
+let rerollData;
+const lastMsg = game.messages.contents.findLast(lus => lus.token?.id === token.id && lus.getFlag("world", "macro.spellUsed") && lus.getFlag("world", "macro.actionUsed"));
+if (lastMsg) {
+  rerollData = lastMsg ? { action: lastMsg.getFlag("world", "macro.actionUsed"), spell: lastMsg.getFlag("world", "macro.spellUsed") } : undefined;
+  rerollData.spell.spell = actor.items.get(rerollData.spell.spell._id);
 }
 
-/* Get the strike actions */
-let spc = last ?? choices.spell;
+const choices = await SSDialog(actor, spells, sbs, rerollData);
+let spc = choices.spell;
+
+if (choices.reroll) {
+  if (actor.system.resources.heroPoints.value === 0) return void ui.notifications.warn("You have no hero points left");
+}
 
 // Combine spell slot from dialog with standby spell's spell data. Reroll data from a message has already had this done, skip for rerolls.
 if (choices.standby && !choices.reroll) {
@@ -111,16 +111,16 @@ if (!choices.reroll) {
       await new Promise(async (resolve) => {
         setTimeout(resolve,100);
       });
-      await msg.setFlag("world","macro.spellUsed", spc);
-      await msg.setFlag("world","macro.actionUsed", choices.action)
+      await msg.setFlag("world", "macro.spellUsed", foundry.utils.mergeObject(spc, { "spell._id": spc.spell.id }, { recursive: false, inplace: false }));
+      await msg.setFlag("world", "macro.actionUsed",
+        { itemId: choices.action.item.id, altUsage: choices.action.item.altUsageType, variant: choices.variant});
       await msg.update({flavor: msg.flavor + "Chosen Spell: " + spc.spell.link});
     }
   });
   critt = roll.degreeOfSuccess;
-}
-else {
-  await game.pf2e.Check.rerollFromMessage(mes,{heroPoint:1});
-  critt = game.messages.contents.findLast(r => r.isReroll && r.speaker.token === mes.speaker.token).rolls[0].degreeOfSuccess;
+} else {
+  await game.pf2e.Check.rerollFromMessage(lastMsg, { heroPoint: true });
+  critt = game.messages.contents.findLast(r => r.isReroll && r.speaker.token === lastMsg.speaker.token).rolls[0].degreeOfSuccess;
 }
 let ttags = '';
 for (const t of spc.traits) {
@@ -270,7 +270,7 @@ await s_entry.cast(spc.spell, {slotId: spc.index, message: false});
 //   standby: Boolean, standby spell to be used
 //   event: PointerEvent, from the attack button click (i.e. shift-click vs normal)
 // }
-async function SSDialog(actor, spells, sbs) {
+async function SSDialog(actor, spells, sbs, reroll) {
   const starlit = actor.itemTypes.feat.some(f => f.slug === 'starlit-span');
   const template = "systems/pf2e/templates/actors/character/partials/strike.hbs";
   const base = await actor.sheet.getData();
@@ -279,12 +279,21 @@ async function SSDialog(actor, spells, sbs) {
   const actions = new Map(base.data.actions.map((a, i) => [i, a]).filter(
     a => a[1].visible && a[1].type === "strike" && a[1].item.isEquipped && filter(a[1])));
   const attacksHtml = await Promise.all(Array.from(actions, ([index, action]) => renderTemplate(template, {...base, index, action})));
+  const rerollItem = reroll && actor.items.get(reroll.action.itemId);
+  let rerollText;
+  if (rerollItem && reroll.spell.spell) {
+    rerollText = `${rerollItem.name}${reroll.action.altUsage ? ` (${reroll.action.altUsage})` : ""} / ${reroll.spell.spell.name}`;
+  }
 
   // Build dialog data
   const label = (useSBS) => `Choose a Spell ${useSBS ? "Slot to expend" : " to Cast"}`;
   const spellOptions = spells.map((s, i) => `<option value="${i}">${s.name}</option>`);
   const content = `
   <style>
+  .spellstrike-macro
+  .actor.sheet.attack-popout section.window-content {
+    background-image: inherit;
+  }
   .spellstrike-macro
   .actor.sheet.attack-popout section.window-content .tab.actions {
     margin: 0 0 0 0;
@@ -326,7 +335,7 @@ async function SSDialog(actor, spells, sbs) {
     ${attacksHtml.join("\n")}
   </ol>
   </div></section></div>
-  ${mes ? `<p><label>Reroll using Hero Point:</label><input type="checkbox" id="reroll"/></p>` : "" }
+  ${rerollText ? `<p>Reroll using a Hero Point: <button id="reroll">${rerollText}</button></p>` : "" }
   `;
 
   const result = new Promise(async (resolve) => {
@@ -351,14 +360,24 @@ async function SSDialog(actor, spells, sbs) {
           const button = $(event.delegateTarget);
           const index = Number(button.parents('[data-action-index]').data('action-index'));
           const variant = Number(button.data('variant-index'));
-          const altp = ({thrown: "isThrown", melee: "isMelee"})[button.data('alt-usage')];
-          const action = altp ? actions.get(index).altUsages.find(a => a.item?.[altp]) : actions.get(index);
+          const alt = button.data('alt-usage');
+          const action = alt ? actions.get(index).altUsages.find(a => a.item?.altUsageType === alt) : actions.get(index);
           const spell = spells[Number(html.find('#spell :selected').val())];
-          const reroll = html.find('#reroll')[0]?.checked;
           const standby = html.find("#standby")[0]?.checked ?? false;
           dialog.close();
-          resolve({spell, action, variant, reroll, standby, event: event.originalEvent});
+          resolve({spell, action, variant, reroll: false, standby, event: event.originalEvent});
         });
+        // Handler for reroll button, also does a "submit"
+        if (rerollText) {
+          html.find("#reroll").on("click", (event) => {
+            dialog.close();
+            let action = actions.values().find(a => a.item?.id === rerollItem.id);
+            if (reroll.action.altUsage) {
+              action = action?.altUsages.find(a => a.item?.altUsageType === reroll.action.altUsage);
+            }
+            resolve({reroll: true, spell: reroll.spell, action, variant: reroll.action.variant, standby: false, event: event.originalEvent});
+          });
+        }
         // Handler for toggle buttons, only versatile is supported
         strikes.find("[data-action=toggle-weapon-trait]").on("click", async (event) => {
           const button = $(event.delegateTarget);
@@ -390,20 +409,6 @@ async function SSDialog(actor, spells, sbs) {
         // Handler for standby checkbox
         if (sbs) {
           html.find("#standby").on("click", (event) => updateChoices(html.find("#standby")[0].checked));
-        }
-        //disable spell choices, unapplicable strikes, and standby spell
-        const heroPointUpdate = (useHP) => {
-          html.find("#spell")[0].disabled = useHP;
-          if (sbs) html.find("#standby")[0].disabled = useHP;
-          actions.forEach((a, i) => {
-            if (lastA && a.slug !== lastA.slug) {
-              strikes.filter(`[data-action-index=${i}]`).find("[data-action=strike-attack]").prop('disabled', useHP);
-            }
-          });
-        }
-        // Handler for reroll checkbox
-        if (mes){
-          html.find("#reroll").on("click", (event) => heroPointUpdate(html.find("#reroll")[0].checked));
         }
       }
     }, { classes: ["dialog", "spellstrike-macro", "dui-limited-scope"]});
