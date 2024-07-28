@@ -1,6 +1,6 @@
 /*
 Based on the macro by bipedalshark and WesBelmont and Allalinor.
-updated by darkim, Dalvyn, and julie.winchester
+updated by darkim, Dalvyn, julie.winchester, and xyzzy42
 
 Recall Knowledge
 This macro will roll several knowledge checks if no target is selected.
@@ -74,48 +74,61 @@ const FIRST_DC_INDEX = {
 // Get token skills infos by simulating fake rolls
 // ===============================================
 
-const tokenSkills = {};
-const loreSkills = [];
-const appliedModifiers = [];
-for (const skill in actor.skills) {
-    let fakeRoll;
-    const rank = actor.skills[skill].rank;
-    const rollOptions = [
-        ...actor.getRollOptions(["all", "skill-check"]),
+/**
+ * Do a skill check for RK, using the skill supplied.  The value of the D20 roll can be injected using rollResult.
+ * There is no message generated.
+ *
+ * @param {string} skillSlug    The skill to use. Can be a lore.
+ * @param {Number} rollResult   Value to use as d20 result.
+ * @param {Actor} target        The target actor/hazard to RK about, optional.
+ */
+async function getSkillResult(skillSlug, rollResult = undefined, target = undefined) {
+    const skill = actor.skills[skillSlug];
+    const rank = skill.rank;
+    const extraRollOptions = [
         "action:recall-knowledge",
-        `action:recall-knowledge:${skill}`,
-        "skill-check",
+        `action:recall-knowledge:${skillSlug}`,
         `skill:rank:${rank}`,
     ];
-    if (game.user.targets.size === 1) {
-        const traits = game.user.targets.first().actor.traits;
-        traits.forEach(t => { rollOptions.push(`target:trait:${t}`) });
+    if (target) {
+        extraRollOptions.push(...target.getSelfRollOptions('target'));
     }
 
-    await actor.skills[skill].roll({
-        callback: (res) => {
-            fakeRoll = res;
-        },
-        createMessage: false,
-        skipDialog: true,
-        extraRollOptions: rollOptions,
-    });
-    const fakeRollDieResult = fakeRoll.dice[0].values[0];
+    const [fakeRoll, fakeMsg ] = await new Promise((resolve) =>
+        skill.roll({
+            callback: (roll, outcome, msg) => resolve([roll, msg]),
+            createMessage: false,
+            rollMode: CONST.DICE_ROLL_MODES.BLIND,
+            skipDialog: true,
+            extraRollOptions,
+        })
+    );
+
+    // Get the actual options the pf2e system roll code came up with
+    const rollOptions = fakeMsg.getFlag('pf2e','context.options');
+
+    // Extract tags text from roll, but remove ability and proficiency
+    const div = document.createElement('div');
+    div.innerHTML = fakeMsg.flavor;
+    const breakdown = div.querySelector("div.modifiers");
+    // This would drop the ability and proficiency modifiers, possibly less interesting since they are always there.
+    //const uninteresting = new Set([...Object.keys(CONFIG.PF2E.abilities), "proficiency"]);
+    //breakdown?.querySelectorAll("[data-slug]").forEach((e) => { if (uninteresting.has(e.dataset.slug)) e.remove(); });
 
     // find conditional RK modifiers
-    const conditionalModifiers = [];
-    const coreSkill = actor.skills[skill];
-    const recallKnowledgeModifiers =
-        coreSkill?.modifiers.filter((mod) => mod.predicate.includes("action:recall-knowledge")) ?? [];
+    const appliedModifiers = [], unappliedModifiers = [];
+    const recallKnowledgeModifiers = skill.modifiers.filter((mod) => predicateRollOptions(mod.predicate).some(r => r === "action:recall-knowledge"));
     for (const mod of recallKnowledgeModifiers) {
-        mod.predicate.test(rollOptions) ? appliedModifiers.push(mod.slug) : conditionalModifiers.push(mod);
+        (mod.predicate.test(rollOptions) ? appliedModifiers : unappliedModifiers).push(mod);
     }
 
-    if (coreSkill?.lore) loreSkills.push(skill);
-    tokenSkills[skill] = {
-        conditionalModifiers: conditionalModifiers,
-        label: coreSkill?.label ?? "NO SKILL",
-        modifier: fakeRoll.total - fakeRollDieResult,
+    return {
+        label: skill.label,
+        modifier: fakeRoll.options.totalModifier,
+        total: fakeRoll.total,
+        unappliedModifiers,
+        appliedModifiers,
+        breakdown,
         rank,
     };
 }
@@ -123,16 +136,16 @@ for (const skill in actor.skills) {
 // Global d20 roll used for all skills
 // ===================================
 
-const globalRoll = (await new Roll("1d20").roll()).total;
+const globalRoll = (await new Roll("1d20").roll({allowInteractive: false})).total;
 const rollColor = globalRoll == 20 ? "green" : globalRoll == 1 ? "red" : "royalblue";
 
 // Skill list output
 // =================
 
-const skillListOutput = (title, skills) => {
+const skillListOutput = (title, skillResults) => {
     let output = `<table><tr><th>${title}</th><th>Prof</th><th>Mod</th><th>Result</th></tr>`;
-    for (const skill of skills) {
-        const { label, modifier, rank } = tokenSkills[skill];
+    for (const skillResult of skillResults) {
+        const { label, modifier, rank, breakdown } = skillResult;
         const adjustedResult = globalRoll + modifier;
         output += `<tr><th>${label}</th>
             <td class="tags"><div class="tag" style="background-color: ${RANK_COLORS[rank]}; white-space:nowrap">${
@@ -140,6 +153,9 @@ const skillListOutput = (title, skills) => {
         }</td>
             <td>${modifier >= 0 ? "+" : ""}${modifier}</td>
             <td><span style="color: ${rollColor}">${adjustedResult}</span></td></tr>`;
+        if (breakdown?.childElementCount > 0) {
+            output += `<tr><td colspan="7">${breakdown.outerHTML}</td></tr>`;
+        }
     }
     output += "</table>";
     return output;
@@ -148,15 +164,14 @@ const skillListOutput = (title, skills) => {
 // Conditional modifier output
 // ==========================
 
-const conditionalModifiersOutput = (skills) => {
+const conditionalModifiersOutput = (skillResults) => {
     // Find unique modifiers that are never successfully applied for any skill or lore to inform user
-    const allModifiers = skills.map((s) => tokenSkills[s].conditionalModifiers).flat();
-    const uniqModifiers = [...new Map(allModifiers.map((mod) => [mod.slug, mod])).values()];
-    const exclModifiers = uniqModifiers.filter((mod) => !appliedModifiers.includes(mod.slug));
-    if (exclModifiers.length === 0) return "";
+    const allAppliedSlugs = new Set(skillResults.flatMap((r) => r.appliedModifiers.map((m) => m.slug)));
+    const allUnappliedModifiers = new Map(skillResults.flatMap((r) => r.unappliedModifiers.filter((m) => !allAppliedSlugs.has(m.slug)).map((m) => [m.slug, m])));
+    if (allUnappliedModifiers.length === 0) return "";
 
     let output = `<table style="font-size: 12px"><tr><th>Potential Modifiers</th><th>Mod</th></tr>`;
-    for (const mod of exclModifiers) {
+    for (const mod of allUnappliedModifiers.values()) {
         const { label, signedValue, source } = mod;
         output += `<tr><td><a class="content-link" draggable="true" data-uuid="${source}"><i class="fas fa-suitcase"></i>${label}</a></td><td>${signedValue}</td></tr>`;
     }
@@ -171,10 +186,11 @@ let output = `<strong>Recall Knowledge</strong> (Roll: <span style="color: ${rol
 
 if (game.user.targets.size < 1) {
     // No target - roll all Recall Knowledge and lore skills
+    const lores = Object.values(actor.skills).filter((s) => s.lore).map((s) => s.slug);
+    const skillResults = await Promise.all([...SKILL_OPTIONS, ...lores].map((s) => getSkillResult(s, globalRoll)));
 
-    const allRKSkills = [...SKILL_OPTIONS, ...loreSkills];
-    output += skillListOutput("Skill", allRKSkills);
-    output += conditionalModifiersOutput(allRKSkills);
+    output += skillListOutput("Skill", skillResults);
+    output += conditionalModifiersOutput(skillResults);
 } else {
     // Target - roll corresponding Recall Knowledge skills and lore skills
 
@@ -218,8 +234,11 @@ if (game.user.targets.size < 1) {
             }
         }
 
+        const tokenSkills = [];
         for (const skill of primarySkills) {
-            const { label, modifier, rank } = tokenSkills[skill];
+            const skillResult = await getSkillResult(skill, globalRoll, targetActor);
+            tokenSkills.push(skillResult);
+            const { label, modifier, rank, breakdown } = skillResult;
             const adjustedResult = globalRoll + modifier;
 
             output += `<tr><th>${label}
@@ -238,6 +257,9 @@ if (game.user.targets.size < 1) {
                 output += `<td style="text-align:center; vertical-align:middle">${OUTCOMES[success]}</td>`;
             }
             output += "</tr>";
+            if (breakdown?.childElementCount > 0) {
+                output += `<tr><td colspan="7">${breakdown.outerHTML}</td></tr>`;
+            }
         }
         output += "</table>";
 
@@ -256,9 +278,11 @@ if (game.user.targets.size < 1) {
         output += "</tr></table>";
 
         // Lore skills
-
+        const loreSkills = await Promise.all(Object.values(actor.skills).filter((s) => s.lore).map(
+            (s) => getSkillResult(s.slug, globalRoll, targetActor)
+        ));
         output += skillListOutput("Lore Skill", loreSkills);
-        output += conditionalModifiersOutput([...primarySkills, ...loreSkills]);
+        output += conditionalModifiersOutput([...loreSkills, ...tokenSkills]);
         if (HAS_DUBIOUS_KNOWLEDGE) {
             output += `<br>${token?.name ?? actor.name} has @UUID[Compendium.pf2e.feats-srd.Item.1Bt7uCW2WI4sM84P]{Dubious Knowledge}`
         }
@@ -279,3 +303,16 @@ await ChatMessage.create({
     speaker: ChatMessage.getSpeaker(),
     flags: { "xdy-pf2e-workbench.minimumUserRole": CONST.USER_ROLES.GAMEMASTER },
 });
+
+// Recursively return every roll option in a predicate expression tree
+function* predicateRollOptions(predicate) {
+    for (const t of predicate) {
+        if (typeof t === 'object') {
+            for (const v of Object.values(t)) {
+                yield *predicateRollOptions(v);
+            }
+        } else {
+            yield t;
+        }
+    }
+}
