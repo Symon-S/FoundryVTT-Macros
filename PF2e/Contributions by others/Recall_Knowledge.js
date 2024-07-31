@@ -117,7 +117,7 @@ async function getSkillResult(skillSlug, rollResult = undefined, target = undefi
 
     // find conditional RK modifiers
     const appliedModifiers = [], unappliedModifiers = [];
-    const recallKnowledgeModifiers = skill.modifiers.filter((mod) => predicateRollOptions(mod.predicate).some(r => r === "action:recall-knowledge"));
+    const recallKnowledgeModifiers = skill.modifiers.filter((mod) => Array.from(predicateRollOptions(mod.predicate)).some(r => r === "action:recall-knowledge"));
     for (const mod of recallKnowledgeModifiers) {
         (mod.predicate.test(rollOptions) ? appliedModifiers : unappliedModifiers).push(mod);
     }
