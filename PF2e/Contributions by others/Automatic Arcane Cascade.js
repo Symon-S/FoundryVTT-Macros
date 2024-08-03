@@ -13,13 +13,18 @@
 
 const ACEffectUuid = 'Compendium.pf2e.feat-effects.Item.fsjO5oTKttsbpaKl';
 
-const spell = game.messages.contents.findLast(m => 
-  m.speaker.actor === actor.id && 
-  m.flags.pf2e.origin?.type === 'spell' && 
-  m.speaker.scene === game.scenes.active.id)?.item;
+const msg = game.messages.contents.findLast(m =>
+  m.speaker.actor === actor.id &&
+  (m.flags.pf2e.origin?.type === 'spell' ||
+    (m.flags.pf2e.context?.type === 'attack-roll' && m.flags.world?.macro?.spellUsed)) &&
+  m.speaker.scene === game.scenes.active.id);
 
+let spell;
+if (msg) {
+  spell = msg.flags.pf2e.origin.type === 'spell' ? msg.item : actor.items.get(msg.flags.world.macro.spellUsed.spell._id);
+}
 if (!spell) {
-  ui.notifications.warn("You haven't cast a spell!");
+  ui.notifications.warn("You haven't cast a Spell or made a Spellstrike!");
   return;
 }
 const dtypes = Object.values(spell.system.damage).map(d => d.type);
