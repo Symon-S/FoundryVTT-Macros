@@ -12,13 +12,13 @@ const level = token.actor.level;
 let skillName,skillKey,actionSlug,actionName,choice,notes;
 let buttons = {};
 if (token.actor.itemTypes.feat.some(ms => ms.slug === "inspiring-marshal-stance")) { 
-  buttons.ims = { label: 'Inspiring Marshal Stance' };
+  buttons.ims = { label: 'Inspiring Marshal Stance', callback: () => { return 'ims' } };
 }
 if (token.actor.itemTypes.feat.some(ms => ms.slug === "dread-marshal-stance")) {
-  buttons.dms = { label: 'Dread Marshal Stance' };
+  buttons.dms = { label: 'Dread Marshal Stance', callback: () => { return 'dms' } };
 }
 if (token.actor.itemTypes.feat.some(ms => ms.slug === "devrins-cunning-stance")) { 
-  buttons.dcs = { label: 'Devrins Cunning Stance' };
+  buttons.dcs = { label: `Devrin's Cunning Stance`, callback: () => { return 'dcs' } };
 }
 
 if (Object.keys(buttons).length > 1) {
@@ -29,9 +29,6 @@ if (Object.keys(buttons).length > 1) {
     buttons,
     close: () => { return "close" }
   },{width});
-}
-else {
-  choice = Object.keys(buttons)[0];
 }
 
 if ( choice === "close" ) { return ui.notifications.warn("You did not select a stance"); }
@@ -47,8 +44,7 @@ if (choice === "ims") {
   notes = [];
   actionSlug = "inspiring-marshal-stance";
   actionName = "Inspiring Marshal Stance";
-  notes.push({"outcome":["success"], "selector":"diplomacy", "text":`<p>Your @Compendium[pf2e.feat-effects.kzEPq4aczYb6OD2h]{Marshal's Aura} grants you and allies a +1 status bonus to attack rolls and saves against mental effects.</p>`});
-  notes.push({"outcome":["criticalSuccess"], "selector":"diplomacy", "text":`<p>Your @Compendium[pf2e.feat-effects.kzEPq4aczYb6OD2h]{Marshal's Aura} increases to 20 feet and grants you and allies a +1 status bonus to attack rolls and saves against mental effects.</p>`});
+  notes.push({"outcome":["success","criticalSuccess"], "selector":"diplomacy", "text":`<p>Your marshal’s aura grants you and your allies in the aura a +1 status bonus to damage rolls. When you or an ally in the aura critically hit an enemy with a Strike, that enemy is @UUID[Compendium.pf2e.conditionitems.Item.TBSHQspnbcqxsmjL]{Frightened 1}. If you’re wielding a weapon that has more than one damage die (typically due to a striking rune), you can have the status bonus equal the weapon’s number of damage dice instead of +1.</p>`});
   notes.push({"outcome":["failure"], "selector":"diplomacy", "text":`<p>You fail to enter the stance.</p>`});
   notes.push({"outcome":["criticalFailure"], "selector":"diplomacy", "text":`<p>You fail to enter the stance and can't take this action again for 1 minute.</p>`});
 }
@@ -59,8 +55,7 @@ if (choice === "dms") {
   notes = [];
   actionSlug = "dread-marshal-stance";
   actionName = "Dread Marshal Stance";
-  notes.push({"outcome":["success"], "selector":"intimidation", "text":`<p>Your @Compendium[pf2e.feat-effects.KBEJVRrie2JTHWIK]{Marshal's Aura} grants you and allies a status bonus to damage rolls equal to the number of weapon damage dice of the unarmed attack or weapon you are wielding that has the most weapon damage dice. When you or an ally in the aura critically hits an enemy with a Strike, that enemy is @Compendium[pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 1}.</p>`});
-  notes.push({"outcome":["criticalSuccess"], "selector":"intimidation", "text":`<p>Your @Compendium[pf2e.feat-effects.KBEJVRrie2JTHWIK]{Marshal's Aura} increases to 20 feet, and it grants you and allies a status bonus to damage rolls equal to the number of weapon damage dice of the unarmed attack or weapon you are wielding that has the most weapon damage dice. When you or an ally in the aura critically hits an enemy with a Strike, that enemy is @Compendium[pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 1}.</p>`});
+  notes.push({"outcome":["success","criticalSuccess"], "selector":"intimidation", "text":`<p>Your marshal’s aura grants you and your allies in the aura a +1 status bonus to damage rolls. When you or an ally in the aura critically hit an enemy with a Strike, that enemy is @UUID[Compendium.pf2e.conditionitems.Item.TBSHQspnbcqxsmjL]{Frightened 1}. If you’re wielding a weapon that has more than one damage die (typically due to a striking rune), you can have the status bonus equal the weapon’s number of damage dice instead of +1.</p>`});
   notes.push({"outcome":["failure"], "selector":"intimidation", "text":`<p>You fail to enter the stance.</p>`});
   notes.push({"outcome":["criticalFailure"], "selector":"intimidation", "text":`<p>You fail to enter the stance and can't take this action again for 1 minute.</p>`});
 }
@@ -93,7 +88,7 @@ const custom = await new Promise((resolve) => {
 
 const DCbyLevel = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50]
 
-let DC = DCbyLevel[level];
+let DC = choice === 'dcs' ? DCbyLevel[level] : DCbyLevel[level]-2;
 
 const options = token.actor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
 options.push(`action:${actionSlug}`);
@@ -129,24 +124,13 @@ async function SRoll() {
     { actor: token.actor, type: 'skill-check', options, notes, flag: 'marshal-stance', dc: { value: DC }, skipDialog: true },
 	null,
   );
-
   if (roll.options.degreeOfSuccess > 1) {
-    if(choice === 'dms'){
-      const effect = (await fromUuid('Compendium.pf2e.feat-effects.qX62wJzDYtNxDbFv')).toObject();
-      effect.img = img;
-      effect.system.rules.shift();
-      effect.system.rules[0].radius = 10;
-      if (roll.options.degreeOfSuccess === 3) { effect.system.rules[0].radius = 20; }
-      effect.system.rules[0].slug = "marshal-drd-stance";
-      await token.actor.createEmbeddedDocuments("Item", [effect]);
-    }
-      if (choice === 'ims'){
-        const effect = (await fromUuid("Compendium.pf2e.feat-effects.er5tvDNvpbcnlbHQ")).toObject();
-        effect.img = img;
-        effect.system.rules.shift();
-        effect.system.rules[0].radius = 10;
-        if (roll.options.degreeOfSuccess === 3) { effect.system.rules[0].radius = 20; }
-        effect.system.rules[0].slug = "marshal-insp-stance";
+      if (choice === 'ims') {
+        const effect = (await fromUuid('Compendium.pf2e.feat-effects.Item.er5tvDNvpbcnlbHQ')).toObject();
+        await token.actor.createEmbeddedDocuments("Item", [effect]);
+      }
+      if (choice === 'dms') {
+        const effect = (await fromUuid('Compendium.pf2e.feat-effects.Item.qX62wJzDYtNxDbFv')).toObject();
         await token.actor.createEmbeddedDocuments("Item", [effect]);
       }
       if(choice === 'dcs'){
