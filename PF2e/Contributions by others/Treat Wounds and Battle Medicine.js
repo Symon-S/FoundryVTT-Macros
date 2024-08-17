@@ -821,10 +821,12 @@ if (canvas.tokens.controlled.length !== 1){
    }
    const hasHealersTools = checkItemPresent('healer-s-toolkit') || checkItemPresent('healers-toolkit') 
                            || checkItemPresent('healers-toolkit-expanded') || checkItemPresent('violet-ray')
-                           || checkItemPresent('marvelous-medicines') || checkItemPresent('marvelous-medicines-greater');
+                           || checkItemPresent('marvelous-medicines') || checkItemPresent('marvelous-medicines-greater')
+                           || checkItemPresent('medkit-commercial') || checkItemPresent('medkit-tactical');
    const hasHealersToolsHeld = !hasHealersTools || checkItemPresent('healer-s-toolkit', 0) || checkItemPresent('healers-toolkit', 0)
                            || checkItemPresent('healers-toolkit-expanded', 0) || checkItemPresent('violet-ray', 2)
-                           || checkItemPresent('marvelous-medicines', 2) || checkItemPresent('marvelous-medicines-greater', 2);
+                           || checkItemPresent('marvelous-medicines', 2) || checkItemPresent('marvelous-medicines-greater', 2)
+                           || checkItemPresent('medkit-commercial', 0) || checkItemPresent('medkit-tactical', 0);
    const hasBattleMedicsBatonHeld = checkItemPresent('battle-medic-s-baton', 1) || checkItemPresent('battle-medics-baton', 1);
    const batonUsed = token.actor.itemTypes.effect.find(obj => {
       return obj.name === `Battle Medic's Baton used`
