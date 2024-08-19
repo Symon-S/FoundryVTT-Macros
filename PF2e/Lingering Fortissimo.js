@@ -23,48 +23,70 @@ let cantrips = token.actor.itemTypes.spell.filter(s=> s.isFocusSpell === true &&
 
 if (!token.actor.itemTypes.feat.some(lc => lc.slug === "lingering-composition")) { cantrips = cantrips.filter(s => ["rallying-anthem", "courageous-anthem", "song-of-strength"].includes(s.slug)) }   
       
-const lc_data = [
-	{ label: `Choose a Spell : `, type: `select`, options: cantrips.map(p=> p.name) },
-	{ label: `Custom DC : `, type: `number`}
-];
+let ops = ''
+for ( const c of cantrips ) {
+	ops += `<option value=${c.slug}>${c.name}</option>`;
+}
+
+let content = `<table>
+	<tr>
+		<th>Choose a Spell : </th>
+		<td><select id="select" autofocus>${ops}</select></td>
+	</tr>
+	<tr>
+		<th>Custom DC : </th>
+		<td><input type="number" id="number" style="margin:auto;display:block;width:15%;text-align:center"></td>
+	</tr>
+`
 
 if (token.actor.itemTypes.feat.some(s => s.slug === 'fortissimo-composition')) {
-	let options = `style="margin:auto;display:block"`
-	if (!token.actor.itemTypes.feat.some(lc => lc.slug === "lingering-composition")) { options += ' checked disabled' }
-	lc_data.push( { label: `Fortissimo Composition (Rallying Anthem, Courageous Anthem, and Song of Strength Only) : `, type: `checkbox`, options } ) 
+	let style = `style="margin:auto;display:block"`
+	if (!token.actor.itemTypes.feat.some(lc => lc.slug === "lingering-composition")) { style += ' checked disabled' }
+	content += `<tr><th>Fortissimo Composition (Rallying Anthem, Courageous Anthem, and Song of Strength Only) : </th>
+				<td><input type="checkbox" id="checkbox" ${style}></td></tr>
+	`; 
 }     
 
-const {choice, event} = await quickDialog({data: lc_data, title: `Lingering Composition`});
-      
-const cast_spell = token.actor.itemTypes.spell.find(e => e.name === choice[0]);
-const slug = cast_spell.slug;
+content += '</table>'
+
+const {choice, event} = await Dialog.prompt({
+	title: "Lingering Fortissimo",
+	content,
+	callback: (html,event) => {
+		const choice = [html.find("#select").val(), html.find("#number")[0].valueAsNumber];
+		if (html.find("#checkbox")[0]?.checked) choice.push(html.find("#checkbox")[0].checked);
+		return {choice, event}
+	},
+	rejectClose:false
+},{width:"400"})  ;
+console.log(choice,event);
+const cast_spell = token.actor.itemTypes.spell.find(e => e.slug === choice[0]);
+const spellName = cast_spell.name;
 
 let cs,suc;
 const effectcom = game.packs.find(sp => sp.collection === "pf2e.spell-effects");
 const effects = await effectcom.getIndex({fields:["system.slug"]});
-let effect = effects.some(e => e.system.slug.includes(slug)) ? effects.find(e => e.system.slug.includes(slug)) : "";
+let effect = effects.some(e => e.system.slug.includes(choice[0])) ? effects.find(e => e.system.slug.includes(choice[0])) : "";
 if (choice[2]) {
-	if (choice[0] === 'Courageous Anthem' || choice[0] === 'Rallying Anthem' || choice[0] === 'Song of Strength') {  
-    	actionSlug = "fortissimo-composition";
-    	actionName = "Fortissimo Composition";
-		options.push(`action:${actionSlug}`);
-		if (slug === "courageous-anthem") {
-			cs = "Compendium.pf2e.spell-effects.Item.VFereWC1agrwgzPL";
-			suc = "Compendium.pf2e.spell-effects.Item.kZ39XWJA3RBDTnqG";
-		}
-		if (slug === "rallying-anthem") {
-			cs = "Compendium.pf2e.spell-effects.Item.BKam63zT98iWMJH7";
-			suc = "Compendium.pf2e.spell-effects.Item.Chol7ExtoN2T36mP";
-		}
-		if (slug === "song-of-strength") {
-			cs = "Compendium.pf2e.spell-effects.Item.8XaSpienzVXLmcfp";
-			suc = "Compendium.pf2e.spell-effects.Item.Fjnm1l59KH5YJ7G9";
-		}
-		if (effect !== ''){
-			notes.push({"outcome":["success"], "selector":"performance", "text":`<p>@UUID[${suc}]</p>`});
-    		notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p>@UUID[${cs}]</p>`});
-    		notes.push({"outcome":["failure","criticalFailure"], "selector":"performance", "text":`<p>@UUID[${effect.uuid}] You don't spend the Focus Point for casting the spell</p>`});
-		}
+    actionSlug = "fortissimo-composition";
+    actionName = "Fortissimo Composition";
+	options.push(`action:${actionSlug}`);
+	if (choice[0] === "courageous-anthem") {
+		cs = "Compendium.pf2e.spell-effects.Item.VFereWC1agrwgzPL";
+		suc = "Compendium.pf2e.spell-effects.Item.kZ39XWJA3RBDTnqG";
+	}
+	if (choice[0] === "rallying-anthem") {
+		cs = "Compendium.pf2e.spell-effects.Item.BKam63zT98iWMJH7";
+		suc = "Compendium.pf2e.spell-effects.Item.Chol7ExtoN2T36mP";
+	}
+	if (choice[0] === "song-of-strength") {
+		cs = "Compendium.pf2e.spell-effects.Item.8XaSpienzVXLmcfp";
+		suc = "Compendium.pf2e.spell-effects.Item.Fjnm1l59KH5YJ7G9";
+	}
+	if (effect !== ''){
+		notes.push({"outcome":["success"], "selector":"performance", "text":`<p>@UUID[${suc}]</p>`});
+    	notes.push({"outcome":["criticalSuccess"], "selector":"performance", "text":`<p>@UUID[${cs}]</p>`});
+    	notes.push({"outcome":["failure","criticalFailure"], "selector":"performance", "text":`<p>@UUID[${effect.uuid}] You don't spend the Focus Point for casting the spell</p>`});
 	}
 	else { 
 		return void ui.notifications.warn('Fortissimo Composition is only applicable to Inspire Courage, Rallying Anthem, or Song of Strength');
@@ -82,7 +104,7 @@ let level;
 let levels = [];
 let willDCs = [];
 const tokens = canvas.tokens.placeables.filter(t => token.distanceTo(t) <= 60 && !t.actor?.hasCondition("defeaned"));
-if (choice[0] === 'Dirge of Doom') {
+if (choice[0] === 'dirge-of-doom') {
   options.push(`secret`)
   levels = tokens.filter(f => f.actor?.type === "npc" && !f.actor?.hasPlayerOwner && token.distanceTo(f) <= 30).map(l => l.actor.level);
   if (levels.length === 0) { return ui.notifications.warn('There are no enemies within range'); }
@@ -104,70 +126,22 @@ if ( isNaN(choice[1]) ) {
 	else { DC = DCbyLevel[level]; }
 }
 else { DC = choice[1]; }
-      
-async function quickDialog({data, title = `Quick Dialog`} = {}) {
-	data = data instanceof Array ? data : [data];
-      
-	return await new Promise(async (resolve) => {
-	  let content = `
-		<table style="width:100%">
-		${data.map(({type, label, options, style}, i)=> {
-			if(type.toLowerCase() === `select`) {
-		  	return `<tr><th style="width:50%"><label>${label}</label></th><td style="width:50%"><select id="${i}qd">${options.map((e,i)=> `<option value="${e}">${e}</option>`).join(``)}</td></tr>`;
-			}
-			else if(type.toLowerCase() === `checkbox`){
-		  	return `<tr><th style="width:50%"><label>${label}</label></th><td style="width:50%"><input type="${type}" id="${i}qd" ${options || ``}/></td></tr>`;
-			}
-			else{
-		  	return `<tr><th style="width:50%"><label>${label}</label></th><td style="width:50%"><input type="${type}" style="margin:auto;display:block;width:15%;text-align:center" id="${i}qd" value="${options instanceof Array ? options[0] : options} ${style || ""}"/></td></tr>`;
-			}
-		}).join(``)}
-	  </table>`;
-      
-	  await new Dialog({
-	    title, content,
-	    buttons : {
-		 		Ok : { label : `Ok`, callback : (html, event) => {
-		   		resolve({choice:Array(data.length).fill().map((e,i)=>{
-		     		let {type} = data[i];
-		     		if(type.toLowerCase() === `select`) {
-		       		return html.find(`select#${i}qd`).val();
-		     		}
-						else{
-		       		switch(type.toLowerCase()) {
-			 					case `text` :
-			 					case `password` :
-			 					case `radio` :
-			 					return html.find(`input#${i}qd`)[0].value;
-								case `checkbox` :
-								return html.find(`input#${i}qd`)[0].checked;
-								case `number` :
-								return html.find(`input#${i}qd`)[0].valueAsNumber;
-		      		}
-		    		}
-		  		}), event});
-				}}
-	    },
-		default: "Ok",
-	  },{width:"400"})._render(true);
-	  document.getElementById("0qd").focus();
-	});
-}
+
 let aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.Item.KIPV1TiPCzlhuAzo")).toObject();
 if ( effect.slug === "spell-effect-rallying-anthem" ) {
 	aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.Item.tcnjhVxyRchqjt71")).toObject();
 }
-if (choice[0] === "Dirge of Doom") {
+if (choice[0] === "dirge-of-doom") {
   aura = (await fromUuid("Compendium.xdy-pf2e-workbench.xdy-pf2e-workbench-items.Item.wOcAf3pf04cTM4Uk")).toObject();
 }
-if (effect === "" && choice[0] !== "Dirge of Doom") {
+if (effect === "" && choice[0] !== "dirge-of-doom") {
 	aura.system.rules[0] = {key: "Aura", radius: 60, slug:"is-aura-effect" }
 }
-else if (choice[0] !== "Dirge of Doom") { aura.system.rules[0].effects[0].uuid = effect.uuid; }
+else if (choice[0] !== "dirge-of-doom") { aura.system.rules[0].effects[0].uuid = effect.uuid; }
 aura.system.duration.value = 1;
 aura.system.duration.unit = "rounds"
 aura.img = cast_spell.img;
-aura.name = `Aura: ${actionName} (${choice[0]})`
+aura.name = `Aura: ${actionName} (${spellName})`
 aura.slug = `aura-${actionSlug}`
 aura.system.rules[0].level = Math.ceil(actor.level/2);
 aura.system.level.value = Math.ceil(actor.level/2);
@@ -177,7 +151,7 @@ if (cs !== undefined) {
 
 const roll = await game.pf2e.Check.roll(
 	new game.pf2e.CheckModifier(
-	  `<span class="pf2-icon">A</span> <b>${actionName}</b><br><i>${choice[0]}</i> - <p class="compact-text">${skillName } Skill Check</p>`,
+	  `<span class="pf2-icon">A</span> <b>${actionName}</b><br><i>${spellName}</i> - <p class="compact-text">${skillName} Skill Check</p>`,
 	  token.actor.skills.performance, modifiers 
 	), { actor: token.actor, type: 'skill-check', options, notes, dc: { value: DC }}, event);
 
