@@ -371,7 +371,7 @@ async function SSDialog(actor, spells, sbs, reroll) {
         if (rerollText) {
           html.find("#reroll").on("click", (event) => {
             dialog.close();
-            let action = actions.values().find(a => a.item?.id === rerollItem.id);
+            let action = [...actions.values()].find(a => a.item?.id === rerollItem.id);
             if (reroll.action.altUsage) {
               action = action?.altUsages.find(a => a.item?.altUsageType === reroll.action.altUsage);
             }
