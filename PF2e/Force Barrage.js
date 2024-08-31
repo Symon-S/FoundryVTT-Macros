@@ -155,7 +155,7 @@ for (const a of fmm) {
 
 	let dam;
 	
-	if(token.actor.itemTypes.feat.some(ds => ds.slug === 'dangerous-sorcery')) {
+	if(token.actor.itemTypes.feat.some(ds => ds.slug === 'sorcerous-potency')) {
 
 		 dam = `(${a.num}d4 + ${a.num} + ${mmch.rank})[force]`;
 
