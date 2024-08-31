@@ -29,8 +29,9 @@ const days = await Dialog.wait({
 if (days === "cancel") { return }
 const consume = Array.fromRange(days,1);
 let ate = [];
-const comp = ["Construct Companion","Eidolon","Animal Companion"]
-for (a of game.actors.contents) {
+const comp = ["Construct Companion","Eidolon","Animal Companion"];
+const aList = game.actors.party?.members.length > 0 ? game.actors.party.members : game.actors.contents;
+for (a of aList) {
     let tof = false;
     for (ids of uIds) {
         if (a.ownership[ids] === 3) { tof = true; }
@@ -48,7 +49,7 @@ for (a of game.actors.contents) {
     for (c of consume) {
         if (!a.itemTypes.consumable.some(r => r.slug === "rations")) { 
             ui.notifications.warn(`${a.name} has no rations left`);
-            xdays = c;
+            xdays = c - 1;
             break;
         }
         await a.itemTypes.consumable.find(r => r.slug === "rations").consume();
