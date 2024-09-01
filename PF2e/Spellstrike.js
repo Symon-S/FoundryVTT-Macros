@@ -114,7 +114,7 @@ if (!choices.reroll) {
       await msg.setFlag("world", "macro.spellUsed", foundry.utils.mergeObject(spc, { "spell._id": spc.spell.id }, { recursive: false, inplace: false }));
       await msg.setFlag("world", "macro.actionUsed",
         { itemId: choices.action.item.id, altUsage: choices.action.item.altUsageType, variant: choices.variant});
-      await msg.update({flavor: msg.flavor + "Chosen Spell: " + spc.spell.link});
+      await msg.update({flavor: msg.flavor + `Chosen Spell: ${spc.spell.link} <strong>at Rank ${spc.castRank}</strong>`});
     }
   });
   critt = roll.degreeOfSuccess;
@@ -146,12 +146,13 @@ if (spc.isSave) {
   flavor += `<br>@Check[type:${spc.save}|dc:${spc.DC}|traits:damaging-effect,${spc.traits.map(v => v.value).join()}|basic:${spc.basic}]`;
 }
 
+let persistentD;
 if (spc.slug === "acid-splash" && critt === 3) {
-  if(spc.castRank < 3) { flavor += `[[/r 1[persistent,acid]]]` }
-  else if(spc.castRank > 2 && spc.castRank < 5) { flavor += `[[/r 2[persistent,acid]]]` }
-  else if(spc.castRank > 4 && spc.castRank < 7) { flavor += `[[/r 3[persistent,acid]]]` }
-  else if(spc.castRank > 6 && spc.castRank < 9) { flavor += `[[/r 4[persistent,acid]]]` }
-  else { flavor += `[[/r 5[persistent,acid]]]` }
+  if(spc.castRank < 3) { persistentD = new DamageRoll(`1[persistent,acid]`) }
+  else if(spc.castRank > 2 && spc.castRank < 5) { persistentD = new DamageRoll(`2[persistent,acid]`) }
+  else if(spc.castRank > 4 && spc.castRank < 7) { persistentD = new DamageRoll(`3[persistent,acid]`) }
+  else if(spc.castRank > 6 && spc.castRank < 9) { persistentD = new DamageRoll(`4[persistent,acid]`) }
+  else { persistentD = new DamageRoll(`5[persistent,acid]`) }
 }
 if (spc.slug === 'ignition' && critt === 3) {
   pers = Math.ceil(actor.level / 2);
@@ -161,23 +162,11 @@ if (spc.slug === 'ignition' && critt === 3) {
   else {
     pers += 'd4';
   }
-  flavor += `[[/r ${pers}[persistent,fire]]]`
+  persistentD = new DamageRoll(`${pers}[persistent,fire]`);
 }
 if (spc.slug === 'produce-flame' && critt === 3) {
   pers = Math.ceil(actor.level / 2) + "d4";
-  flavor += `[[/r ${pers}[persistent,fire]]]`
-}
-if (spc.slug === 'ray-of-frost' && critt === 3) {
-  flavor += `@UUID[Compendium.pf2e.spell-effects.I4PsUAaYSUJ8pwKC]{Spell Effect: Ray of Frost}`
-}
-
-if(spc.slug === 'chilling-darkness'){
-  if (game.user.targets.first().actor.traits.has('holy')) {
-    const spRD = spc.spell.getRollData({castRank: spc.castRank});
-    spc.roll = (await spRD.item.getDamage()).template.damage.roll;
-    spc.roll = new DamageRoll(`{(${spc.roll.terms[0].rolls[0]._formula})[${spc.roll.terms[0].rolls[0].type}],(${(spc.castRank-3)*2 + 5}d6)[spirit]}`);
-    flavor = `<div class="tags">${ttags}<br><hr><strong>Spellstrike</strong><br>${spc.spell.link}${flavName} (${dos})`;
-  }
+  persistentD = new DamageRoll(`${pers}[persistent,fire]`);
 }
 
 // Auto roll damage unless the workbench setting exists and is on, in which case workbench will do it
@@ -221,7 +210,7 @@ if(spc.slug === 'chromatic-ray' && critt >= 2) {
     chroma[3].dd = `(70${dsc})[poison]`;
     chroma[3].f = chroma[3].f.replace('25','35');
   }
-  const chromaR = new Roll(chromaD).evaluate({async:false}).total;
+  const chromaR = (await new Roll(chromaD).evaluate()).total;
   if (chromaR < 5) {
     ddice = chroma[chromaR-1].dd;
     flavor = flavor + chroma[chromaR-1].f;
@@ -235,7 +224,7 @@ if(spc.slug === 'chromatic-ray' && critt >= 2) {
     const flavor2 = flavor + chroma[chromaR-1].f;
     await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor2, flags: { "world.macro.spellUsed": spc }});
     if (critt === 3) {
-      const chromaRR = new Roll('1d7').evaluate({async:false}).total;
+      const chromaRR = (await new Roll('1d7').evaluate()).total;
       if (chromaRR < 5) { flavor = flavor + chroma[chromaRR-1].f; spc.roll = new DamageRoll(chroma[chromaRR-1].dd); }
       if (chromaRR > 4) { flavor = flavor + chroma[chromaRR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor, flags: { "world.macro.spellUsed": spc }});}
   	}
@@ -255,6 +244,10 @@ if (critt >= 2) {
   }
   else {
     await spc.spell.rollDamage(choices.event, choices.variant);
+    if (persistentD) {
+      flavor = `${spc.spell.name}<br> <strong>Persistent damage roll</strong>`
+      await persistentD.toMessage({speaker: ChatMessage.getSpeaker(), flavor});
+    }
   }
 }
 
