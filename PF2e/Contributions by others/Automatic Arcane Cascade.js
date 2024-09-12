@@ -37,5 +37,5 @@ if (dtypes.length <= 1) {
   // Multiple damage types, restrict choices to those done by spell.
   re.choices = re.choices.filter(c => dtypes.includes(c.value));
 }
-await actor.itemTypes.effect.find(e => e.flags.core?.sourceId === effect.flags.core.sourceId)?.delete();
+await actor.itemTypes.effect.find(e => e.sourceId === effect.sourceId)?.delete();
 actor.createEmbeddedDocuments("Item", [effect]);
