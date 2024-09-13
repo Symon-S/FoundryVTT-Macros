@@ -170,7 +170,7 @@ function UpdateAvailableOptions(html)
 
 /*
 FUNCTION itemSelectedCallback
-This is where the magic happens.  Create a new object from the selected weapon to shift into, copy all runes, materials, and equipped status from the original weapon onto it.  Add the new object to the token's actor.  Delete the old object.  Display a message to the chat.
+This is where the magic happens.  Create a new object from the selected weapon to shift into, copy all runes, materials, size, and equipped status from the original weapon onto it.  Add the new object to the token's actor.  Delete the old object.  Display a message to the chat.
 */
 async function itemSelectedCallback(weaponToShift, newWeaponID, revert)
 {
@@ -181,6 +181,7 @@ async function itemSelectedCallback(weaponToShift, newWeaponID, revert)
 	    itemObject = await itemToMove.toObject();
 	    itemObject.system.material = weaponToShift.system.material;
 	    itemObject.system.runes = weaponToShift.system.runes;
+	    itemObject.system.size = weaponToShift.system.size;
     }
     if (revert) { 
 		if (weaponToShift.flags.pf2e.originalItemData !== undefined){
