@@ -51,6 +51,10 @@ allWeapons.forEach((item)=> {
 	allWeaponList += '<option value="' + item.name + '">' + item.name + '</option>';
 });
 
+let incrementMap = { tiny: "sm", sm: "med", med: "lg", lg: "huge", huge: "grg", grg: "grg" };
+
+let decrementMap = { tiny: "tiny", sm: "tiny", med: "sm", lg: "med", huge: "lg", grg: "huge" };
+
 const formContent = `
 <input type="checkbox" id="usingBladeAlly" name="usingBladeAlly"><label for="usingBladeAlly">Blade Ally Weapon</label><br />
 <div align="center">FROM: <select name="weapon" id="weapon">` + weaponList + `</select></div>
@@ -169,6 +173,45 @@ function UpdateAvailableOptions(html)
 }
 
 /*
+FUNCTION incrementSize
+This function returns a new size incremented by the amount.
+*/
+function incrementSize(size, amount) {
+    if (amount === 0) return size;
+    return incrementSize(incrementMap[size], amount - 1);
+}
+
+/*
+FUNCTION decrementSize
+This function returns a new size decremented by the amount.
+*/
+function decrementSize(size, amount) {
+    if (amount === 0) return size;
+    return decrementSize(decrementMap[size], amount - 1);
+}
+
+/*
+FUNCTION findActualWeaponSize
+This function checks for CreatureSizeRuleElement type rule elements and returns the actual weapon size when the actor is resized.
+*/
+function findActualWeaponSize(weaponToShift) {
+	if(macroActor.rules.some(r => r.key === "CreatureSize" && r.resizeEquipment)) {
+		let actorSize = macroActor.system.traits.size;
+		let sizeDiff = actorSize.difference({ value: macroActor.system.traits.naturalSize }, { smallIsMedium: true });
+		if(sizeDiff === 0) {
+			return weaponToShift.system.size;
+		}
+		if(sizeDiff < 0) {
+			return incrementSize(weaponToShift.system.size, Math.abs(sizeDiff));
+		}
+		if(sizeDiff > 0) {
+			return decrementSize(weaponToShift.system.size, Math.abs(sizeDiff));
+		}
+	}
+	return weaponToShift.system.size;
+}
+
+/*
 FUNCTION itemSelectedCallback
 This is where the magic happens.  Create a new object from the selected weapon to shift into, copy all runes, materials, size, and equipped status from the original weapon onto it.  Add the new object to the token's actor.  Delete the old object.  Display a message to the chat.
 */
@@ -181,7 +224,7 @@ async function itemSelectedCallback(weaponToShift, newWeaponID, revert)
 	    itemObject = await itemToMove.toObject();
 	    itemObject.system.material = weaponToShift.system.material;
 	    itemObject.system.runes = weaponToShift.system.runes;
-	    itemObject.system.size = weaponToShift.system.size;
+	    itemObject.system.size = findActualWeaponSize(weaponToShift);
     }
     if (revert) { 
 		if (weaponToShift.flags.pf2e.originalItemData !== undefined){
