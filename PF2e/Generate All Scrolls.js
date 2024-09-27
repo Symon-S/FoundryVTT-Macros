@@ -1,9 +1,7 @@
-/*
-This will generate all scrolls from the inputted criteria and place them into a generated(if not already generated) loot actor,
-an existing loot actor, or in a party actor.
+/**
+ * This will generate all scrolls or wands from the inputted criteria and place them into a generated(if not already generated) loot actor,an existing loot actor, or in a party actor.
+ * Dialog V2 modification and Wands added by Freeze.
 */
-
-const stuff = [];
 const scrollUuids = {
   1: 'Compendium.pf2e.equipment-srd.Item.RjuupS9xyXDLgyIr',
   2: 'Compendium.pf2e.equipment-srd.Item.Y7UD64foDbDMV9sx',
@@ -16,174 +14,175 @@ const scrollUuids = {
   9: 'Compendium.pf2e.equipment-srd.Item.cFHomF3tty8Wi1e5',
   10: 'Compendium.pf2e.equipment-srd.Item.o1XIHJ4MJyroAHfF',
 };
+const wandUuids = {
+  1: 'Compendium.pf2e.equipment-srd.Item.UJWiN0K3jqVjxvKk',
+  2: 'Compendium.pf2e.equipment-srd.Item.vJZ49cgi8szuQXAD',
+  3: 'Compendium.pf2e.equipment-srd.Item.wrDmWkGxmwzYtfiA',
+  4: 'Compendium.pf2e.equipment-srd.Item.Sn7v9SsbEDMUIwrO',
+  5: 'Compendium.pf2e.equipment-srd.Item.5BF7zMnrPYzyigCs',
+  6: 'Compendium.pf2e.equipment-srd.Item.kiXh4SUWKr166ZeM',
+  7: 'Compendium.pf2e.equipment-srd.Item.nmXPj9zuMRQBNT60',
+  8: 'Compendium.pf2e.equipment-srd.Item.Qs8RgNH6thRPv2jt',
+  9: 'Compendium.pf2e.equipment-srd.Item.Fgv722039TVM5JTc'
+};
 
-const picks = await Dialog.wait(
-  {
-    title: "Scroll Generator",
-    content: `<table>
-      <tr>
-        <th style="text-align:center">Spell Rank:</th>
-        <td><select id="level">
-          <option>1</option>
-          <option>2</option>
-          <option>3</option>
-          <option>4</option>
-          <option>5</option>
-          <option>6</option>
-          <option>7</option>
-          <option>8</option>
-          <option>9</option>
-          <option>10</option>
-          <option>All</option>
-        </select></td>
-      </tr>
-      <tr>
-        <th style="text-align:center">Tradition:</th>
-        <td><select id="trad">
-          <option value="arcane">Arcane</option>
-          <option value="divine">Divine</option>
-          <option value="occult">Occult</option>
-          <option value="primal">Primal</option>
-					<option value="all">All</option>
-        </select></td>
-      </tr>
-      <tr>
-        <th style="text-align:center">Quantity:</th>
-        <td><input style="width:20%;text-align:center" type="number" id="quantity" value=1 /></td>
-      </tr>
-      <tr>
-        <th style="text-align:center">Rarity:</th>
-        <td><select id="rarity">
-          <option value="common">Common</option>
-            <option value="uncommon">Uncommon</option>
-            <option value="rare">Rare</option>
-						<option value="any">Any</option>
-        </select></td>
-      </tr>
-      <tr>
-      <th style="text-align:center">Output Type:</th>
-        <td><select id="outtype">
-          <option>Party Actor</option>
-          <option>Existing Loot Actor</option>
-          <option>Generated Loot Actor</option>
-        </select></td>
-      </tr>
-      <tr>
-        <th style="text-align:center">Mystify?</th>
-        <td><input type="checkbox" id="mystify" /></td>
-      </tr>
-</table>`,
-  	buttons: {
-      ok: {
-        label: "Ok",
-        callback: (html) => {
-          return [
-            html[0].querySelector("#level").value,
-            html[0].querySelector("#quantity").valueAsNumber,
-            html[0].querySelector("#rarity").value,
-            html[0].querySelector("#outtype").value,
-            html[0].querySelector("#mystify").checked,
-            html[0].querySelector("#trad").value,
-          ];
-        },
-      },
-      close: {
-        label: "Close",
-      },
-    },
-    close: () => {
-      return "close";
-    },
-    default: "ok",
-  },
-  { width: "auto" }
-);
-if (picks === "close") {
-  return;
-}
+// establish choices for the dropdown selects.
+const trads = CONFIG.PF2E.magicTraditions;
+trads.all = "All"; // add an all option.
+const rarityTraits = CONFIG.PF2E.rarityTraits;
+rarityTraits.any = "Any"; // add an any option.
+delete rarityTraits.unique; // comment out if you need unique spells.
+const outputChoices = { "party": "Party", "loot": "Existing Loot Actor", "generate": "Generated Loot Actor" };
 
+// establish the fields we need and a shorthand for DialogV2.
+const {NumberField, StringField, BooleanField} = foundry.data.fields;
+const {DialogV2} = foundry.applications.api;
+
+// create the HTML groups for the content of the Dialog.
+const itemGroup = new StringField({
+  choices: {"scroll": "Scrolls", "wand": "Wands"},
+  label: "Items to create:",
+  required: true
+}).toFormGroup({},{name: "sItem"}).outerHTML;
+
+const spellRanksGroup = new NumberField({
+  choices: Object.keys(scrollUuids).reduce((acc,e)=> {acc[e]= `Spell Rank ${e}`; return acc;},{"-1": "All"}),
+  label: "Spell Rank:"
+}).toFormGroup({},{dtype:"Number", name: "level"}).outerHTML;
+
+const traditionsGroup = new StringField({
+  choices: trads,
+  label: "Tradition:",
+  required: true
+}).toFormGroup({},{name:"trad", localize: true}).outerHTML;
+
+const raritiesGroup = new StringField({
+  choices: rarityTraits,
+  label: "Rarity:",
+  required: true
+}).toFormGroup({},{name:"rarity", localize: true}).outerHTML;
+
+const outputGroup = new StringField({
+  choices: outputChoices,
+  label: "Output Type:",
+  required: true
+}).toFormGroup({},{name:"outtype"}).outerHTML;
+
+const quantiyGroup = new NumberField({
+  label: "Quantity:"
+}).toFormGroup({},{name: "quantity", value: 1}).outerHTML;
+
+const mystifyGroup = new BooleanField({
+  label: "Mystify?"
+}).toFormGroup({rootId: "scroll-wand-mystify-check"},{name: "mystify"}).outerHTML;
+
+// DialogV2 that sets the picks values.
+const picks = await DialogV2.wait({
+  window: {title: "Scroll Generator"},
+  content: itemGroup + spellRanksGroup + traditionsGroup + quantiyGroup + raritiesGroup + outputGroup + mystifyGroup,
+  buttons:[{
+    label: "Create",
+    action: "create",
+    icon: "fa-solid fa-check",
+    callback: (_, button) => new FormDataExtended(button.form).object
+  },{
+    label: "Cancel",
+    action: "cancel",
+    icon: "fa-solid fa-xmark",
+    callback: ()=> null
+  }],
+  render: onRender,
+  rejectClose: false
+});
+
+if(!picks) return;
+
+//lets make some scrolls.
 let spells = [];
-  const compendiums = ["pf2e.spells-srd"];
-  const aCSpells = game.packs.filter(c => compendiums.includes(c.collection));
-  for (const s of aCSpells) {
-    let index = (await s.getIndex({fields: ["system.level.value","system.slug","system.traits","system.ritual","uuid"]})).filter(f => !f.system.traits.value.includes("cantrip") && !(f.system.ritual ??= false) && !f.system.traits.value.includes("focus"));
-    if ( picks[0] !== "All") { index = index.filter(r => r.system.level.value === parseInt(picks[0])) }
-    if ( picks[2] !== "any" ) { index = index.filter(r => r.system.traits.rarity === picks[2]) }
-		if ( picks[5] !== "all" ) { index = index.filter(r => r.system.traits.traditions.includes(picks[5])) }
-    for (const x of index){
-      spells.push({ level: x.system.level.value, name: `Scroll of ${x.name} (Rank ${x.system.level.value})`, uuid: x.uuid, suuid: scrollUuids[x.system.level.value]});
-    };
+const compendiums = ["pf2e.spells-srd"];
+const aCSpells = game.packs.filter(c => compendiums.includes(c.collection));
+for (const s of aCSpells) {
+  let index = (await s.getIndex({ fields: ["system.level.value", "system.slug", "system.traits", "system.ritual", "uuid"] })).filter(f => !f.system.traits.value.includes("cantrip") && !(f.system.ritual ??= false) && !f.system.traits.value.includes("focus"));
+  if (picks.level > 0) index = index.filter(r => r.system.level.value === picks.level);
+  if (picks.rarity !== "any") index = index.filter(r => r.system.traits.rarity === picks.rarity);
+  if (picks.trad !== "all") index = index.filter(r => r.system.traits.traditions.includes(picks.trad));
+  for (const x of index) {
+    x.compendium = s.collection;
+    const uuidList = picks.sItem === "wand" ? wandUuids : scrollUuids;
+    spells.push({ level: x.system.level.value, name: `${picks.sItem.capitalize()} of ${x.name} (Rank ${x.system.level.value})`, uuid: x.uuid, suuid: uuidList[x.system.level.value] });
+  }
 }
-
-if (spells.length === 0) { return void ui.notifications.warn("There are no spells that meet the criteria"); }
-
+// find the actor or create the actor to make the scrolls on.
 let a;
-if ( picks[3] === "Generated Loot Actor" ) {
-	if (!game.actors.some( n => n.name === "Generated Loot")) {
-	await Actor.create({name:"Generated Loot",type:"loot",img:"icons/containers/chest/chest-reinforced-steel-red.webp"});
-	}
-	a = game.actors.getName("Generated Loot");
+if (picks.outtype === "generate") {
+  a = game.actors.getName("Generated Loot");
+  if (!a) a = await Actor.create({ name: "Generated Loot", type: "loot", img: "icons/containers/chest/chest-reinforced-steel-red.webp" });
 }
-		
-if ( picks[3] === "Party Actor" ) {
-	if ( game.actors.filter( p => p.type === "party" ).length > 1 ) {
-		a = await MyDialog("party");
-	}
-	else { 
-		a = game.actors.find(p => p.type === "party" );
-	}
+else {
+  if (game.actors.filter(p => p.type === picks.outtype).length > 1) {
+    a = await MyDialog(picks.outtype);
+  }
+  else {
+    a = game.actors.find(p => p.type === picks.outtype);
+  }
 }
+if (!a) return;
 
-if ( picks[3] === "Existing Loot Actor" ) {
-	if ( game.actors.filter( p => p.type === "loot" ).length > 1 ) {
-		a = await MyDialog("loot");
-	}
-	else { 
-		a = game.actors.find(p => p.type === "loot" );
-	}
+const toCreate = [];
+for (const s of spells) {
+  toCreate.push(await createSpellScrollWand(s.suuid, s.uuid, s.level, s.name, picks.mystify));
 }
+const created = await a.createEmbeddedDocuments("Item", toCreate);
+a.sheet.render(true);
 
-for ( const s of spells ) {
-  stuff.push(await createSpellScrollWand(s.suuid, s.uuid, s.level, s.name))
-}
-const updates = await a.createEmbeddedDocuments("Item",stuff);
-if ( picks[4] ) { await a.updateEmbeddedDocuments("Item", updates.map(u => ({_id: u.id, "system.identification.status": "unidentified" }))); }
-await a.sheet.render(true);
-
+//helper function to select a specific party actor or loot actor if multiple exist.
 async function MyDialog(type) {
-	let options = "";
-	for (const plac of game.actors.filter( f => f.type === type )) {
-		options += `<option value=${plac.id}>${plac.name}</option>`
-	}
-	const myac = await Dialog.prompt({
-		title: `Select ${type} actor`,
-		content:`
-			<table>
-				<tr>
-					<th width="70%" style="text-align:center">Please select an actor : </th>
-					<td width="30%"><select>${options}</select></td>
-				</tr>
-			</table>
-		`,
-		callback: (html) => { return html[0].querySelector("select").value },
-		rejectClose:false,
-	},{width:"200px"});
-	return game.actors.get(myac);
+  const content = new StringField({
+    choices: game.actors.reduce((acc,e)=>{
+      if(e.type !== type) return acc;
+      acc[e.id] = e.name;
+      return acc;
+    },{}),
+    label: "Please Select an Actor:",
+    required: true
+  }).toFormGroup({classes:["stacked"]}, {name: "actor"}).outerHTML;
+  const myact = await DialogV2.prompt({
+    window: {title: `Select ${type} actor`},
+    content,
+    ok: {
+      callback: (event,button) => new FormDataExtended(button.form).object.actor
+    },
+    rejectClose: false,
+    position: { width: 375 }
+  });
+  return game.actors.get(myact);
 }
-
-async function createSpellScrollWand(scrollUUID, uuid, level, name) {
-  const spell = (await fromUuid(uuid))?.toObject();
+// helper function to create the data for a scroll.
+async function createSpellScrollWand(itemUuid, spellUuid, level, name, mystified) {
+  const spell = (await fromUuid(spellUuid))?.toObject();
   if (!spell) return null;
   if (level === false) level = spell.system.level.value;
-	scrolls = await fromUuid(scrollUUID);
-	const scroll = scrolls?.toObject();
-  if (!scroll) return null;
-	spell.system.location.heightenedLevel = level;
-  scroll.name = name;
-  scroll.system.description.value = `@UUID[${uuid}]\n<hr />${scroll.system.description.value}`;
-  scroll.system.spell = spell;
-  scroll.system.traits.rarity = spell.system.traits.rarity;
-  scroll.system.quantity = picks[1];
-  scroll.system.traits.value = [...new Set(scroll.system.traits.value.concat(spell.system.traits.traditions).concat(spell.system.traits.value))];
-  return scroll;
+  const item = await fromUuid(itemUuid);
+  const itemData = item?.toObject();
+  if (!itemData) return null;
+  spell.system.location.heightenedLevel = level;
+  itemData.name = name;
+  itemData.system.spell = spell;
+  itemData.system.description.value = `@UUID[${spellUuid}]{${spell.name}}` + itemData.system.description.value;
+  itemData.system.traits.rarity = spell.system.traits.rarity;
+  itemData.system.quantity = picks.quantity;
+  itemData.system.traits.value = [...new Set(itemData.system.traits.value.concat(spell.system.traits.traditions).concat(spell.system.traits.value))];
+  if(mystified) itemData.system.identification.status = "unidentified";
+  return itemData;
+}
+
+function onRender(event, html) {
+  const itemSelect = html.querySelector("select[name=sItem]");
+  const levelSelect = html.querySelector("select[name=level]");
+  itemSelect.addEventListener("change", ()=>{
+    const value = itemSelect.value;
+    const uuidList = value === "wand" ? wandUuids : scrollUuids;
+    const replacement = HandlebarsHelpers.selectOptions(Object.keys(uuidList).reduce((acc,e)=> {acc[e]= `Spell Rank ${e}`; return acc;},{"-1": "All"}), {hash:{}});
+    levelSelect.innerHTML = replacement;
+  });
 }
