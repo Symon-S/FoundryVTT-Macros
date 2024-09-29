@@ -1,5 +1,6 @@
 /**
- * Simple mass initiative roller
+ * Simple mass initiative roller that rolls initiative on the currently selected scene and current combat.
+ * This mass roller will also create a combat, if there isn't a current one.
  * Select all tokens you want to roll initiative for with a specific skill, then click on the applicable skill.
  * This macro was created for use with NPCs, but can be used with any actors with initiative.
  */
@@ -20,7 +21,8 @@ await new Promise(async (resolve) => {
 	}).render(true);
 });
 
-async function Initiative(s) {
+async function Initiative(statistic) {
+	if (!game.combat) await Combat.create();
 	for ( const c of canvas.tokens.controlled ) {
 		if (!c.actor) { 
 			ui.notifications.warn(`Token ${c.id} does not have a valid actor`);
@@ -30,10 +32,7 @@ async function Initiative(s) {
 			ui.notifications.info(`Token ${c.id} does not have an initiative`);
 			continue;
 		}
-		const createCombatants = !game.combat?.combatants.some(x => x.tokenId === c.id) ?? true;
-		await c.actor.update({"system.initiative.statistic": s});
-		await c.actor.rollInitiative({createCombatants, rerollInitiative: true});
-		await c.actor.update({"system.initiative.statistic": "perception"});
+		await new c.actor.initiative.constructor(c.actor,{statistic, tiebreakPriority: c.actor.initiative.tiebreakPriority}).roll();
 	}
 }
 
