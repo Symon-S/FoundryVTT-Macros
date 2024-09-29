@@ -64,12 +64,12 @@ const holdingCooperativeBlade = token.actor.items.some((item) => { return item.s
 
 
 //sets the various crit bonuses for Aid, referenced in the chat output later
-if (token.actor.system.skills.dip.rank === 2 && holdingCooperativeBlade) {
+if (token.actor.system.skills.diplomacy.rank === 2 && holdingCooperativeBlade) {
   critAidBonus = 3
-} else if (token.actor.system.skills.dip.rank < 3) {
+} else if (token.actor.system.skills.diplomacy.rank < 3) {
   critAidBonus = 2
 } else {
-  critAidBonus = token.actor.system.skills.dip.rank
+  critAidBonus = token.actor.system.skills.diplomacy.rank
 }
 
 let rollResult = await dsnHook(game.pf2e.actions.get('aid')
