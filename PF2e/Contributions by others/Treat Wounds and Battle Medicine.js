@@ -17,6 +17,7 @@ This Macro works just like the system's Treat Wounds macro, except for the follo
 - Checks if the Healer is having healer's tools in the inventory.
 - Provide information to the user that Expanded Healer's Tools have to be held with 2h to gain it's bonus.
 - Supports the Spell Stitcher feat from Magus+.
+- Adds automated robust health integration
 */
 
 /**
@@ -459,6 +460,8 @@ async function applyChanges($html) {
      immunityEffect.name = useBattleMedicine ? `${bmtw} by ${name}`: `${bmtw}`;
      const hasGodlessHealing = targetActor.items.filter((item) => item.type === 'feat').some((item) => item.system.slug === "godless-healing");
      const godlessHealingBonus = hasGodlessHealing ? 5 : 0;
+     const hasRobustHealth = targetActor.items.filter((item) => item.type === "feat").some((item) => item.system.slug === "robust-health");
+     const robustHealthBonus = hasRobustHealth ? target.actor.level : 0;
 
      // check if the person being healed is currently immune. If so, check if healer is a medic
      var isImmune = targetActor.itemTypes.effect.find(obj => {
@@ -491,7 +494,7 @@ async function applyChanges($html) {
          }
      }
 
-     if (forensicMedicine || hasGodlessHealing) {
+     if (forensicMedicine || hasGodlessHealing || hasRobustHealth) {
        immunityEffect.system.duration.unit = "hours";
      }
      if (useContinualRecovery) {
@@ -525,7 +528,7 @@ async function applyChanges($html) {
        case 1:
          rollTreatWounds({
            DC: 15 + mod,
-           bonus: 0 + medicBonus + godlessHealingBonus + useBattleMedicineBonus + magicHandsBonus,
+           bonus: 0 + medicBonus + godlessHealingBonus + robustHealthBonus + useBattleMedicineBonus + magicHandsBonus,
            med,
            isRiskySurgery,
            useMortalHealing,
@@ -542,7 +545,7 @@ async function applyChanges($html) {
        case 2:
          rollTreatWounds({
            DC: 20 + mod,
-           bonus: 10 + medicBonus + godlessHealingBonus + useBattleMedicineBonus + magicHandsBonus,
+           bonus: 0 + medicBonus + godlessHealingBonus + robustHealthBonus + useBattleMedicineBonus + magicHandsBonus,
            med,
            isRiskySurgery,
            useMortalHealing,
@@ -559,7 +562,7 @@ async function applyChanges($html) {
        case 3:
          rollTreatWounds({
            DC: 30 + mod,
-           bonus: 30 + medicBonus + godlessHealingBonus + useBattleMedicineBonus + magicHandsBonus,
+           bonus: 0 + medicBonus + godlessHealingBonus + robustHealthBonus + useBattleMedicineBonus + magicHandsBonus,
            med,
            isRiskySurgery,
            useMortalHealing,
@@ -576,7 +579,7 @@ async function applyChanges($html) {
        case 4:
          rollTreatWounds({
            DC: 40 + mod,
-           bonus: 50 + medicBonus + godlessHealingBonus + useBattleMedicineBonus + magicHandsBonus,
+           bonus: 0 + medicBonus + godlessHealingBonus + robustHealthBonus + useBattleMedicineBonus + magicHandsBonus,
            med,
            isRiskySurgery,
            useMortalHealing,
