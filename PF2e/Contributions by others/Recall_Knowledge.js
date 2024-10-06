@@ -27,9 +27,6 @@ if (!actor) {
  */
 const checkFeat = (slug) => actor.itemTypes.feat.some((item) => item.slug === slug);
 
-if (!game.modules.get("xdy-pf2e-workbench")?.active) {
-    return ui.notifications.error("This Macro requires PF2e Workbench module");
-}
 // Get breakdown display mode from settings, if workbench is not present, uses default "all"
 // That default can changed to "extra" or "none" here.
 const breakdownMode = (() => {
@@ -146,7 +143,8 @@ async function getSkillResult(skillSlug, rollResult = undefined, target = undefi
 // Global d20 roll used for all skills
 // ===================================
 
-const globalRoll = (await new Roll("1d20").roll({allowInteractive: false})).total;
+const rollD20 = new Roll("1d20");
+const globalRoll = (await rollD20.roll({allowInteractive: false})).total;
 const rollColor = globalRoll == 20 ? "green" : globalRoll == 1 ? "red" : "royalblue";
 
 // Skill list output
@@ -307,11 +305,11 @@ await ChatMessage.create({
     user: game.userId,
     style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     content: output,
-    whisper: game.users.contents.flatMap((user) => (user.isGM ? user.id : [])),
+    whisper: ChatMessage.getWhisperRecipients("GM").map(u => u.id),
     visible: false,
     blind: true,
     speaker: ChatMessage.getSpeaker(),
-    flags: { "xdy-pf2e-workbench.minimumUserRole": CONST.USER_ROLES.GAMEMASTER },
+    rolls: [rollD20],
 });
 
 // Recursively return every roll option in a predicate expression tree
