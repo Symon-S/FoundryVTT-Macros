@@ -545,7 +545,7 @@ async function applyChanges($html) {
        case 2:
          rollTreatWounds({
            DC: 20 + mod,
-           bonus: 0 + medicBonus + godlessHealingBonus + robustHealthBonus + useBattleMedicineBonus + magicHandsBonus,
+           bonus: 10 + medicBonus + godlessHealingBonus + robustHealthBonus + useBattleMedicineBonus + magicHandsBonus,
            med,
            isRiskySurgery,
            useMortalHealing,
@@ -562,7 +562,7 @@ async function applyChanges($html) {
        case 3:
          rollTreatWounds({
            DC: 30 + mod,
-           bonus: 0 + medicBonus + godlessHealingBonus + robustHealthBonus + useBattleMedicineBonus + magicHandsBonus,
+           bonus: 30 + medicBonus + godlessHealingBonus + robustHealthBonus + useBattleMedicineBonus + magicHandsBonus,
            med,
            isRiskySurgery,
            useMortalHealing,
@@ -579,7 +579,7 @@ async function applyChanges($html) {
        case 4:
          rollTreatWounds({
            DC: 40 + mod,
-           bonus: 0 + medicBonus + godlessHealingBonus + robustHealthBonus + useBattleMedicineBonus + magicHandsBonus,
+           bonus: 50 + medicBonus + godlessHealingBonus + robustHealthBonus + useBattleMedicineBonus + magicHandsBonus,
            med,
            isRiskySurgery,
            useMortalHealing,
