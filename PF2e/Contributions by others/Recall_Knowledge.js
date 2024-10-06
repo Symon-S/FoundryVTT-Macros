@@ -30,6 +30,11 @@ const checkFeat = (slug) => actor.itemTypes.feat.some((item) => item.slug === sl
 if (!game.modules.get("xdy-pf2e-workbench")?.active) {
     return ui.notifications.error("This Macro requires PF2e Workbench module");
 }
+// Get breakdown display mode from settings, if workbench is not present, uses default "all"
+// That default can changed to "extra" or "none" here.
+const breakdownMode = (() => {
+    try { return game.settings.get("xdy-pf2e-workbench", "rkBreakdown"); } catch { return "all"; }
+})();
 
 const HAS_DUBIOUS_KNOWLEDGE = checkFeat('dubious-knowledge');
 const SKILL_OPTIONS = ["arcana", "crafting", "medicine", "nature", "occultism", "religion", "society"];
@@ -107,13 +112,18 @@ async function getSkillResult(skillSlug, rollResult = undefined, target = undefi
     // Get the actual options the pf2e system roll code came up with
     const rollOptions = fakeMsg.getFlag('pf2e','context.options');
 
-    // Extract tags text from roll, but remove ability and proficiency
-    const div = document.createElement('div');
-    div.innerHTML = fakeMsg.flavor;
-    const breakdown = div.querySelector("div.modifiers");
-    // This would drop the ability and proficiency modifiers, possibly less interesting since they are always there.
-    //const uninteresting = new Set([...Object.keys(CONFIG.PF2E.abilities), "proficiency"]);
-    //breakdown?.querySelectorAll("[data-slug]").forEach((e) => { if (uninteresting.has(e.dataset.slug)) e.remove(); });
+    // Extract tags text from roll, but possibly remove ability and proficiency
+    let breakdown = null;
+    if (breakdownMode !== 'none') {
+        const div = document.createElement('div');
+        div.innerHTML = fakeMsg.flavor;
+        breakdown = div.querySelector("div.modifiers");
+        if (breakdownMode === "extra") {
+            // Drop the ability and proficiency modifiers, possibly less interesting since they are always there.
+            const uninteresting = new Set([...Object.keys(CONFIG.PF2E.abilities), "proficiency"]);
+            breakdown?.querySelectorAll("[data-slug]").forEach((e) => { if (uninteresting.has(e.dataset.slug)) e.remove(); });
+        }
+    }
 
     // find conditional RK modifiers
     const appliedModifiers = [], unappliedModifiers = [];
