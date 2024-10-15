@@ -181,7 +181,7 @@ const conditionalModifiersOutput = (skillResults) => {
     let output = `<table style="font-size: 12px"><tr><th>Potential Modifiers</th><th>Mod</th></tr>`;
     for (const mod of allUnappliedModifiers.values()) {
         const { label, signedValue, source } = mod;
-        output += `<tr><td><a class="content-link" draggable="true" data-uuid="${source}"><i class="fas fa-suitcase"></i>${label}</a></td><td>${signedValue}</td></tr>`;
+        output += `<tr><td>@UUID[${source}]{${label}}</a></td><td>${signedValue}</td></tr>`;
     }
     output += "</table>";
     return output;
@@ -241,15 +241,20 @@ if (game.user.targets.size < 1) {
                 }
             }
         }
-        if (actor.itemTypes.feat.some(x => x.slug === "unified-theory") && ( primarySkills.size > 1 || !primarySkills.has("society"))) primarySkills.add("arcana");
-
+        
+        let uT;
+        if (checkFeat("unified-theory") && primarySkills.intersection(new Set(["religion", "occultism", "nature"])).size > 0) {
+            primarySkills.add("arcana");
+            uT = true;
+        }
+         
         const tokenSkills = [];
         for (const skill of primarySkills) {
             const skillResult = await getSkillResult(skill, globalRoll, targetActor);
             tokenSkills.push(skillResult);
-            const { label, modifier, rank, breakdown } = skillResult;
+            let { label, modifier, rank, breakdown } = skillResult;
             const adjustedResult = globalRoll + modifier;
-
+            if (skill === "arcana" && uT) label = "Unified Theory";
             output += `<tr><th>${label}
                 </th><td class="tags"><div class="tag" style="background-color: ${RANK_COLORS[rank]}; white-space:nowrap">${RANK_NAMES[rank]?.[0]}</td>
                 <td><span style="color: ${rollColor}; text-align: center">${adjustedResult}</span></td>`;
