@@ -241,6 +241,7 @@ if (game.user.targets.size < 1) {
                 }
             }
         }
+        if (actor.itemTypes.feat.some(x => x.slug === "unified-theory") && ( primarySkills.size > 1 || !primarySkills.has("society"))) primarySkills.add("arcana");
 
         const tokenSkills = [];
         for (const skill of primarySkills) {
