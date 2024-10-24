@@ -33,7 +33,6 @@ const breakdownMode = (() => {
     try { return game.settings.get("xdy-pf2e-workbench", "rkBreakdown"); } catch { return "all"; }
 })();
 
-const HAS_DUBIOUS_KNOWLEDGE = checkFeat('dubious-knowledge');
 const SKILL_OPTIONS = ["arcana", "crafting", "medicine", "nature", "occultism", "religion", "society"];
 
 const IDENTIFY_SKILLS = {
@@ -295,8 +294,11 @@ if (game.user.targets.size < 1) {
         ));
         output += skillListOutput("Lore Skill", loreSkills);
         output += conditionalModifiersOutput([...loreSkills, ...tokenSkills]);
-        if (HAS_DUBIOUS_KNOWLEDGE) {
-            output += `<br>${token?.name ?? actor.name} has @UUID[Compendium.pf2e.feats-srd.Item.1Bt7uCW2WI4sM84P]{Dubious Knowledge}`
+        if (checkFeat('dubious-knowledge')) {
+            output += `<p>${token?.name ?? actor.name} has @UUID[Compendium.pf2e.feats-srd.Item.1Bt7uCW2WI4sM84P]</p>`;
+        }
+        if (checkFeat('unmistakable-lore')) {
+            output += `<p>${token?.name ?? actor.name} has @UUID[Compendium.pf2e.feats-srd.Item.XvX1EyxWbbBF32NV]</p>`;
         }
     }
 }
