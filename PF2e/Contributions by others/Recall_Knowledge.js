@@ -241,20 +241,18 @@ if (game.user.targets.size < 1) {
                 }
             }
         }
-        
-        let uT;
-        if (checkFeat("unified-theory") && primarySkills.intersection(new Set(["religion", "occultism", "nature"])).size > 0) {
-            primarySkills.add("arcana");
-            uT = true;
-        }
-         
+
+        const uT = checkFeat("unified-theory") && !primarySkills.has('arcana') &&
+            primarySkills.intersection(new Set(["religion", "occultism", "nature"])).size > 0;
+        if (uT) primarySkills.add("arcana");
+
         const tokenSkills = [];
         for (const skill of primarySkills) {
             const skillResult = await getSkillResult(skill, globalRoll, targetActor);
             tokenSkills.push(skillResult);
             let { label, modifier, rank, breakdown } = skillResult;
             const adjustedResult = globalRoll + modifier;
-            if (skill === "arcana" && uT) label = "Unified Theory";
+            if (skill === "arcana" && uT) label = actor.itemTypes.feat.find(i => i.slug === 'unified-theory').name;
             output += `<tr><th>${label}
                 </th><td class="tags"><div class="tag" style="background-color: ${RANK_COLORS[rank]}; white-space:nowrap">${RANK_NAMES[rank]?.[0]}</td>
                 <td><span style="color: ${rollColor}; text-align: center">${adjustedResult}</span></td>`;
