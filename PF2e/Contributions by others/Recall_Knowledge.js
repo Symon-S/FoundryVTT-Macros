@@ -58,12 +58,9 @@ const IDENTIFY_SKILLS = {
 };
 const RANK_COLORS = ["#443730", "#171f69", "#3c005e", "#5e4000", "#5e0000"];
 const RANK_NAMES = ["UNTRAINED", "TRAINED", "EXPERT", "MASTER", "LEGENDARY"];
-const OUTCOMES = [
-    "<span style='color:red'>CrFail</span>",
-    "<span style='color:orange'>Fail</span>",
-    "<span style='color:royalblue'>Suc</span>",
-    "<span style='color:green'>CrSuc</span>",
-];
+const DOS_LABELS = ["CrFail", "Fail", "Suc", "CrSuc"];
+const DOS_COLORS = ["red", "orange", "royalblue", "green"];
+const DOS = ["criticalFailure", "failure", "success", "criticalSuccess"];
 const DC_MODS = [-5, -2, 0, 2, 5, 10, "-", "-", "-"];
 const FIRST_DC_INDEX = {
     common: 2,
@@ -136,7 +133,46 @@ async function getSkillResult(skillSlug, rollResult = undefined, target = undefi
         appliedModifiers,
         breakdown,
         rank,
+        rollOptions,
+        domains: fakeMsg.getFlag('pf2e', 'context.domains'),
     };
+}
+
+/* Apply degree of success adjustments to roll.
+ * @param {Object}        roll        The total, die, dos, and delta values of the roll.
+ * @param {Array<string>} domains     The domains of the roll.
+ * @param {Array<string>} rollOptions The roll options for the roll.
+ *
+ * Returns {Numeric}          dos     New (or old) DoS (0…3) value.
+ *         {string|undefined} label   Why dos was changed, but only present if it was.
+ */
+function adjustDoS(roll, domains, rollOptions) {
+    // Roll options for DoS adjustments includes these extra one based on the unadjusted result
+    const options = [
+        ...rollOptions,
+        `check:total:${roll.total}`,
+        `check:total:natural:${roll.die}`,
+        `check:total:delta:${roll.delta}`,
+    ];
+    // Extract adjustments that apply to the domains of the roll, it's DoS, and have true predicates
+    const adjustments = domains.flatMap(
+        (domain) =>
+            actor.synthetics.degreeOfSuccessAdjustments[domain]?.flatMap((a) =>
+                a.predicate.test(options) ? [a.adjustments.all ?? [], a.adjustments[DOS[roll.dos]] ?? []].flat() : [],
+            ) ?? [],
+    );
+    if (adjustments.length == 0) return { dos: roll.dos };
+
+    const results = adjustments.map((a) => {
+        const specificDoS = DOS.indexOf(a.amount);
+        return {
+            dos: specificDoS !== -1 ? specificDoS : Math.clamp(roll.dos + a.amount, 0, 3),
+            label: a.label,
+        };
+    });
+    // There's no rule about what to do with multiple adjustments applying to the same roll.
+    // Take the best one?
+    return results.reduce((acc, r) => r.dos < acc?.dos ? acc : r);
 }
 
 // Global d20 roll used for all skills
@@ -252,8 +288,8 @@ if (game.user.targets.size < 1) {
             let { label, modifier, rank, breakdown } = skillResult;
             const adjustedResult = globalRoll + modifier;
             if (skill === "arcana" && uT) label = actor.itemTypes.feat.find(i => i.slug === 'unified-theory').name;
-            output += `<tr><th>${label}
-                </th><td class="tags"><div class="tag" style="background-color: ${RANK_COLORS[rank]}; white-space:nowrap">${RANK_NAMES[rank]?.[0]}</td>
+            output += `<tr style="vertical-align:middle;"><th>${label}
+                </th><td class="tags" style="display:revert"><div class="tag" style="background-color: ${RANK_COLORS[rank]}; white-space:nowrap">${RANK_NAMES[rank]?.[0]}</td>
                 <td><span style="color: ${rollColor}; text-align: center">${adjustedResult}</span></td>`;
 
             for (const dc of DCs) {
@@ -265,7 +301,16 @@ if (game.user.targets.size < 1) {
                 let success = diff >= 10 ? 3 : diff >= 0 ? 2 : diff <= -10 ? 0 : 1;
                 if (globalRoll == 20 && success < 3) success++;
                 else if (globalRoll == 1 && success > 0) success--;
-                output += `<td style="text-align:center; vertical-align:middle">${OUTCOMES[success]}</td>`;
+                const { dos: successAdj, label: labelAdj } = adjustDoS(
+                    { die: rollD20, total: adjustedResult, delta: diff, dos: success },
+                    skillResult.domains,
+                    skillResult.rollOptions,
+                );
+                const text = successAdj === success ?
+                    `<span style="color:${DOS_COLORS[success]}">${DOS_LABELS[success]}</span>` :
+                    `<span style="text-decoration:line-through;">${DOS_LABELS[success]}</span><br />
+                     <span style="color:${DOS_COLORS[successAdj]}" data-tooltip="${labelAdj}">${DOS_LABELS[successAdj]}</span>`;
+                output += `<td style="text-align:center;">${text}</td>`;
             }
             output += "</tr>";
             if (breakdown?.childElementCount > 0) {
