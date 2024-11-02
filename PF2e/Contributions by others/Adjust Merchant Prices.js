@@ -1,10 +1,10 @@
 /*
-Contributed by Cerapter
+Contributed by Cerapter and Digitalshadowhawk
 */
 
 if (token?.actor?.type !== "loot") {
   ui.notifications.error(`You must select at least one Merchant actor!`);
-} else if (token.actor.data.data.lootSheetType !== "Merchant") {
+} else if (token.actor.system.lootSheetType !== "Merchant") {
   ui.notifications.error(`The selected actor must be a Merchant!`);
 } else {
   showPopup(token.actor);
@@ -39,7 +39,7 @@ function showPopup(actor) {
 
               updates.push({
                 _id: item.id,
-                "data.price.value": newValue.scale(percentChange / 100),
+                "system.price.value": newValue.scale(percentChange / 100),
               });
             }
           }
@@ -80,11 +80,11 @@ function formatPopup(actor) {
 
 function gatherItems(items) {
   return items
-    .filter((notcoins) => notcoins.data.data.stackGroup !== "coins")
+    .filter((notcoins) => notcoins.system.stackGroup !== "coins")
     .map((item) => ({
       id: item.id,
       name: item.name,
-      price: item.data.data.price.value,
+      price: item.system.price.value,
     }));
 }
 
