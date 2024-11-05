@@ -52,10 +52,10 @@ spells = spells.filter(s => !s.isExpended && !s.isUseless);
 if (spells.length === 0) { return void ui.notifications.info("You have no spells available"); }
 
 let rerollData;
-const lastMsg = game.messages.contents.findLast(lus => lus.token?.id === token.id && lus.getFlag("world", "macro.spellUsed") && lus.getFlag("world", "macro.actionUsed"));
+const lastMsg = game.messages.contents.findLast(lus => lus.token?.id === token.id && lus.getFlag("pf2e", "macro.spellUsed") && lus.getFlag("pf2e", "macro.actionUsed"));
 if (lastMsg) {
-  rerollData = lastMsg ? { action: lastMsg.getFlag("world", "macro.actionUsed"), spell: lastMsg.getFlag("world", "macro.spellUsed") } : undefined;
-  rerollData.spell.spell = actor.items.get(rerollData.spell.spell._id);
+  rerollData = lastMsg && !lastMsg.isReroll ? { action: lastMsg.getFlag("pf2e", "macro.actionUsed"), spell: lastMsg.getFlag("pf2e", "macro.spellUsed") } : undefined;
+  if (rerollData) rerollData.spell.spell = actor.items.get(rerollData.spell.spell._id);
 }
 
 const choices = await SSDialog(actor, spells, sbs, rerollData);
@@ -111,8 +111,8 @@ if (!choices.reroll) {
       await new Promise(async (resolve) => {
         setTimeout(resolve,100);
       });
-      await msg.setFlag("world", "macro.spellUsed", foundry.utils.mergeObject(spc, { "spell._id": spc.spell.id }, { recursive: false, inplace: false }));
-      await msg.setFlag("world", "macro.actionUsed",
+      await msg.setFlag("pf2e", "macro.spellUsed", foundry.utils.mergeObject(spc, { "spell._id": spc.spell.id }, { recursive: false, inplace: false }));
+      await msg.setFlag("pf2e", "macro.actionUsed",
         { itemId: choices.action.item.id, altUsage: choices.action.item.altUsageType, variant: choices.variant});
       await msg.update({flavor: msg.flavor + `Chosen Spell: ${spc.spell.link} <strong>at Rank ${spc.castRank}</strong>`});
     }
@@ -219,14 +219,14 @@ if(spc.slug === 'chromatic-ray' && critt >= 2) {
       spc.roll = new DamageRoll(chroma[chromaR-1].dd);
     }
   }
-  if (chromaR > 4 && chromaR <= 7) { flavor = flavor + chroma[chromaR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor, flags: { "world.macro.spellUsed": spc }}); }
+  if (chromaR > 4 && chromaR <= 7) { flavor = flavor + chroma[chromaR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor, flags: { "pf2e.macro.spellUsed": spc }}); }
   if (chromaR === 8) {
     const flavor2 = flavor + chroma[chromaR-1].f;
-    await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor2, flags: { "world.macro.spellUsed": spc }});
+    await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor2, flags: { "pf2e.macro.spellUsed": spc }});
     if (critt === 3) {
       const chromaRR = (await new Roll('1d7').evaluate()).total;
       if (chromaRR < 5) { flavor = flavor + chroma[chromaRR-1].f; spc.roll = new DamageRoll(chroma[chromaRR-1].dd); }
-      if (chromaRR > 4) { flavor = flavor + chroma[chromaRR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor, flags: { "world.macro.spellUsed": spc }});}
+      if (chromaRR > 4) { flavor = flavor + chroma[chromaRR-1].f; await ChatMessage.create({speaker: ChatMessage.getSpeaker(), content: flavor, flags: { "pf2e.macro.spellUsed": spc }});}
   	}
   }
 }
@@ -240,7 +240,7 @@ if (critt >= 2) {
   }
   if (critt === 3 && spc.slug !== "chromatic-ray" && spc.isAttack) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }
   if ( spc.roll !== undefined ) {
-    await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker(), flags: { "world.macro.spellUsed": spc } });
+    await spc.roll.toMessage({ flavor: flavor, speaker: ChatMessage.getSpeaker(), flags: { "pf2e.macro.spellUsed": spc } });
   }
   else {
     await spc.spell.rollDamage(choices.event, choices.variant);
