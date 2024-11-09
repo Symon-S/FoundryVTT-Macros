@@ -45,8 +45,9 @@ async function main(html) {
         bmEffect.img = applicator.prototypeToken.texture.src;
         const isgodless = CheckFeat('godless-healing', token.actor); //godless healing affects the patient, not the healer
         const isForensic = CheckFeat('forensic-medicine-methodology', applicator);
+        const isRobust = CheckFeat('robust-health', token.actor);
 
-        if (isForensic || isgodless || bmBatonUsed) {
+        if (isForensic || isgodless || bmBatonUsed || isRobust) {
             bmEffect.system.duration.unit = "hours";
         }
 
