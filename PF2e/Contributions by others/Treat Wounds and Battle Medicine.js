@@ -644,7 +644,7 @@ const renderDialogContent = ({
     inCombat,
 }) => `
  <div>
-   HACKAD! Attempt to heal the target by 2d8 hp.<br>You have to hold healer's toolkit, or you are wearing them and have a hand free!<br>
+   Attempt to heal the target by 2d8 hp.<br>You have to hold healer's toolkit, or you are wearing them and have a hand free!<br>
    <small>Hover the options for more information.</small>
  </div>
  <hr/>
