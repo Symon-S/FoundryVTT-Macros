@@ -30,6 +30,7 @@ if (Object.keys(buttons).length > 1) {
     close: () => { return "close" }
   },{width});
 }
+else { choice = Object.keys(buttons)[0] }
 
 if ( choice === "close" ) { return ui.notifications.warn("You did not select a stance"); }
 
