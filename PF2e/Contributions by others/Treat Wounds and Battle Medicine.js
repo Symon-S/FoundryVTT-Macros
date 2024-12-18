@@ -22,6 +22,7 @@ This Macro works just like the system's Treat Wounds macro, except for the follo
 - Makes sure circumstance bonuses for robust health and medic dedication do not stack
 - Improved support for Chirurgeon, Natural Medicine and Spellstitcher
 - Add support for Proficiency Without Level
+- Add support for Right-Hand Blood
 */
 
 /**
@@ -72,14 +73,26 @@ function dsnHook(code) {
     }
 }
 
-const getRollOptions = ({ isRiskySurgery } = {}) => [
-    ...token.actor.getRollOptions(["all", "skill-check", "medicine"]),
-    "action:treat-wounds",
-    // This conditionally adds some elements to the available options
-    // If there are more cases like this, it might be good to rewrite this with
-    // if(...){....push(...)}
-    isRiskySurgery ? "risky-surgery" : "",
-];
+/**
+ * Retrieve roll options for treating wounds.
+ *
+ * @param {Object} options - Options for determining the roll.
+ * @param {boolean} options.isRiskySurgery - Whether risky surgery applies.
+ * @param {boolean} options.isRightHandBlood - Whether right-hand blood applies.
+ *
+ * @returns {string[]} - Array of roll options.
+ */
+function getRollOptions({ isRiskySurgery, isRightHandBlood } = {}) {
+    const options = [...token.actor.getRollOptions(["all", "skill-check", "medicine"]), "action:treat-wounds"];
+
+    if (isRiskySurgery) {
+        options.push("risky-surgery");
+    }
+    if (isRightHandBlood) {
+        options.push("right-hand-blood");
+    }
+    return options;
+}
 
 /* Get DamageRoll */
 const DamageRoll = CONFIG.Dice.rolls.find((R) => R.name === "DamageRoll");
@@ -99,6 +112,7 @@ const legendaryDC = game.pf2e?.settings?.variants?.pwol?.enabled ? 30 : 40;
  * @param {boolean} options.useMagicHands Actor uses the feat magic-hands
  * @param {boolean} options.useMortalHealing Actor uses the feat mortal healing
  * @param {boolean} options.isRiskySurgery Actor uses the feat risky surgery
+ * @param {boolean} options.isRightHandBlood Actor uses the feat right-hand blood
  * @param {string} options.bonusString Bonus String for this throw
  * @param {number} options.spellStitcherBonus Extra healing received from Spell Stitcher (Magus+)
  * @returns {{healFormula: string, successLabel: string}} Dice heal formula and success label
@@ -108,6 +122,7 @@ const getHealSuccess = ({
     useMagicHands,
     useMortalHealing,
     isRiskySurgery,
+    isRightHandBlood,
     bonusString,
     spellStitcherBonus,
 }) => {
@@ -174,6 +189,7 @@ const rollTreatWounds = async ({
     bonus,
     med,
     isRiskySurgery,
+    isRightHandBlood,
     useMortalHealing,
     useMagicHands,
     assurance,
@@ -198,7 +214,7 @@ const rollTreatWounds = async ({
 
     if (assurance) {
         const aroll = await new CheckRoll(
-            `10 + ${med.modifiers.find((m) => m.type === "proficiency").modifier}`,
+            `10 + ${med.modifiers.find((m) => m.type === "proficiency").modifier} + ${isRightHandBlood ? 1 : 0}`,
         ).roll();
         ChatMessage.create({
             user: game.user.id,
@@ -219,6 +235,7 @@ const rollTreatWounds = async ({
             useMagicHands,
             useMortalHealing,
             isRiskySurgery,
+            isRightHandBlood,
             bonusString,
             spellStitcherBonus,
         });
@@ -227,6 +244,12 @@ const rollTreatWounds = async ({
             await new DamageRoll("1d8[slashing]").toMessage({
                 speaker: ChatMessage.getSpeaker(),
                 flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
+            });
+        }
+        if (isRightHandBlood) {
+            await new DamageRoll("2d8").toMessage({
+                speaker: ChatMessage.getSpeaker(),
+                flavor: `<strong>Damage Roll: Right-Hand Blood</strong>`,
             });
         }
         let healRoll = 0;
@@ -266,14 +289,23 @@ const rollTreatWounds = async ({
             });
         }
     } else {
-        if (isRiskySurgery)
+        if (isRiskySurgery) {
             await actor.toggleRollOption(
                 "medicine",
                 "risky-surgery",
                 actor.items.find((x) => x.slug === "risky-surgery").id,
                 true,
             );
-        const extraRollOptions = getRollOptions({ isRiskySurgery });
+        }
+        if (isRightHandBlood) {
+            await actor.toggleRollOption(
+                "medicine",
+                "right-hand-blood",
+                actor.items.find((x) => x.slug === "right-hand-blood").id,
+                true,
+            );
+        }
+        const extraRollOptions = getRollOptions({ isRiskySurgery, isRightHandBlood });
         await med.roll({
             dc: dc,
             event: event,
@@ -291,6 +323,12 @@ const rollTreatWounds = async ({
                     await new DamageRoll("1d8[slashing]").toMessage({
                         speaker: ChatMessage.getSpeaker(),
                         flavor: `<strong>Damage Roll: Risky Surgery</strong>`,
+                    });
+                }
+                if (isRightHandBlood) {
+                    await new DamageRoll("1d8").toMessage({
+                        speaker: ChatMessage.getSpeaker(),
+                        flavor: `<strong>Damage Roll: Right-Hand Blood</strong>`,
                     });
                 }
                 let healRoll = 0;
@@ -335,13 +373,22 @@ const rollTreatWounds = async ({
                 }
             },
         });
-        if (isRiskySurgery)
+        if (isRiskySurgery) {
             await actor.toggleRollOption(
                 "medicine",
                 "risky-surgery",
                 actor.items.find((x) => x.slug === "risky-surgery").id,
                 false,
             );
+        }
+        if (isRightHandBlood) {
+            await actor.toggleRollOption(
+                "medicine",
+                "right-hand-blood",
+                actor.items.find((x) => x.slug === "right-hand-blood").id,
+                false,
+            );
+        }
     }
 };
 
@@ -381,10 +428,13 @@ async function applyChanges($html) {
         }
         const useHealingPlaster = $html.find('[name="useHealingPlaster"]')[0]?.checked;
         const useBuiltInTools = $html.find('[name="useBuiltInTools"]')[0]?.checked;
+        const useRightHandBlood = $html.find('[name="right_hand_blood_bool"]')[0]?.checked;
         if (useBuiltInTools) {
             // skip the following else/if.
-        } else if (!useBattleMedicine && useHealingPlaster === false) {
-            ui.notifications.warn(`You can't ${bmtw} without Healer's Tools or a Healing Plaster.`);
+        } else if (!useBattleMedicine && (useHealingPlaster === false || !useRightHandBlood)) {
+            ui.notifications.warn(
+                `You can't ${bmtw} without Healer's Tools, a Healing Plaster, or having used Right-Hand Blood.`,
+            );
             continue;
         } else if (useBattleMedicine && useHealingPlaster !== undefined) {
             ui.notifications.warn(`You can't use ${bmtw} without Healer's Tools.`);
@@ -398,6 +448,7 @@ async function applyChanges($html) {
         const hasMedicDedication = checkFeat("medic-dedication");
         // Risky Surgery does not apply when Battle Medicine is used.
         const isRiskySurgery = !useBattleMedicine && $html.find('[name="risky_surgery_bool"]')[0]?.checked;
+        const isRightHandBlood = !useBattleMedicine && $html.find('[name="right_hand_blood_bool"]')[0]?.checked;
         // Mortal Healing does not apply when Battle Medicine is used.
         const useMortalHealing = !useBattleMedicine && $html.find('[name="mortal_healing_bool"]')[0]?.checked;
         // Magic Hands do not apply when Battle Medicine is used.
@@ -558,6 +609,7 @@ async function applyChanges($html) {
                             magicHandsStatusBonus,
                         med: skillUsed,
                         isRiskySurgery,
+                        isRightHandBlood,
                         useMortalHealing,
                         useMagicHands,
                         assurance,
@@ -580,6 +632,7 @@ async function applyChanges($html) {
                             magicHandsStatusBonus,
                         med: skillUsed,
                         isRiskySurgery,
+                        isRightHandBlood,
                         useMortalHealing,
                         useMagicHands,
                         assurance,
@@ -602,6 +655,7 @@ async function applyChanges($html) {
                             magicHandsStatusBonus,
                         med: skillUsed,
                         isRiskySurgery,
+                        isRightHandBlood,
                         useMortalHealing,
                         useMagicHands,
                         assurance,
@@ -624,6 +678,7 @@ async function applyChanges($html) {
                             magicHandsStatusBonus,
                         med: skillUsed,
                         isRiskySurgery,
+                        isRightHandBlood,
                         useMortalHealing,
                         useMagicHands,
                         assurance,
@@ -787,6 +842,16 @@ const renderDialogContent = ({
          : ``
  }
  ${
+     checkFeat("right-hand-blood")
+         ? `<form>
+         <div class="form-group">
+           <label title"Will not be applied when using Battle Medicine.">Right-Hand Blood</label>
+           <input type="checkbox" id="right_hand_bool" name="right_hand_blood_bool"></input>
+         </div>
+       </form>`
+         : ``
+ }
+ ${
      game.user.isGM
          ? `<form>
          <div class="form-group">
@@ -922,6 +987,16 @@ function EnableDisable(html) {
         if (html.find("#useBattleMedicine")[0].value === "1") {
             html.find("#risky_surgery_bool")[0].checked = false;
             html.find("#risky_surgery_bool")[0].disabled = true;
-        } else html.find("#risky_surgery_bool")[0].disabled = false;
+        } else {
+            html.find("#risky_surgery_bool")[0].disabled = false;
+        }
+    }
+    if (html.find("#right_hand_blood_bool").length !== 0) {
+        if (html.find("#useBattleMedicine")[0].value === "1") {
+            html.find("#right_hand_blood_bool")[0].checked = false;
+            html.find("#right_hand_blood_bool")[0].disabled = true;
+        } else {
+            html.find("#right_hand_blood_bool")[0].disabled = false;
+        }
     }
 }
