@@ -20,6 +20,8 @@ This Macro works just like the system's Treat Wounds macro, except for the follo
 - Adds automated robust health integration
 - Fix for Foundry 6.7.2 (removes alternate dc support)
 - Makes sure circumstance bonuses for robust health and medic dedication do not stack
+- Improved support for Chirurgeon, Natural Medicine and Spellstitcher
+- Add support for Proficiency Without Level
 */
 
 /**
@@ -82,6 +84,12 @@ const getRollOptions = ({ isRiskySurgery } = {}) => [
 /* Get DamageRoll */
 const DamageRoll = CONFIG.Dice.rolls.find((R) => R.name === "DamageRoll");
 const CheckRoll = CONFIG.Dice.rolls.find((R) => R.name === "CheckRoll");
+
+/* Set DCs */
+const normalDC = 15;
+const expertDC = 20;
+const masterDC = game.pf2e?.settings?.variants?.pwol?.enabled ? 25 : 30;
+const legendaryDC = game.pf2e?.settings?.variants?.pwol?.enabled ? 30 : 40;
 
 /**
  * Get the formula for healing and the success label
@@ -339,16 +347,32 @@ const rollTreatWounds = async ({
 
 async function applyChanges($html) {
     for (const token of canvas.tokens.controlled) {
-        var med = token.actor.skills.medicine;
+        const useBattleMedicine = parseInt($html.find('[name="useBattleMedicine"]')[0]?.value) === 1;
+        let skillUsed = token.actor.skills.medicine;
+        const hasChirurgeon = checkFeat("chirurgeon");
+        const hasNaturalMedicine = checkFeat("natural-medicine");
+        const hasSpellStitcher = checkFeat("spell-stitcher"); /// < From Magus+, allows using Arcana for actions that normally require Medicine
 
-        if (!med) {
+        if (hasChirurgeon) {
+            skillUsed = token.actor.skills.crafting;
+        }
+
+        if (hasSpellStitcher) {
+            skillUsed = token.actor.skills.arcana;
+        }
+
+        if (hasNaturalMedicine && !useBattleMedicine) {
+            skillUsed = token.actor.skills.nature;
+        }
+
+        if (!skillUsed) {
             ui.notifications.warn(`Token ${token.name} does not have the medicine skill`);
             continue;
         }
         const hasWardMedic = checkFeat("ward-medic");
-        const useBattleMedicine = parseInt($html.find('[name="useBattleMedicine"]')[0]?.value) === 1;
         const bmtw = useBattleMedicine ? "Battle Medicine" : "Treat Wounds";
-        const maxTargets = useBattleMedicine ? 1 : hasWardMedic ? 2 ** (med.rank - 1) : 1;
+
+        const maxTargets = useBattleMedicine ? 1 : hasWardMedic ? 2 ** (skillUsed.rank - 1) : 1;
         if (game.user.targets.size > maxTargets) {
             ui.notifications.warn(
                 `Too many targets (${game.user.targets.size}) for ${bmtw}. You can select a maximum of ${maxTargets} targets.`,
@@ -418,18 +442,18 @@ async function applyChanges($html) {
         // Handle Rule Interpretation
 
         let usedProf = 0;
-        usedProf = requestedProf <= med.rank ? requestedProf : med.rank;
+        usedProf = requestedProf <= skillUsed.rank ? requestedProf : skillUsed.rank;
         if (skill === "cra") {
-            med = token.actor.skills.crafting;
+            skillUsed = token.actor.skills.crafting;
         }
         if (skill === "arc") {
-            med = token.actor.skills.arcana;
+            skillUsed = token.actor.skills.arcana;
             if (usedProf === 0) {
                 usedProf = 1;
             }
         }
         if (skill === "nat") {
-            med = token.actor.skills.nature;
+            skillUsed = token.actor.skills.nature;
             if (usedProf === 0) {
                 usedProf = 1;
             }
@@ -526,13 +550,13 @@ async function applyChanges($html) {
                     break;
                 case 1:
                     rollTreatWounds({
-                        DC: 15 + mod,
+                        DC: normalDC + mod,
                         bonus:
                             Math.max(robustHealthCircumstanceBonus, medicCircumstanceBonus) +
                             godlessHealingUntypedBonus +
                             forensicUsesBattleMedicineUntypedBonus +
                             magicHandsStatusBonus,
-                        med,
+                        med: skillUsed,
                         isRiskySurgery,
                         useMortalHealing,
                         useMagicHands,
@@ -547,14 +571,14 @@ async function applyChanges($html) {
                     break;
                 case 2:
                     rollTreatWounds({
-                        DC: 20 + mod,
+                        DC: expertDC + mod,
                         bonus:
                             10 +
                             Math.max(robustHealthCircumstanceBonus, medicCircumstanceBonus) +
                             godlessHealingUntypedBonus +
                             forensicUsesBattleMedicineUntypedBonus +
                             magicHandsStatusBonus,
-                        med,
+                        med: skillUsed,
                         isRiskySurgery,
                         useMortalHealing,
                         useMagicHands,
@@ -569,14 +593,14 @@ async function applyChanges($html) {
                     break;
                 case 3:
                     rollTreatWounds({
-                        DC: 30 + mod,
+                        DC: masterDC + mod,
                         bonus:
                             30 +
                             Math.max(robustHealthCircumstanceBonus, medicCircumstanceBonus) +
                             godlessHealingUntypedBonus +
                             forensicUsesBattleMedicineUntypedBonus +
                             magicHandsStatusBonus,
-                        med,
+                        med: skillUsed,
                         isRiskySurgery,
                         useMortalHealing,
                         useMagicHands,
@@ -591,14 +615,14 @@ async function applyChanges($html) {
                     break;
                 case 4:
                     rollTreatWounds({
-                        DC: 40 + mod,
+                        DC: legendaryDC + mod,
                         bonus:
                             50 +
                             Math.max(robustHealthCircumstanceBonus, medicCircumstanceBonus) +
                             godlessHealingUntypedBonus +
                             forensicUsesBattleMedicineUntypedBonus +
                             magicHandsStatusBonus,
-                        med,
+                        med: skillUsed,
                         isRiskySurgery,
                         useMortalHealing,
                         useMagicHands,
@@ -675,10 +699,10 @@ const renderDialogContent = ({
          <div class="form-group">
          <label title="Select the skill you want to use.">Treat Wounds Skill:</label>
            <select id="skill" name="skill">
-             ${tmed ? `<option value="med">Medicine</option>` : ``}
              ${hasChirurgeon ? `<option value="cra">Crafting</option>` : ``}
              ${hasNaturalMedicine ? `<option value="nat">Nature</option>` : ``}
              ${hasSpellStitcher ? `<option value="arc">Arcana</option>` : ``}
+             ${tmed ? `<option value="med">Medicine</option>` : ``}
            </select>
          </div>
        </form>`
@@ -722,15 +746,15 @@ const renderDialogContent = ({
      <div class="form-group">
          <label title="Select a target DC. Remember that you can't attempt a heal above your proficiency. Attempting to do so will downgrade the DC and amount healed to the highest you're capable of.">Medicine DC:</label>
          <select id="dc-type" name="dc-type">
-             <option value="1" selected>Trained DC 15</option>
+             <option value="1" selected>Trained DC ${normalDC}</option>
          ${
              checkFeat("medic-dedication")
-                 ? ` <option value="2">Expert DC 20, +15 Healing</option>
-                 <option value="3">Master DC 30, +40 Healing</option>
-                 <option value="4">Legendary DC 40, +65 Healing</option>`
-                 : ` <option value="2">Expert DC 20, +10 Healing</option>
-                 <option value="3">Master DC 30, +30 Healing</option>
-                 <option value="4">Legendary DC 40, +50 Healing</option>`
+                 ? ` <option value="2">Expert DC ${expertDC}, +15 Healing</option>
+                 <option value="3">Master DC ${masterDC}, +40 Healing</option>
+                 <option value="4">Legendary DC ${legendaryDC}, +65 Healing</option>`
+                 : ` <option value="2">Expert DC ${expertDC}, +10 Healing</option>
+                 <option value="3">Master DC ${masterDC}, +30 Healing</option>
+                 <option value="4">Legendary DC ${legendaryDC}, +50 Healing</option>`
          }
          </select>
      </div>
