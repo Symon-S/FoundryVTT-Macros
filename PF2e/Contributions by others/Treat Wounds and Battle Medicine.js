@@ -23,6 +23,8 @@ This Macro works just like the system's Treat Wounds macro, except for the follo
 - Improved support for Chirurgeon, Natural Medicine and Spellstitcher
 - Add support for Proficiency Without Level
 - Add support for Right-Hand Blood
+- Removed use of non-existant 'apply immunity' macros
+- Temporarily disabled enforcing that healing toolkit etc is held
 */
 
 /**
@@ -181,13 +183,12 @@ const getHealSuccess = ({
  * @param {number} options.bmtw bmtw
  * @param {Object} options.target current target
  * @param {Object} options.immunityEffect the immunity effect
- * @param {string} options.immunityMacroLink the immunity Macro Link
  * @param {number} options.spellStitcherBonus The bonus healing received from Spell Stitcher (Magus+)
  */
 const rollTreatWounds = async ({
     DC,
     bonus,
-    med,
+    skillUsed,
     isRiskySurgery,
     isRightHandBlood,
     useMortalHealing,
@@ -196,7 +197,6 @@ const rollTreatWounds = async ({
     bmtw,
     target,
     immunityEffect,
-    immunityMacroLink,
     usedBattleMedicsBaton,
     spellStitcherBonus,
 }) => {
@@ -210,17 +210,17 @@ const rollTreatWounds = async ({
         };
     }
     const bonusString = bonus > 0 ? ` + ${bonus}` : "";
-    const immunityMessage = `<strong>${target.name}</strong> is now immune to ${immunityEffect.name} for ${immunityEffect.system.duration.value} ${immunityEffect.system.duration.unit}.<br>${immunityMacroLink}`;
+    const immunityMessage = `<strong>${target.name}</strong> is now immune to ${immunityEffect.name} for ${immunityEffect.system.duration.value} ${immunityEffect.system.duration.unit}.`;
 
     if (assurance) {
         const aroll = await new CheckRoll(
-            `10 + ${med.modifiers.find((m) => m.type === "proficiency").modifier} + ${isRightHandBlood ? 1 : 0}`,
+            `10 + ${skillUsed.modifiers.find((m) => m.type === "proficiency").modifier} + ${isRightHandBlood ? 1 : 0}`,
         ).roll();
         ChatMessage.create({
             user: game.user.id,
             type: CONST.CHAT_MESSAGE_TYPES.ROLL,
             flavor: `<strong>Assurance Roll: ${
-                med.label[0].toUpperCase() + med.label.substring(1)
+                skillUsed.label[0].toUpperCase() + skillUsed.label.substring(1)
             }</strong> vs DC ${DC}<br><small>Do not apply any other bonuses, penalties, or modifiers</small><br>`,
             roll: aroll,
             speaker: ChatMessage.getSpeaker(),
@@ -306,7 +306,7 @@ const rollTreatWounds = async ({
             );
         }
         const extraRollOptions = getRollOptions({ isRiskySurgery, isRightHandBlood });
-        await med.roll({
+        await skillUsed.roll({
             dc: dc,
             event: event,
             extraRollOptions,
@@ -326,7 +326,7 @@ const rollTreatWounds = async ({
                     });
                 }
                 if (isRightHandBlood) {
-                    await new DamageRoll("1d8").toMessage({
+                    await new DamageRoll("2d8").toMessage({
                         speaker: ChatMessage.getSpeaker(),
                         flavor: `<strong>Damage Roll: Right-Hand Blood</strong>`,
                     });
@@ -394,7 +394,9 @@ const rollTreatWounds = async ({
 
 async function applyChanges($html) {
     for (const token of canvas.tokens.controlled) {
-        const useBattleMedicine = parseInt($html.find('[name="useBattleMedicine"]')[0]?.value) === 1;
+        const dropdown = $html.find('[name="useBattleMedicine"]');
+        // const selectedOption = dropdown[0]?.options[dropdown[0]?.selectedIndex]?.value;
+        const useBattleMedicine = parseInt(dropdown[0]?.value) === 1;
         let skillUsed = token.actor.skills.medicine;
         const hasChirurgeon = checkFeat("chirurgeon");
         const hasNaturalMedicine = checkFeat("natural-medicine");
@@ -426,20 +428,28 @@ async function applyChanges($html) {
             );
             continue;
         }
-        const useHealingPlaster = $html.find('[name="useHealingPlaster"]')[0]?.checked;
-        const useBuiltInTools = $html.find('[name="useBuiltInTools"]')[0]?.checked;
-        const useRightHandBlood = $html.find('[name="right_hand_blood_bool"]')[0]?.checked;
-        if (useBuiltInTools) {
-            // skip the following else/if.
-        } else if (!useBattleMedicine && (useHealingPlaster === false || !useRightHandBlood)) {
-            ui.notifications.warn(
-                `You can't ${bmtw} without Healer's Tools, a Healing Plaster, or having used Right-Hand Blood.`,
-            );
-            continue;
-        } else if (useBattleMedicine && useHealingPlaster !== undefined) {
-            ui.notifications.warn(`You can't use ${bmtw} without Healer's Tools.`);
-            continue;
-        }
+
+        // Temporarily disabled checking for tools
+        // const useHealingPlaster = $html.find("[name=\"useHealingPlaster\"]")[0]?.checked;
+        // const useBuiltInTools = $html.find("[name=\"useBuiltInTools\"]")[0]?.checked;
+        // const useRightHandBlood = $html.find("[name=\"right_hand_blood_bool\"]")[0]?.checked;
+        // if (!useBuiltInTools) {
+        //     const twWithoutTools = !useBattleMedicine && (useHealingPlaster === false || useRightHandBlood === true);
+        //     const bmWithoutTools = useBattleMedicine && useHealingPlaster !== undefined;
+        //     console.log(
+        //         `Twt: ${twWithoutTools}, BMt: ${bmWithoutTools}, HP: ${useHealingPlaster}, RB: ${useRightHandBlood}, BM: ${useBattleMedicine}`)
+        //     if (twWithoutTools) {
+        //         ui.notifications.warn(
+        //             `You can't Treat Wounds without Healer's Tools, a Healing Plaster, or having used Right-Hand Blood.`
+        //         );
+        //         continue;
+        //     } else {
+        //         if (bmWithoutTools) {
+        //             ui.notifications.warn(`You can't use Battle Medicine without Healer's Tools.`);
+        //             continue;
+        //         }
+        //     }
+        // }
         const { name } = token;
         const level = token.actor.system.details.level.value;
         const mod = parseInt($html.find('[name="modifier"]').val()) || 0;
@@ -459,17 +469,6 @@ async function applyChanges($html) {
         const bmUUID = "Compendium.pf2e.feat-effects.2XEYQNZTCGpdkyR6";
         const twUUID = "Compendium.pf2e.feat-effects.Lb4q2bBAgxamtix5";
         const immunityEffectUUID = useBattleMedicine ? bmUUID : twUUID;
-        let immunityMacroLink = ``;
-        if (game.modules.has("xdy-pf2e-workbench") && game.modules.get("xdy-pf2e-workbench").active) {
-            // Extract the Macro ID from the asynomous benefactor macro compendium.
-            const macroName = useBattleMedicine ? `BM Immunity CD` : `TW Immunity CD`;
-            const macroId = (await game.packs.get("xdy-pf2e-workbench.asymonous-benefactor-macros")).index.find(
-                (n) => n.name === macroName,
-            )?._id;
-            immunityMacroLink = `@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Apply ${bmtw} Immunity}`;
-        } else {
-            ui.notifications.warn(`Workbench Module not active! Linking Immunity effect Macro not possible.`);
-        }
         const forensicMedicine = checkFeat("forensic-medicine-methodology");
 
         let spellStitcherUntypedBonus = 0;
@@ -607,7 +606,7 @@ async function applyChanges($html) {
                             godlessHealingUntypedBonus +
                             forensicUsesBattleMedicineUntypedBonus +
                             magicHandsStatusBonus,
-                        med: skillUsed,
+                        skillUsed,
                         isRiskySurgery,
                         isRightHandBlood,
                         useMortalHealing,
@@ -616,7 +615,6 @@ async function applyChanges($html) {
                         bmtw,
                         target,
                         immunityEffect,
-                        immunityMacroLink,
                         usedBattleMedicsBaton,
                         spellStitcherBonus: spellStitcherUntypedBonus,
                     });
@@ -630,7 +628,7 @@ async function applyChanges($html) {
                             godlessHealingUntypedBonus +
                             forensicUsesBattleMedicineUntypedBonus +
                             magicHandsStatusBonus,
-                        med: skillUsed,
+                        skillUsed,
                         isRiskySurgery,
                         isRightHandBlood,
                         useMortalHealing,
@@ -639,7 +637,6 @@ async function applyChanges($html) {
                         bmtw,
                         target,
                         immunityEffect,
-                        immunityMacroLink,
                         usedBattleMedicsBaton,
                         spellStitcherBonus: spellStitcherUntypedBonus,
                     });
@@ -653,7 +650,7 @@ async function applyChanges($html) {
                             godlessHealingUntypedBonus +
                             forensicUsesBattleMedicineUntypedBonus +
                             magicHandsStatusBonus,
-                        med: skillUsed,
+                        skillUsed,
                         isRiskySurgery,
                         isRightHandBlood,
                         useMortalHealing,
@@ -662,7 +659,6 @@ async function applyChanges($html) {
                         bmtw,
                         target,
                         immunityEffect,
-                        immunityMacroLink,
                         usedBattleMedicsBaton,
                         spellStitcherBonus: spellStitcherUntypedBonus,
                     });
@@ -676,7 +672,7 @@ async function applyChanges($html) {
                             godlessHealingUntypedBonus +
                             forensicUsesBattleMedicineUntypedBonus +
                             magicHandsStatusBonus,
-                        med: skillUsed,
+                        skillUsed,
                         isRiskySurgery,
                         isRightHandBlood,
                         useMortalHealing,
@@ -685,7 +681,6 @@ async function applyChanges($html) {
                         bmtw,
                         target,
                         immunityEffect,
-                        immunityMacroLink,
                         usedBattleMedicsBaton,
                         spellStitcherBonus: spellStitcherUntypedBonus,
                     });
@@ -716,8 +711,8 @@ const renderDialogContent = ({
     hasSpellStitcher,
     tmed,
     totalAssurance,
-    hasHealersTools,
-    hasHealersToolsHeld,
+    hasHealersToolkit,
+    hasHealersToolkitHeld,
     batonUsed,
     hasBattleMedicsBatonHeld,
     inCombat,
@@ -728,7 +723,7 @@ const renderDialogContent = ({
  </div>
  <hr/>
  ${
-     !hasHealersTools
+     !hasHealersToolkit
          ? `<b>You don't have healer's toolkit on your character!</b>
        ${
            checkItemTypeFeat("built-in-tools")
@@ -870,7 +865,7 @@ const renderDialogContent = ({
          : ``
  }
  ${
-     !hasHealersToolsHeld
+     !hasHealersToolkitHeld
          ? `<b>Note: To gain the bonus of Healer's toolkit (if any), you have to set the Healer's toolkit to be WORN, due to how the item is implemented in the pf2e core system.</b>`
          : ``
  }
@@ -918,7 +913,7 @@ if (canvas.tokens.controlled.length !== 1) {
         ) {
             bmtw_skill = token.actor.skills.arcana;
         }
-        const hasHealersTools =
+        const hasHealersToolkit =
             checkItemPresent("healer-s-toolkit") ||
             checkItemPresent("healers-toolkit") ||
             checkItemPresent("healers-toolkit-expanded") ||
@@ -927,8 +922,8 @@ if (canvas.tokens.controlled.length !== 1) {
             checkItemPresent("marvelous-medicines-greater") ||
             checkItemPresent("medkit-commercial") ||
             checkItemPresent("medkit-tactical");
-        const hasHealersToolsHeld =
-            !hasHealersTools ||
+        const hasHealersToolkitHeld =
+            !hasHealersToolkit ||
             checkItemPresent("healer-s-toolkit", 0) ||
             checkItemPresent("healers-toolkit", 0) ||
             checkItemPresent("healers-toolkit-expanded", 0) ||
@@ -954,8 +949,8 @@ if (canvas.tokens.controlled.length !== 1) {
                 hasSpellStitcher,
                 tmed,
                 totalAssurance,
-                hasHealersTools,
-                hasHealersToolsHeld,
+                hasHealersToolkit,
+                hasHealersToolkitHeld,
                 batonUsed,
                 hasBattleMedicsBatonHeld,
                 inCombat,
