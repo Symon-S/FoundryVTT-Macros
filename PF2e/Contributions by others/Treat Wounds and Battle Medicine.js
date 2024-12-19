@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 /*
 Originally contributed by Mother of God.
 Updated and maintained by darkim.
@@ -24,7 +25,8 @@ This Macro works just like the system's Treat Wounds macro, except for the follo
 - Add support for Proficiency Without Level
 - Add support for Right-Hand Blood
 - Removed use of non-existant 'apply immunity' macros
-- Temporarily disabled enforcing that healing toolkit etc is held
+- Re-enabled enforcing that healing toolkit etc is held
+- Disallow Treat Wounds in combat
 */
 
 /**
@@ -429,27 +431,27 @@ async function applyChanges($html) {
             continue;
         }
 
-        // Temporarily disabled checking for tools
-        // const useHealingPlaster = $html.find("[name=\"useHealingPlaster\"]")[0]?.checked;
-        // const useBuiltInTools = $html.find("[name=\"useBuiltInTools\"]")[0]?.checked;
-        // const useRightHandBlood = $html.find("[name=\"right_hand_blood_bool\"]")[0]?.checked;
-        // if (!useBuiltInTools) {
-        //     const twWithoutTools = !useBattleMedicine && (useHealingPlaster === false || useRightHandBlood === true);
-        //     const bmWithoutTools = useBattleMedicine && useHealingPlaster !== undefined;
-        //     console.log(
-        //         `Twt: ${twWithoutTools}, BMt: ${bmWithoutTools}, HP: ${useHealingPlaster}, RB: ${useRightHandBlood}, BM: ${useBattleMedicine}`)
-        //     if (twWithoutTools) {
-        //         ui.notifications.warn(
-        //             `You can't Treat Wounds without Healer's Tools, a Healing Plaster, or having used Right-Hand Blood.`
-        //         );
-        //         continue;
-        //     } else {
-        //         if (bmWithoutTools) {
-        //             ui.notifications.warn(`You can't use Battle Medicine without Healer's Tools.`);
-        //             continue;
-        //         }
-        //     }
-        // }
+        const useHealingPlaster = $html.find('[name="useHealingPlaster"]')[0]?.checked;
+        const useBuiltInTools = $html.find('[name="useBuiltInTools"]')[0]?.checked;
+        const useRightHandBlood = $html.find('[name="right_hand_blood_bool"]')[0]?.checked;
+        if (!useBuiltInTools) {
+            const twWithoutTools = !useBattleMedicine && (useHealingPlaster === false || useRightHandBlood === true);
+            const bmWithoutTools = useBattleMedicine && useHealingPlaster !== undefined;
+            console.log(
+                `Twt: ${twWithoutTools}, BMt: ${bmWithoutTools}, HP: ${useHealingPlaster}, RB: ${useRightHandBlood}, BM: ${useBattleMedicine}`,
+            );
+            if (twWithoutTools) {
+                ui.notifications.warn(
+                    `You can't Treat Wounds without Healer's Tools, a Healing Plaster, or having used Right-Hand Blood.`,
+                );
+                continue;
+            } else {
+                if (bmWithoutTools) {
+                    ui.notifications.warn(`You can't use Battle Medicine without Healer's Tools.`);
+                    continue;
+                }
+            }
+        }
         const { name } = token;
         const level = token.actor.system.details.level.value;
         const mod = parseInt($html.find('[name="modifier"]').val()) || 0;
@@ -761,7 +763,7 @@ const renderDialogContent = ({
  <form>
      <div class="form-group">
          <select id="useBattleMedicine" name="useBattleMedicine">
-             <option value="0">Treat Wounds</option>
+             ${!inCombat ? `<option value="0">Treat Wounds</option>` : ""}
              ${hasBattleMedicine ? `<option value="1" ${inCombat ? "selected" : ""}>Battle Medicine</option>` : ""}
          </select>
      </div>
@@ -958,7 +960,7 @@ if (canvas.tokens.controlled.length !== 1) {
             buttons: {
                 yes: {
                     icon: `<i class="fas fa-hand-holding-medical"></i>`,
-                    label: "Treat Wounds",
+                    label: "Use selected action",
                     callback: applyChanges,
                 },
                 no: {
@@ -970,6 +972,10 @@ if (canvas.tokens.controlled.length !== 1) {
                 html.find("#useBattleMedicine").on("change", function () {
                     EnableDisable(html);
                 });
+                if (inCombat && !hasBattleMedicine) {
+                    html.find("button:contains('Use selected action')").attr("disabled", true).text("Disabled as neither Treat Wounds nor Battle Medicine is available");
+                    html.find("#useBattleMedicine").attr("disabled", true);
+                }
             },
             default: "yes",
         });
