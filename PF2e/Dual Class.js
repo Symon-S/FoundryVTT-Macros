@@ -1,18 +1,23 @@
 /*
 This is a macro designed to facilitate building a dual class item for the Dual Class Variant Rule.
-Simply select your 2 classes and the macro will create an item you can drag and drop onto your character sheet.
+Simply select your 2 classes (kineticist and probably inventor and thaumaturge as well should be selected in the first box) and the macro will create an item you can drag and drop onto your character sheet.
 This will need to be run by a GM or someone with the ability to create items in the system.
 Look for the created class item in the items tab.
+Has support for Battlezoo Eldamon (https://battlezoo.com/collections/battlezoo-eldamon) as well as pf2e system classes.
 */
 
-const packKeys = ["pf2e.classes"] //array of pack key strings
+const packKeys = ["pf2e.classes", "battlezoo-eldamon-pf2e.classes"]; //array of pack key strings
 const classesData = [] //array of classData that will be built from the array of packs
 const clPacks = game.packs.filter( p => packKeys.includes(p.collection) )
 for ( const pack of clPacks ) { classesData.push(...(await pack.getIndex())) }
 if ( classesData.some(t => t.type !== "class") ) return void ui.notifications.warn("One of the inputted packKeys is not a classes Compendium");
-const classes = classesData.map( n => n.name );
+const classes = classesData.map(n => n.name).sort();
 const qDData = [
-  { label: `Choose your 1st Class : `, type: `select`, options: classes },
+  {
+    label: `Choose your 1st Class (Kineticist must go here, probably Inventor and Thaumaturge as well) : `,
+    type: `select`,
+    options: classes
+  },
   { label: `Choose your 2nd Class : `, type: `select`, options: classes }
 ];
 
@@ -125,7 +130,7 @@ class2.system.trainedSkills.value.forEach(v => {
 dClass.img = "systems/pf2e/icons/spells/guidance.webp";
 
 await Item.create(dClass);
-ui.notifications.info(`A new item called ${dClass.name} has been created in the game's items tab. Drag and drop to an actor sheet to create a Dual Class Character. System's Dual Class variant must be enabled for this to work properly.`);
+ui.notifications.info(`A new class item called ${dClass.name} has been created in the game's items tab. Drag and drop to an actor sheet to create a Dual Class Character. System's Dual Class variant must be enabled for this to work properly.`);
 
 async function quickDialog({ data, title = `Quick Dialog` } = {}) {
   data = data instanceof Array ? data : [data];
