@@ -146,7 +146,7 @@ if (spc.isSave) {
 }
 
 let persistentD;
-if (spc.slug === "acid-splash" && critt === 3) {
+if (["acid-splash","caustic-blast"].includes(spc.slug) && critt === 3) {
   if(spc.castRank < 3) { persistentD = new DamageRoll(`1[persistent,acid]`) }
   else if(spc.castRank > 2 && spc.castRank < 5) { persistentD = new DamageRoll(`2[persistent,acid]`) }
   else if(spc.castRank > 4 && spc.castRank < 7) { persistentD = new DamageRoll(`3[persistent,acid]`) }
@@ -488,6 +488,7 @@ async function spellList(actor, sbs) {
         const spellChatData = await spell.getChatData({}, {groupId: group.id});
         const isStrikeable = await allowed(spell, spellChatData) && actionsAllowed.test(spell.system.time?.value) && !blacklist.has(spell.slug);
         const {castRank, isAttack, isSave, description, save, slug, traits, hasDamage} = spellChatData;
+        console.log(isStrikeable,spell.name)
 
         let rank = `Rank ${castRank}`
         if(spellData.isPrepared) {
