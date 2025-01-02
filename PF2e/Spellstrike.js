@@ -459,11 +459,11 @@ async function spellList(actor, sbs) {
   // Most harmful spells that target a creature are attacks, but some aren't.  These are they:
   const undead = [...game.user.targets.values()].some(t => t.actor.traits.has('undead'));
   if (!undead) {
-    blacklist.add('heal');
     blacklist.add("possession");
+    blacklist.add("heal");
   }
   // Don't allow healing damage spells, unless they are also vitality and there is an undead target
-  const healing = (spell, data) => data.damage?.[0]?.kinds.has('healing') && !data.damage?.[0]?.kinds.has("damage") &&
+  const healing = (spell, data) => spell.traits.has("healing") && !data.damage?.[0]?.kinds?.has("damage") &&
     !(undead && spell.traits.has('vitality'));
 
   // Spells that ESS allows us to use, beyond spell attacks
@@ -486,7 +486,7 @@ async function spellList(actor, sbs) {
         if (active === null) { continue; }
         const spell = active.spell;
         const spellChatData = await spell.getChatData({}, {groupId: group.id});
-        const isStrikeable = allowed(spell, spellChatData) && actionsAllowed.test(spell.system.time?.value) && !blacklist.has(spell.slug);
+        const isStrikeable = await allowed(spell, spellChatData) && actionsAllowed.test(spell.system.time?.value) && !blacklist.has(spell.slug);
         const {castRank, isAttack, isSave, description, save, slug, traits, hasDamage} = spellChatData;
 
         let rank = `Rank ${castRank}`
