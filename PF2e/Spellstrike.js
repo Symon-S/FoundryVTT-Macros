@@ -17,7 +17,6 @@ if (game.user.targets.size > 1) { return void ui.notifications.warn('Spellstrike
 if (!token.actor.itemTypes.feat.some(e => ["spellstriker","spellstrike"].includes(e.slug))) {
   return void ui.notifications.warn('Does not have Spellstrike.');
 }
-const ess = token.actor.itemTypes.feat.some(f => f.slug === 'expansive-spellstrike');
 
 const DamageRoll = CONFIG.Dice.rolls.find(((R) => R.name === "DamageRoll"));
 
@@ -47,7 +46,7 @@ if (token.actor.itemTypes.feat.some(f => f.slug === 'standby-spell')) {
   }
 }
 
-let spells = await spellList(actor, sbs, ess);
+let spells = await spellList(actor, sbs);
 spells = spells.filter(s => !s.isExpended && !s.isUseless);
 if (spells.length === 0) { return void ui.notifications.info("You have no spells available"); }
 
@@ -413,38 +412,40 @@ async function SSDialog(actor, spells, sbs, reroll) {
 // Return list of actor's spells.  Each object has a bunch of fields, which include:
 // isStrikeable: Can be used with spellstrike
 // standbyExpendable: Slot can be expended when using StandbySpell
-async function spellList(actor, sbs, ess) {
+async function spellList(actor, sbs) {
   // A bunch of these should be excluded because they are not AoE spells, but there area bunch of AoE spells
   // with multiple area choices and the system encodes these as no area, so we consider no area as AoE and then
   // fix the mistakes with this list.
   const blacklist = new Set([
     "celestial-accord",
     "shattering-gem",
-    "entangle-fate",
-    "behold-the-weave",
-    "compel-true-name",
+    //"entangle-fate",
+    //"behold-the-weave",
+    //"compel-true-name",
+    "force-barrage",
+    "force-fang",
     "foul-miasma",
-    "invoke-the-harrow",
-    "rewrite-memory",
-    "subconscious-suggestion",
-    "excise-lexicon",
-    "enthrall",
-    "mind-reading",
+    //"invoke-the-harrow",
+    //"rewrite-memory",
+    //"subconscious-suggestion",
+    //"excise-lexicon",
+    //"enthrall",
+    //"mind-reading",
     "mirecloak",
     "mask-of-terror",
     "hallucination",
     "hyperfocus",
     "pact-broker",
     "death-knell",
-    "sudden-recollection",
+    //"sudden-recollection",
     "favorable-review",
-    "litany-of-self-interest",
-    "suggestion",
-    "command",
-    "déjà-vu",
-    "charming-touch",
-    "charm",
-    "possession",
+    //"litany-of-self-interest",
+    //"suggestion",
+    //"command",
+    //"déjà-vu",
+    //"charming-touch",
+    //"charm",
+    //"possession",
     "cornucopia",
     "delay-affliction",
     "heal-companion",
@@ -456,20 +457,22 @@ async function spellList(actor, sbs, ess) {
 
   // ESS, in addition to AoE spells, extends "spell attacks" to "harmful spells that target a creature".
   // Most harmful spells that target a creature are attacks, but some aren't.  These are they:
-  const harmfulNonAttacks = new Set(['force-barrage', 'force-fang']);
   const undead = [...game.user.targets.values()].some(t => t.actor.traits.has('undead'));
-  if (undead) harmfulNonAttacks.add('heal');
+  if (!undead) {
+    blacklist.add('heal');
+    blacklist.add("possession");
+  }
   // Don't allow healing damage spells, unless they are also vitality and there is an undead target
-  const healing = (spell, data) => data.damage?.[0]?.kinds.has('healing') &&
+  const healing = (spell, data) => data.damage?.[0]?.kinds.has('healing') && !data.damage?.[0]?.kinds.has("damage") &&
     !(undead && spell.traits.has('vitality'));
 
   // Spells that ESS allows us to use, beyond spell attacks
-  const essAllowed = (spell, data) => harmfulNonAttacks.has(data.slug) || (
-    !data.target.value.includes('willing') && !healing(spell, data) && (
-      (data.target.value.includes("creature") && data.hasDamage) ||
-      (["line", "cone", "burst", undefined].includes(data.area?.type) && (data.hasDamage || data.isSave))
-    )
-  );
+  const allowed = (spell, data) => 
+    !(data.target.value.includes('willing') && healing(spell, data)) &&
+      (data.target.value.includes("creature") ||
+      (["line", "cone", "burst", undefined].includes(data.area?.type) && (data.isSave))
+    );
+
   // "1", "2", "2 to 2 rounds", "1 or 2", etc.
   const actionsAllowed = /^[12]( (or|to) .*)?$/;
 
@@ -483,8 +486,7 @@ async function spellList(actor, sbs, ess) {
         if (active === null) { continue; }
         const spell = active.spell;
         const spellChatData = await spell.getChatData({}, {groupId: group.id});
-        const isStrikeable = (spell.isAttack || (ess && essAllowed(spell, spellChatData))) &&
-          actionsAllowed.test(spell.system.time?.value) && !blacklist.has(spell.slug);
+        const isStrikeable = allowed(spell, spellChatData) && actionsAllowed.test(spell.system.time?.value) && !blacklist.has(spell.slug);
         const {castRank, isAttack, isSave, description, save, slug, traits, hasDamage} = spellChatData;
 
         let rank = `Rank ${castRank}`
