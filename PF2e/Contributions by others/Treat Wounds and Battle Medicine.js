@@ -201,6 +201,7 @@ const rollTreatWounds = async ({
     immunityEffect,
     usedBattleMedicsBaton,
     spellStitcherBonus,
+    immunityMacroLink,
 }) => {
     const dc = {
         value: DC,
@@ -212,7 +213,7 @@ const rollTreatWounds = async ({
         };
     }
     const bonusString = bonus > 0 ? ` + ${bonus}` : "";
-    const immunityMessage = `<strong>${target.name}</strong> is now immune to ${immunityEffect.name} for ${immunityEffect.system.duration.value} ${immunityEffect.system.duration.unit}.`;
+    const immunityMessage = `<strong>${target.name}</strong> is now immune to ${immunityEffect.name} for ${immunityEffect.system.duration.value} ${immunityEffect.system.duration.unit}.<br>${immunityMacroLink}`;
 
     if (assurance) {
         const aroll = await new CheckRoll(
@@ -442,12 +443,12 @@ async function applyChanges($html) {
             );
             if (twWithoutTools) {
                 ui.notifications.warn(
-                    `You can't Treat Wounds without Healer's Tools, a Healing Plaster, or having used Right-Hand Blood.`,
+                    `You can't Treat Wounds without a Healer's Toolkit, a Healing Plaster, or having used Right-Hand Blood.`,
                 );
                 continue;
             } else {
                 if (bmWithoutTools) {
-                    ui.notifications.warn(`You can't use Battle Medicine without Healer's Tools.`);
+                    ui.notifications.warn(`You can't use Battle Medicine without a Healer's Toolkit.`);
                     continue;
                 }
             }
@@ -472,6 +473,18 @@ async function applyChanges($html) {
         const twUUID = "Compendium.pf2e.feat-effects.Lb4q2bBAgxamtix5";
         const immunityEffectUUID = useBattleMedicine ? bmUUID : twUUID;
         const forensicMedicine = checkFeat("forensic-medicine-methodology");
+
+        let immunityMacroLink = ``;
+        if (game.modules.has("xdy-pf2e-workbench") && game.modules.get("xdy-pf2e-workbench").active) {
+            // Extract the Macro ID from the asynomous benefactor macro compendium.
+            const macroName = useBattleMedicine ? `BM Immunity CD` : `TW Immunity CD`;
+            const macroId = game.packs
+                .get("xdy-pf2e-workbench.asymonous-benefactor-macros")
+                .index.find((n) => n.name === macroName)?._id;
+            immunityMacroLink = `@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Apply ${bmtw} Immunity}`;
+        } else {
+            ui.notifications.warn(`Workbench Module not active! Linking Immunity effect Macro not possible.`);
+        }
 
         let spellStitcherUntypedBonus = 0;
         if (checkFeat("spell-stitcher") && useBattleMedicine) {
@@ -619,6 +632,7 @@ async function applyChanges($html) {
                         immunityEffect,
                         usedBattleMedicsBaton,
                         spellStitcherBonus: spellStitcherUntypedBonus,
+                        immunityMacroLink
                     });
                     break;
                 case 2:
@@ -641,6 +655,7 @@ async function applyChanges($html) {
                         immunityEffect,
                         usedBattleMedicsBaton,
                         spellStitcherBonus: spellStitcherUntypedBonus,
+                        immunityMacroLink
                     });
                     break;
                 case 3:
@@ -663,6 +678,7 @@ async function applyChanges($html) {
                         immunityEffect,
                         usedBattleMedicsBaton,
                         spellStitcherBonus: spellStitcherUntypedBonus,
+                        immunityMacroLink
                     });
                     break;
                 case 4:
@@ -731,7 +747,7 @@ const renderDialogContent = ({
            checkItemTypeFeat("built-in-tools")
                ? `<form>
              <div class="form-group">
-               <label title="Are you wielding, wearing, or adjacent to your innovation?">Is healer's toolkit one of your Built-In Tools?</label>
+               <label title="Are you wielding, wearing, or adjacent to your innovation?">Is Healer's Toolkit one of your Built-In Tools?</label>
                <input type="checkbox" id="useBuiltInTools" name="useBuiltInTools" checked></input>
              </div>
            </form>`
@@ -973,7 +989,9 @@ if (canvas.tokens.controlled.length !== 1) {
                     EnableDisable(html);
                 });
                 if (inCombat && !hasBattleMedicine) {
-                    html.find("button:contains('Use selected action')").attr("disabled", true).text("Disabled as neither Treat Wounds nor Battle Medicine is available");
+                    html.find("button:contains('Use selected action')")
+                        .attr("disabled", true)
+                        .text("Disabled as neither Treat Wounds nor Battle Medicine is available");
                     html.find("#useBattleMedicine").attr("disabled", true);
                 }
             },
