@@ -488,7 +488,6 @@ async function spellList(actor, sbs) {
         const spellChatData = await spell.getChatData({}, {groupId: group.id});
         const isStrikeable = await allowed(spell, spellChatData) && actionsAllowed.test(spell.system.time?.value) && !blacklist.has(spell.slug);
         const {castRank, isAttack, isSave, description, save, slug, traits, hasDamage} = spellChatData;
-        console.log(isStrikeable,spell.name)
 
         let rank = `Rank ${castRank}`
         if(spellData.isPrepared) {
