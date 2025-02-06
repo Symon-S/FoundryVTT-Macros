@@ -67,38 +67,40 @@ async function choose(options = [], prompt = ``){
   });
 }
 
-async function spellList(actor, ess) {
+async function spellList(actor) {
   // A bunch of these should be excluded because they are not AoE spells, but there area bunch of AoE spells
   // with multiple area choices and the system encodes these as no area, so we consider no area as AoE and then
   // fix the mistakes with this list.
-  const blacklist = new Set([
+const blacklist = new Set([
     "celestial-accord",
     "shattering-gem",
-    "entangle-fate",
-    "behold-the-weave",
-    "compel-true-name",
+    //"entangle-fate",
+    //"behold-the-weave",
+    //"compel-true-name",
+    "force-barrage",
+    "force-fang",
     "foul-miasma",
-    "invoke-the-harrow",
-    "rewrite-memory",
-    "subconscious-suggestion",
-    "excise-lexicon",
-    "enthrall",
-    "mind-reading",
+    //"invoke-the-harrow",
+    //"rewrite-memory",
+    //"subconscious-suggestion",
+    //"excise-lexicon",
+    //"enthrall",
+    //"mind-reading",
     "mirecloak",
     "mask-of-terror",
     "hallucination",
     "hyperfocus",
     "pact-broker",
     "death-knell",
-    "sudden-recollection",
+    //"sudden-recollection",
     "favorable-review",
-    "litany-of-self-interest",
-    "suggestion",
-    "command",
-    "déjà-vu",
-    "charming-touch",
-    "charm",
-    "possession",
+    //"litany-of-self-interest",
+    //"suggestion",
+    //"command",
+    //"déjà-vu",
+    //"charming-touch",
+    //"charm",
+    //"possession",
     "cornucopia",
     "delay-affliction",
     "heal-companion",
@@ -110,28 +112,31 @@ async function spellList(actor, ess) {
 
   // ESS, in addition to AoE spells, extends "spell attacks" to "harmful spells that target a creature".
   // Most harmful spells that target a creature are attacks, but some aren't.  These are they:
-  const harmfulNonAttacks = new Set(['force-barrage', 'force-fang']);
   const undead = [...game.user.targets.values()].some(t => t.actor.traits.has('undead'));
-  if (undead) harmfulNonAttacks.add('heal');
+  if (!undead) {
+    blacklist.add("possession");
+    blacklist.add("heal");
+  }
   // Don't allow healing damage spells, unless they are also vitality and there is an undead target
-  const healing = (spell, data) => data.damage?.[0]?.kinds.has('healing') &&
+  const healing = (spell, data) => spell.traits.has("healing") && !data.damage?.[0]?.kinds?.has("damage") &&
     !(undead && spell.traits.has('vitality'));
 
   // Spells that ESS allows us to use, beyond spell attacks
-  const essAllowed = (spell, data) => harmfulNonAttacks.has(data.slug) || (
-    !data.target.value.includes('willing') && !healing(spell, data) && (
-      (data.target.value.includes("creature") && data.hasDamage) ||
-      (["line", "cone", "burst", undefined].includes(data.area?.type) && (data.hasDamage || data.isSave))
-    )
-  );
+  const allowed = (spell, data) => 
+    !(data.target.value.includes('willing') && healing(spell, data)) &&
+      (data.target.value.includes("creature") ||
+      (data.defense !== null)
+    );
+
   // "1", "2", "2 to 2 rounds", "1 or 2", etc.
   const actionsAllowed = /^[12]( (or|to) .*)?$/;
+
 
   const spells = [];
   for (const e of actor.itemTypes.spellcastingEntry.filter(r => r.system.prepared?.value !== "items" && r.isPrepared && r.attribute === "int")) {
     for (const spell of e.spells) {
       const spellChatData = await spell.getChatData();
-      const isStrikeable = (spell.isAttack || (ess && essAllowed(spell, spellChatData))) && actionsAllowed.test(spell.system.time?.value) && !blacklist.has(spell.slug) && !spell.isCantrip;
+      const isStrikeable = await allowed(spell, spellChatData) && actionsAllowed.test(spell.system.time?.value) && !blacklist.has(spell.slug) && !spell.isCantrip;
       if (!isStrikeable) continue;
       spells.push(spell)
     }
