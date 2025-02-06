@@ -231,10 +231,15 @@ if(spc.slug === 'chromatic-ray' && critt >= 2) {
 }
 
 if (critt === 1 && !spc.isAttack) {
+  if (!spc.hasDamage  || !(game.settings.settings.has("pf2e-toolbelt.targetHelper.addTargets") && game.settings.get("pf2e-toolbelt","targetHelper.addTargets")) && spc.hasDamage) {
   await spc.spell.toMessage(null);
+  }
+  else {
+    await spc.spell.rollDamage(choices.event, choices.variant);
+  }
 }
 if (critt >= 2) {
-  if (spc.slug !== "chromatic-ray" && !spc.hasDamage && !spc.roll) {
+  if (spc.slug !== "chromatic-ray" && (!spc.hasDamage  || !(game.settings.settings.has("pf2e-toolbelt.targetHelper.addTargets") && game.settings.get("pf2e-toolbelt","targetHelper.addTargets")) && spc.hasDamage && !spc.isAttack) && !spc.roll) {
     await spc.spell.toMessage(null);
   }
   if (critt === 3 && spc.slug !== "chromatic-ray" && spc.isAttack) {  ui.notifications.info('Spell damage will need to be doubled when applied'); }
@@ -470,7 +475,7 @@ async function spellList(actor, sbs) {
   const allowed = (spell, data) => 
     !(data.target.value.includes('willing') && healing(spell, data)) &&
       (data.target.value.includes("creature") ||
-      (["line", "cone", "burst", undefined].includes(data.area?.type) && (data.isSave))
+      (data.defense !== null)
     );
 
   // "1", "2", "2 to 2 rounds", "1 or 2", etc.
