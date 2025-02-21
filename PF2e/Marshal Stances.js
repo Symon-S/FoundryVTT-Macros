@@ -45,7 +45,7 @@ if (choice === "ims") {
   notes = [];
   actionSlug = "inspiring-marshal-stance";
   actionName = "Inspiring Marshal Stance";
-  notes.push({"outcome":["success","criticalSuccess"], "selector":"diplomacy", "text":`<p>Your marshal’s aura grants you and your allies in the aura a +1 status bonus to damage rolls. When you or an ally in the aura critically hit an enemy with a Strike, that enemy is @UUID[Compendium.pf2e.conditionitems.Item.TBSHQspnbcqxsmjL]{Frightened 1}. If you’re wielding a weapon that has more than one damage die (typically due to a striking rune), you can have the status bonus equal the weapon’s number of damage dice instead of +1.</p>`});
+  notes.push({"outcome":["success","criticalSuccess"], "selector":"diplomacy", "text":`<p>Your marshal's aura grants you and allies a +1 status bonus to attack rolls and saves against mental effects.</p>`});
   notes.push({"outcome":["failure"], "selector":"diplomacy", "text":`<p>You fail to enter the stance.</p>`});
   notes.push({"outcome":["criticalFailure"], "selector":"diplomacy", "text":`<p>You fail to enter the stance and can't take this action again for 1 minute.</p>`});
 }
