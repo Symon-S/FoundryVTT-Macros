@@ -79,8 +79,8 @@ for (const s of token.actor.itemTypes.equipment) {
 	}
 };
 
-if (token.actor.itemTypes.effect.some(e => e.slug === "maniEF")) {
-	const effect = token.actor.itemTypes.effect.find(e => e.slug === "maniEF");
+if (token.actor.itemTypes.effect.some(e => e.slug === "mani-ef")) {
+	const effect = token.actor.itemTypes.effect.find(e => e.slug === "mani-ef");
 	mm.unshift({ name: `${effect.name}`, rank: effect.system.level.value, prepared: false, entryId: null, wand: false, scroll: false, spont: false, link: effect.link });
 }
 
@@ -90,12 +90,12 @@ const mmdd = [{ label: 'Which spell?', type: 'select', options: mm.map(n => n.na
 { label: 'Number of Actions?', type: 'select', options: [3, 2, 1] }
 ];
 
-if (token.actor.itemTypes.effect.some(e => e.slug === "maniEF")) { mmdd.push({ label: `Remove Effect Instead?`, type: "checkbox" }) }
+if (token.actor.itemTypes.effect.some(e => e.slug === "mani-ef")) { mmdd.push({ label: `Remove Effect Instead?`, type: "checkbox" }) }
 
 const mmdiag = await quickDialog({ data: mmdd, title: `Force Barrage` });
 
 if (mmdiag[2] === true) {
-	const effect = token.actor.itemTypes.effect.find(e => e.slug === "maniEF")
+	const effect = token.actor.itemTypes.effect.find(e => e.slug === "mani-ef")
 	await effect.delete();
 	return;
 }
@@ -202,11 +202,11 @@ if (!mmch.wand && !mmch.scroll && expend) {
 /* Wand */
 if (mmch.wand) {
 	if (mani.includes(mmch.entryId)) {
-		if (token.actor.itemTypes.effect.some(e => e.slug === "maniEF")) {
-			const effect = token.actor.itemTypes.effect.find(e => e.slug === "maniEF")
+		if (token.actor.itemTypes.effect.some(e => e.slug === "mani-ef")) {
+			const effect = token.actor.itemTypes.effect.find(e => e.slug === "mani-ef")
 			await effect.delete();
 		}
-		if (!token.actor.itemTypes.effect.some(e => e.slug === "maniEF")) {
+		if (!token.actor.itemTypes.effect.some(e => e.slug === "mani-ef")) {
 			const maniEF = {
 				"name": `${mmch.name} Effect`,
 				"type": "effect",
@@ -215,7 +215,7 @@ if (mmch.wand) {
 					"description": {
 						"value": `<p><strong>Requirements</strong> You used Wand of Shardstorm to cast Force Barrage.</p>\n<hr />\n<p>After you cast the spell, an additional barrage or barrages are released from the wand at the start of each of your turns, as though you cast the 1-action version of force barrage. Choose targets each time. This lasts for 1 minute, until you are no longer wielding the wand, or until you try to activate the wand again.</p>`
 					},
-					"slug": "maniEF",
+					"slug": "mani-ef",
 					"level": {
 						"value": mmch.rank
 					},
