@@ -396,25 +396,37 @@ const rollTreatWounds = async ({
 };
 
 async function applyChanges($html) {
+    debugger;
     for (const token of canvas.tokens.controlled) {
         const dropdown = $html.find('[name="useBattleMedicine"]');
-        // const selectedOption = dropdown[0]?.options[dropdown[0]?.selectedIndex]?.value;
         const useBattleMedicine = parseInt(dropdown[0]?.value) === 1;
-        let skillUsed = token.actor.skills.medicine;
-        const hasChirurgeon = checkFeat("chirurgeon");
-        const hasNaturalMedicine = checkFeat("natural-medicine");
-        const hasSpellStitcher = checkFeat("spell-stitcher"); /// < From Magus+, allows using Arcana for actions that normally require Medicine
+        const skill = $html.find('[name="skill"]')[0]?.value;
+        const requestedProf = parseInt($html.find('[name="dc-type"]')[0].value) || 1;
 
-        if (hasChirurgeon) {
+        let usedProf = 0;
+        let skillUsed = null;
+        if (skill === "med")
+        {
+            skillUsed = token.actor.skills.medicine;
+            usedProf = requestedProf <= skillUsed.rank ? requestedProf : skillUsed.rank;
+        }
+        else if (skill === "cra") {
             skillUsed = token.actor.skills.crafting;
+            usedProf = requestedProf <= skillUsed.rank ? requestedProf : skillUsed.rank;
         }
-
-        if (hasSpellStitcher) {
+        else if (skill === "arc") {
             skillUsed = token.actor.skills.arcana;
+            usedProf = requestedProf <= skillUsed.rank ? requestedProf : skillUsed.rank;
+            if (usedProf === 0) {
+                usedProf = 1;
+            }
         }
-
-        if (hasNaturalMedicine && !useBattleMedicine) {
+        else if (skill === "nat") {
             skillUsed = token.actor.skills.nature;
+            usedProf = requestedProf <= skillUsed.rank ? requestedProf : skillUsed.rank;
+            if (usedProf === 0) {
+                usedProf = 1;
+            }
         }
 
         if (!skillUsed) {
@@ -457,7 +469,6 @@ async function applyChanges($html) {
         const level = token.actor.system.details.level.value;
         const mod = parseInt($html.find('[name="modifier"]').val()) || 0;
         const assurance = $html.find('[name="assurance_bool"]')[0]?.checked;
-        const requestedProf = parseInt($html.find('[name="dc-type"]')[0].value) || 1;
         const hasMedicDedication = checkFeat("medic-dedication");
         // Risky Surgery does not apply when Battle Medicine is used.
         const isRiskySurgery = !useBattleMedicine && $html.find('[name="risky_surgery_bool"]')[0]?.checked;
@@ -500,27 +511,6 @@ async function applyChanges($html) {
                 if (token.actor.class.slug === "magus" && checkFeat("greater-weapon-specialization")) {
                     spellStitcherUntypedBonus = 3;
                 }
-            }
-        }
-        const skill = $html.find('[name="skill"]')[0]?.value;
-
-        // Handle Rule Interpretation
-
-        let usedProf = 0;
-        usedProf = requestedProf <= skillUsed.rank ? requestedProf : skillUsed.rank;
-        if (skill === "cra") {
-            skillUsed = token.actor.skills.crafting;
-        }
-        if (skill === "arc") {
-            skillUsed = token.actor.skills.arcana;
-            if (usedProf === 0) {
-                usedProf = 1;
-            }
-        }
-        if (skill === "nat") {
-            skillUsed = token.actor.skills.nature;
-            if (usedProf === 0) {
-                usedProf = 1;
             }
         }
         if (checkItemTypeFeat("clever-improviser") && usedProf === 0) {
