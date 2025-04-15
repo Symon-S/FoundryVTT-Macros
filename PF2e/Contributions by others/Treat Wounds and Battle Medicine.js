@@ -400,7 +400,8 @@ async function applyChanges($html) {
     for (const token of canvas.tokens.controlled) {
         const dropdown = $html.find('[name="useBattleMedicine"]');
         const useBattleMedicine = parseInt(dropdown[0]?.value) === 1;
-        const skill = $html.find('[name="skill"]')[0]?.value;
+        // the dropdown for skills isn't shown if you only have medicine trained, so we default to that.
+        const skill = $html.find('[name="skill"]')[0]?.value ?? "med"; 
         const requestedProf = parseInt($html.find('[name="dc-type"]')[0].value) || 1;
 
         let usedProf = 0;
