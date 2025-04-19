@@ -19,7 +19,7 @@ let actionSlug = "lingering-composition";
 let actionName = "Lingering Composition";
 const options = token.actor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
       
-let cantrips = token.actor.itemTypes.spell.filter(s=> s.isFocusSpell === true && s.isCantrip === true && s.traits.has('composition') && s.system.duration.value === '1 round');
+let cantrips = token.actor.itemTypes.spell.filter(s=> s.isFocusSpell === true && s.isCantrip === true && s.traits.has('composition') && (s.system.duration.value === '1 round' || s.system.duration.value === `1 ${game.i18n.localize("PF2E.Duration.round")}`));
 
 if (!token.actor.itemTypes.feat.some(lc => lc.slug === "lingering-composition")) { cantrips = cantrips.filter(s => ["rallying-anthem", "courageous-anthem", "song-of-strength"].includes(s.slug)) }   
       
