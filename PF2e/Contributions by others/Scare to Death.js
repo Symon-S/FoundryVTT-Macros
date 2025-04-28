@@ -54,7 +54,7 @@ if (canvas.tokens.controlled.length !== 1){
     //adding the auditory trait as you are speaking out loud to get the effect    
     options.push(`auditory`);
 
-    const languages = token.actor.system.traits.languages.value;
+    const languages = token.actor.system.details.languages.value;
 
     const immunityEffect = {
         type: 'effect',
@@ -89,7 +89,7 @@ if (canvas.tokens.controlled.length !== 1){
             continue;
         } else {
 
-            const targetLanguages = targetActor.system.traits.languages.value;
+            const targetLanguages = targetActor.system.details.languages.value;
             if (!targetLanguages.some((lang) => languages.includes(lang))) {
                 langMod = new game.pf2e.Modifier({ label: "Language barrier", modifier: -4, type: "circumstance" })
                 modifiers.push(langMod);
