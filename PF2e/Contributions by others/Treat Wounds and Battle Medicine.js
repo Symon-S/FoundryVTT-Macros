@@ -396,7 +396,6 @@ const rollTreatWounds = async ({
 };
 
 async function applyChanges($html) {
-    debugger;
     for (const token of canvas.tokens.controlled) {
         const dropdown = $html.find('[name="useBattleMedicine"]');
         const useBattleMedicine = parseInt(dropdown[0]?.value) === 1;
