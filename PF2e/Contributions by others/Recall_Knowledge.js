@@ -351,6 +351,29 @@ if (game.user.targets.size < 1) {
 // Notification and chat card
 // ==========================
 
+const makeFlags = () => {
+    const flags = {
+        context: {
+            options: [ "action:recall-knowledge", "check:type:skill", "secret" ],
+            origin: {
+                token: token?.document.uuid,
+                actor: actor.uuid
+            },
+            rollMode: CONST.DICE_ROLL_MODES.BLIND,
+            traits: [ "concentrate", "secret" ],
+            type: "skill-check",
+        }
+    };
+    if (game.user.targets.size == 1) {
+        const target = game.user.targets.first();
+        flags.context.target = {
+            token: target.document.uuid,
+            actor: target.actor?.uuid,
+        };
+    }
+    return flags;
+};
+
 ui.notifications.info(`${token?.name ?? actor.name} tries to remember if they've heard something related to this.`);
 await ChatMessage.create({
     user: game.userId,
@@ -361,6 +384,7 @@ await ChatMessage.create({
     blind: true,
     speaker: ChatMessage.getSpeaker(),
     rolls: [rollD20],
+    flags: { pf2e: makeFlags() },
 });
 
 // Recursively return every roll option in a predicate expression tree
