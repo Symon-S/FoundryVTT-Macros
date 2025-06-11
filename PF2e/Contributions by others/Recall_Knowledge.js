@@ -33,6 +33,12 @@ const breakdownMode = (() => {
     try { return game.settings.get("xdy-pf2e-workbench", "rkBreakdown"); } catch { return "all"; }
 })();
 
+// Every TD and TH needs this in V13, which has huge padding by default
+const tPadding = "padding: 0.25em 0;";
+const tBorder = "border-top: 1px solid var(--color-border-medium); border-bottom: 1px solid var(--color-border-medium);"
+const tdStyle = `style="${tPadding}"`;
+const tdCStyle = `style="text-align: center; ${tPadding}"`;
+
 const SKILL_OPTIONS = ["arcana", "crafting", "medicine", "nature", "occultism", "religion", "society"];
 
 const IDENTIFY_SKILLS = {
@@ -186,18 +192,18 @@ const rollColor = globalRoll == 20 ? "green" : globalRoll == 1 ? "red" : "royalb
 // =================
 
 const skillListOutput = (title, skillResults) => {
-    let output = `<table><tr><th>${title}</th><th>Prof</th><th>Mod</th><th>Result</th></tr>`;
+    let output = `<table style="${tBorder}"><tr><th ${tdStyle}>${title}</th><th ${tdStyle}>Prof</th><th ${tdStyle}>Mod</th><th ${tdStyle}>Result</th></tr>`;
     for (const skillResult of skillResults) {
         const { label, modifier, rank, breakdown } = skillResult;
         const adjustedResult = globalRoll + modifier;
-        output += `<tr><th>${label}</th>
-            <td class="tags"><div class="tag" style="background-color: ${RANK_COLORS[rank]}; white-space:nowrap">${
-            RANK_NAMES[rank]
-        }</td>
-            <td>${modifier >= 0 ? "+" : ""}${modifier}</td>
-            <td><span style="color: ${rollColor}">${adjustedResult}</span></td></tr>`;
+        output += `<tr><th ${tdStyle}>${label}</th>
+            <td class="tags" ${tdStyle}><div class="tag" style="background-color: ${RANK_COLORS[rank]}; white-space:nowrap">
+                ${RANK_NAMES[rank]}
+            </td>
+            <td ${tdStyle}>${modifier >= 0 ? "+" : ""}${modifier}</td>
+            <td ${tdStyle}><span style="color: ${rollColor}">${adjustedResult}</span></td></tr>`;
         if (breakdown?.childElementCount > 0) {
-            output += `<tr><td colspan="7">${breakdown.outerHTML}</td></tr>`;
+            output += `<tr><td ${tdStyle} colspan="7">${breakdown.outerHTML}</td></tr>`;
         }
     }
     output += "</table>";
@@ -213,13 +219,14 @@ const conditionalModifiersOutput = (skillResults) => {
     const allUnappliedModifiers = new Map(skillResults.flatMap((r) => r.unappliedModifiers.filter((m) => !allAppliedSlugs.has(m.slug)).map((m) => [m.slug, m])));
     if (allUnappliedModifiers.length === 0) return "";
 
-    let output = `<table style="font-size: 12px"><tr><th>Potential Modifiers</th><th>Mod</th></tr>`;
-    for (const mod of allUnappliedModifiers.values()) {
-        const { label, signedValue, source } = mod;
-        output += `<tr><td>@UUID[${source}]{${label}}</a></td><td>${signedValue}</td></tr>`;
-    }
-    output += "</table>";
-    return output;
+    const modHtml = ({label, signedValue, source}) => `<tr><td ${tdStyle}>@UUID[${source}]{${label}}</a></td><td ${tdStyle}>${signedValue}</td></tr>`;
+    return `<table style="font-size: 12px; ${tBorder}">
+      <tr>
+        <th ${tdStyle}>Potential Modifiers</th>
+        <th ${tdStyle}>Mod</th>
+      </tr>
+      ${[...allUnappliedModifiers.values()].map(modHtml).join("")}
+    </table>`;
 };
 
 // Creating output
@@ -259,14 +266,15 @@ if (game.user.targets.size < 1) {
         const dcIndex = FIRST_DC_INDEX[rarity];
         const DCs = DC_MODS.slice(dcIndex, dcIndex + 4).map((dc) => (typeof dc === "number" ? dc + levelDC : "-"));
 
-        output += "<table><tr><td></td><td></td><td>";
-        output +=
-            "<th style='text-align:center'>1st</th><th style='text-align:center'>2nd</th><th style='text-align:center'>3rd</th><th style='text-align:center'>4th</th></tr>";
-        output += "<tr><th>Skill</th><td></td><td></td>";
-        DCs.forEach(
-            (dc) => (output += `<th style='text-align:center'>${typeof dc === "number" ? "DC " + dc : "-"}</th>`)
-        );
-        output += "</tr>";
+        output += `<table style="${tBorder}">
+          <tr>
+            <td ${tdStyle}></td><td ${tdStyle}></td><td ${tdStyle}></td>
+            <th ${tdCStyle}>1st</th><th ${tdCStyle}>2nd</th><th ${tdCStyle}>3rd</th><th ${tdCStyle}>4th</th>
+          </tr>
+          <tr>
+            <th ${tdStyle}>Skill</th><td ${tdStyle}></td><td ${tdStyle}></td>
+            ${DCs.map((dc) => `<th ${tdCStyle}>${typeof dc === "number" ? "DC " + dc : "-"}</th>`).join('')}
+          </tr>`;
 
         let primarySkills = new Set();
         for (const trait in IDENTIFY_SKILLS) {
@@ -288,13 +296,15 @@ if (game.user.targets.size < 1) {
             let { label, modifier, rank, breakdown } = skillResult;
             const adjustedResult = globalRoll + modifier;
             if (skill === "arcana" && uT) label = actor.itemTypes.feat.find(i => i.slug === 'unified-theory').name;
-            output += `<tr style="vertical-align:middle;"><th>${label}
-                </th><td class="tags" style="display:revert"><div class="tag" style="background-color: ${RANK_COLORS[rank]}; white-space:nowrap">${RANK_NAMES[rank]?.[0]}</td>
-                <td><span style="color: ${rollColor}; text-align: center">${adjustedResult}</span></td>`;
+            output += `<tr style="vertical-align:middle;"><th ${tdStyle}>${label}</th>
+                <td class="tags" style="display:revert; ${tPadding}">
+                    <div class="tag" style="background-color: ${RANK_COLORS[rank]}; white-space:nowrap">${RANK_NAMES[rank]?.[0]}</div>
+                </td>
+                <td ${tdStyle}><span style="color: ${rollColor}; text-align: center">${adjustedResult}</span></td>`;
 
             for (const dc of DCs) {
                 if (typeof dc !== "number") {
-                    output += "<td style='text-align:center'>-</td>";
+                    output += `<td ${tdCStyle}>-</td>`;
                     continue;
                 }
                 const diff = adjustedResult - dc;
@@ -310,11 +320,11 @@ if (game.user.targets.size < 1) {
                     `<span style="color:${DOS_COLORS[success]}">${DOS_LABELS[success]}</span>` :
                     `<span style="text-decoration:line-through;">${DOS_LABELS[success]}</span><br />
                      <span style="color:${DOS_COLORS[successAdj]}" data-tooltip="${labelAdj}">${DOS_LABELS[successAdj]}</span>`;
-                output += `<td style="text-align:center;">${text}</td>`;
+                output += `<td ${tdCStyle}">${text}</td>`;
             }
             output += "</tr>";
             if (breakdown?.childElementCount > 0) {
-                output += `<tr><td colspan="7">${breakdown.outerHTML}</td></tr>`;
+                output += `<tr><td ${tdStyle} colspan="7">${breakdown.outerHTML}</td></tr>`;
             }
         }
         output += "</table>";
@@ -325,13 +335,21 @@ if (game.user.targets.size < 1) {
             typeof dc === "number" ? dc + levelDC : "-"
         );
 
-        output += "<table><tr><th>Lore Skill DCs</th>";
-        output += "<th>1st</th><th>2nd</th><th>3rd</th><th>4th</th><th>5th</th><th>6th</th></tr>";
-        output += "<tr><th>Unspecific</th>";
-        loreDCs.slice(1).forEach((dc) => (output += `<td style="text-align:center">${dc}</td>`));
-        output += "<td>-</td></tr><tr><th>Specific</th>";
-        loreDCs.forEach((dc) => (output += `<td style="text-align:center">${dc}</td>`));
-        output += "</tr></table>";
+        output += `<table style="${tBorder}">
+          <tr>
+            <th ${tdStyle}>Lore Skill DCs</th>
+            ${["1st", "2nd", "3rd", "4th", "5th", "6th"].map(i => `<th ${tdStyle}>${i}</th>`).join("")}
+          </tr>
+          <tr>
+            <th ${tdStyle}>Unspecific</th>
+            ${loreDCs.slice(1).map((dc) => `<td ${tdCStyle}">${dc}</td>`).join('')}
+            <td ${tdStyle}>-</td>
+          </tr>
+          <tr>
+            <th ${tdStyle}>Specific</th>
+            ${loreDCs.map((dc) => `<td ${tdCStyle}>${dc}</td>`).join('')}
+          </tr>
+        </table>`;
 
         // Lore skills
         const loreSkills = await Promise.all(Object.values(actor.skills).filter((s) => s.lore).map(
