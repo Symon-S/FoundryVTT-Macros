@@ -182,6 +182,8 @@ async function itemSelectedCallback(weaponToShift, newWeaponID, revert)
 	    itemObject.system.material = weaponToShift.system.material;
 	    itemObject.system.runes = weaponToShift.system.runes;
 	    itemObject.system.size = weaponToShift._source.system.size;
+	    itemObject.system.slug = weaponToShift.system.slug;
+	    itemObject.flags = weaponToShift.flags;
     }
     if (revert) { 
 		if (weaponToShift.flags.pf2e.originalItemData !== undefined){
