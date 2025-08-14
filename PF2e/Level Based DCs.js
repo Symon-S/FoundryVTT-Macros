@@ -1,73 +1,30 @@
 /*
 Simple Macro to check for level based DCs.
 Either select a token, multiple tokens, or no token at all.
-You will be prompted for an adjustment.
-When multiple tokens or no tokens are selected you will be prompted for a level as well.
+You will be prompted for selecting the level and adjustment.
+If a single token is selected, it will pre-select its level.
 */
+const adjustments = {"incredibly-easy": -10, "very-easy": -5, "easy": -2, "normal": 0, "hard": 2, "very-hard": 5, "incredibly-hard": 10};
+const actorLevel = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0].actor.level :
+                   game.actors.party.members.length > 0 ? game.actors.party.level : -1;
 
-const diff = await new Promise((resolve) => {
- new Dialog({
- title: 'Difficulty?',
- buttons: {
-  ineasy: { label: 'Incredibly Easy', callback: () => { resolve(-10); } },
-  veasy: { label: 'Very Easy', callback: () => { resolve(-5); } },
-  easy: { label: 'Easy', callback: () => { resolve(-2); } },
-  norm: { label: 'Normal', callback: () => { resolve(0); } },
-  hard: { label: 'Hard', callback: () => { resolve(2); } },
-  vhard: { label: 'Very Hard', callback: () => { resolve(5); } },
-  inhard: { label: 'Incredibly Hard', callback: () => { resolve(10); } },
-  },
- default: 'norm',
- },{width:600}).render(true);
+const optionsLevel = Array.fromRange(27, -1).map(e => ({value: e, label: e, selected: actorLevel === e}))
+const optionsDiff = Object.entries(adjustments).map(([k,v]) => ({label: game.i18n.localize(CONFIG.PF2E.dcAdjustments[k]), value: v, selected: v === 0}));
+
+const levelField = new foundry.data.fields.NumberField({
+  label: game.i18n.localize("PF2E.CharacterLevelLabel"),
+}).toFormGroup({},{name: "level", options: optionsLevel}).outerHTML;
+
+const diffField = new foundry.data.fields.NumberField({
+  label: "Difficulty"
+}).toFormGroup({},{name: "diff", options:optionsDiff}).outerHTML;
+
+const data = await foundry.applications.api.Dialog.input({
+  window: {title: "Level Based DC"},
+  content: levelField+diffField
 });
-
-let level;
-if (canvas.tokens.controlled.length === 1) { level = canvas.tokens.controlled[0].actor.level + 1 }
-
-else {
-  level = await new Promise((resolve) => {
-    new Dialog({
-      title: 'Level?',
-      buttons: {
-        0: { label: '-1', callback: () => { resolve(0); } },
-        1: { label: '0', callback: () => { resolve(1); } },
-        2: { label: '1', callback: () => { resolve(2); } },
-        3: { label: '2', callback: () => { resolve(3); } },
-        4: { label: '3', callback: () => { resolve(4); } },
-        5: { label: '4', callback: () => { resolve(5); } },
-        6: { label: '5', callback: () => { resolve(6); } },
-        7: { label: '6', callback: () => { resolve(7); } },
-        8: { label: '7', callback: () => { resolve(8); } },
-        9: { label: '8', callback: () => { resolve(9); } },
-        10: { label: '9', callback: () => { resolve(10); } },
-        11: { label: '10', callback: () => { resolve(11); } },
-        12: { label: '11', callback: () => { resolve(12); } },
-        13: { label: '12', callback: () => { resolve(13); } },
-        14: { label: '13', callback: () => { resolve(14); } },
-        15: { label: '14', callback: () => { resolve(15); } },
-        16: { label: '15', callback: () => { resolve(16); } },
-        17: { label: '16', callback: () => { resolve(17); } },
-        18: { label: '17', callback: () => { resolve(18); } },
-        19: { label: '18', callback: () => { resolve(19); } },
-        20: { label: '19', callback: () => { resolve(20); } },
-        21: { label: '20', callback: () => { resolve(21); } },
-        22: { label: '21', callback: () => { resolve(22); } },
-        22: { label: '22', callback: () => { resolve(23); } },
-        23: { label: '23', callback: () => { resolve(24); } },
-        24: { label: '24', callback: () => { resolve(25); } },
-        25: { label: '25', callback: () => { resolve(26); } },
-      },
-      render: () => {
-        let myElem = [...document.getElementsByClassName("dialog-buttons")].pop();
-        if (myElem.style === undefined) { myElem = [...document.getElementsByClassName("dialog-buttons")].pop(); }
-        myElem.style.display = "grid";
-        myElem.style.gridTemplateColumns = "repeat(13,1fr)";
-        myElem.style.gap = "1px 1px";
-      }
-    },{width:500}).render(true);
-  });
-}
-
-const lDCs = [13,14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50];
-const bDC = lDCs[level] + diff;
-ui.notifications.info(`Level based DC is ${bDC}`);
+if(!data) return;
+const {level, diff} = data;
+const lDCs = new Map([[-1,13],[0,14],[1,15],[2,16],[3,18],[4,19],[5,20],[6,22],[7,23],[8,24],[9,26],[10,27],[11,28],[12,30],[13,31],[14,32],[15,34],[16,35],[17,36],[18,38],[19,39],[20,40],[21,42],[22,44],[23,46],[24,48],[25,50]]);
+const bDC = lDCs.get(level) + diff;
+ui.notifications.info(`Level based DC is ${bDC} (${game.i18n.localize(CONFIG.PF2E.dcAdjustments[foundry.utils.invertObject(adjustments)[diff]])})`);
