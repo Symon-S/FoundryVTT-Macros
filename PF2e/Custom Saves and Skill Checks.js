@@ -9,333 +9,116 @@ If the custom value and the level based DC are used simultaniously, the larger D
 Add whatever text you would like to post along with the check to chat in the flavor section.
 Add traits to ensure applicable mods will trigger if needed.
 */
-
-let lvl = "";
-if (canvas.tokens.controlled.length === 1) { lvl = token.actor.level; }
-if (canvas.tokens.controlled.length > 1) { lvl = Math.max(...canvas.tokens.controlled.map(l => l.actor.level)); }
-
-const ldc = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50];
-
-let answer = "";
-async function Answers(){
-    answer = await new Promise((resolve) => {
-        new Dialog({
-            title: "To Journal or Message?",
-            buttons:{
-                message: {
-                label: "Message",
-                callback: async() => { resolve('message') }
-                },
-                journal: {
-                label: "Journal",
-                callback: async() => { resolve('journal') }
-                },
-            },
-            default:'message'
-        }).render(true);
-    })
+function _prepareTraits(){
+  const traits = Object.entries(CONFIG.PF2E.actionTraits).map(([value,label])=>({value,label}));
+  return traits;
+}
+function createMessage(data){
+  const dc = data.dc + data.diff;
+  if("check" in data) return `@Check[type:${data.check}|traits:${data.traits.join(",")}|dc:${dc}]${data.flavor !==""  ?`{${data.flavor}}`:""}`
+  if("save" in data) return `@Check[type:${data.save}|traits:${data.traits.join(",")}|dc:${dc}|${data.basic ? "basic" : ""}]${data.flavor !==""  ?`{${data.flavor}}`:""}`
+}
+function render(event, app){
+  const input = app.element.querySelector("[name=dc]");
+  const select = app.element.querySelector("[name=level]");
+  select.addEventListener("change",()=>{
+    input.value = ldc.get(Number(select.value))
+  })
 }
 
-const check = new Dialog({
-    title: "Save or Skill Check?",
-    buttons: {
-        yes: {
-            label: 'Custom Saves',
-            callback: customSaves,
-        },
-        no: {
-            label: 'Skill Checks',
-            callback: skillCheck,
-        },
-        cancel: {
-            label: 'Cancel',
-        },
-    },
-    default: 'yes',
+const {Dialog} = foundry.applications.api;
+const {NumberField, StringField, BooleanField, SetField} = foundry.data.fields;
+const adjustments = {"incredibly-easy": -10, "very-easy": -5, "easy": -2, "normal": 0, "hard": 2, "very-hard": 5, "incredibly-hard": 10};
+const optionsDiff = Object.entries(adjustments).map(([k,v]) => ({label:CONFIG.PF2E.dcAdjustments[k], value: v, selected: v === 0}));
+const ldc = new Map([[0,14],[1,15],[2,16],[3,18],[4,19],[5,20],[6,22],[7,23],[8,24],[9,26],[10,27],[11,28],[12,30],[13,31],[14,32],[15,34],[16,35],[17,36],[18,38],[19,39],[20,40],[21,42],[22,44],[23,46],[24,48],[25,50]]);
+const actorLevel = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0].actor.level :
+                   game.actors.party.members.length > 0 ? game.actors.party.level : 0;
+
+const mode = await Dialog.wait({
+  window: {title: "Save or Skill Check"},
+  buttons: [{
+    action: "save",
+    label: "Custom Saves"
+  },{
+    action: "check",
+    label: "Skill Checks",
+    default: true
+  },{
+    action: "cancel",
+    label: "Cancel",
+    icon: "fa-solid fa-xmark"
+  }]
 });
+if(mode === "cancel") return;
 
-check.render(true);
-
-async function customSaves() {
-async function postSave($html) {
-    const adjDif = parseInt($html.find('[name="adj"]')[0].value);
-    const lbdc = parseInt($html.find('[name="lbdc"]')[0].value);
-    const bst = $html.find('[name="bst"]')[0].checked;
-console.log(bst);
-    if (lbdc > 25 || lbdc < 0) { return ui.notifications.warn("Level Based DC's are between level 0 and 25"); }
-    let DC;
-    if (lbdc !== NaN) { DC = ldc[lbdc]; }
-    const dc = parseInt($html.find('[name="dc"]')[0].value) || '';
-    if (DC === undefined && (dc === '' || dc < 0)) { DC = 10; }
-    if (dc !== '' && (dc > DC || DC === undefined)) { DC = dc; }
-    DC += adjDif;
-    const save = $html.find('[name="save"]')[0].value || 'fortitude';
-    const traits = $html.find('[name="traits"]')[0].value || '';
-    const flavor = $html.find('[name="flavor"]')[0].value || '';
-    let content = `@Check[type:${save}|traits:${traits}|dc:${DC}|basic:${bst}]`;
-    content += (flavor) ? `{${flavor}}` : "";
-    await Answers();
-    if (answer === 'message') {
-        ChatMessage.create({
-            user: game.user.id,
-            content: content
-        });
-    }
-    if (answer === 'journal') {
-        if (!game.journal.some(j => j.name === "Custom Saves and Skill Checks")) {
-            await JournalEntry.create(new JournalEntry({_id:randomID(),name:"Custom Saves and Skill Checks", pages: [await(new JournalEntryPage({_id:randomID(),name:"To Send to Chat",text:{content}})).toObject()]}));
-            ui.notifications.info('New Jounral "Custom Saves and Skill Checks" created');
-        }
-        else { 
-            const page = game.journal.find(x => x.name === "Custom Saves and Skill Checks").pages.contents[0];
-            page.text.content += "<br>" + content;
-            await game.journal.find(x => x.name === "Custom Saves and Skill Checks").updateEmbeddedDocuments("JournalEntryPage",[page]);
-            await game.journal.find(x => x.name === "Custom Saves and Skill Checks").render();
-            ui.notifications.info(`New Entry ${content} added to Custom Saves and Skill Checks journal`);
-        }
-    }
+const optionsLevel = Array.fromRange(26,0).map(e => ({value: e, label: e, selected: e === actorLevel}))
+const levelField = new NumberField({
+  label: "PF2E.LevelLabel"
+}).toFormGroup({localize: true}, {name: "level", options: optionsLevel}).outerHTML;
+const dcField = new NumberField({
+  label: "DC:"
+}).toFormGroup({},{name: "dc", value: ldc.get(actorLevel)}).outerHTML;
+const adjustField = new NumberField({
+  label: "Adjust Difficulty:"
+}).toFormGroup({}, {localize: true, options: optionsDiff, name: "diff"}).outerHTML;
+const flavorField = new StringField({
+  label: "Flavor"
+}).toFormGroup({},{elementType: "textarea", name: "flavor"}).outerHTML;
+const traitsField = new SetField(new StringField(), {
+  label: "PF2E.Traits",
+}).toFormGroup({localize: true}, {localize: true, name: "traits", options: _prepareTraits()}).outerHTML
+const content = levelField + dcField + adjustField + flavorField + traitsField;
+let data;
+if(mode === "save"){ 
+  const savesField = new StringField({
+    label: "PF2E.SavingThrow",
+    choices: CONFIG.PF2E.saves,
+    required: true
+  }).toFormGroup({localize: true}, {localize:true, name: "save"}).outerHTML;
+  const basicField =  new BooleanField({
+    label: "Basic Save"
+  }).toFormGroup({rootId: "custom-save-basic-save-option"}, {name: "basic"}).outerHTML;
+  data = await Dialog.input({
+    window: {title: "New Save"},
+    content: savesField+basicField+content,
+    render
+  });
+  
 }
-
-const dialog = new Dialog({
-    title: 'New Save',
-    content: `
-        <form>
-        <div class="form-group">
-        <label>Save type:</label>
-        <select id="save" name="save">
-        <option value="fortitude">Fortitude</option>
-        <option value="reflex">Reflex</option>
-        <option value="will">Will</option>
-        </select>
-        </div>
-        </form>
-        <form>
-        <div class="form-group">
-        <label>Basic Saving Throw?</label>
-        <input id="bst" name="bst" type="checkbox" checked="checked">
-        </div>
-        </form>
-        <form>
-        <div class="form-group">
-        <label>Level based DC:</label>
-        <input id="lbdc" name="lbdc" type="number" value="${lvl}">
-        </div>
-        </form>
-        <form>
-        <div class="form-group">
-        <label>Custom DC:</label>
-        <input id="dc" name="dc" type="number"/>
-        </div>
-        </form>
-        <form>
-        <div class="form-group">
-        <label>Adjust Difficulty:</label>
-        <select id="adj" name="adj">
-        <option value=0>None</option>
-        <option value=-10>Incredibly Easy</option>
-        <option value=-5>Very Easy</option>
-        <option value=-2>Easy</option>
-        <option value=2>Hard</option>
-        <option value=5>Very Hard</option>
-        <option value=10>Incredibly Hard</option>
-        </select>
-        </div>
-        </form>
-        <form>
-        <div class="form-group">
-        <label>Flavor text:</label>
-        <textarea id="flavor" name="flavor"></textarea>
-        </div>
-        </form>
-        </form>
-        <form>
-        <div class="form-group">
-        <label>Traits (poison,fire,damaging-effect...):</label>
-        <input type="text" id="traits" name="traits"></textarea>
-        </div>
-        </form>
-        `
-        ,
-    buttons: {
-        yes: {
-            label: 'Post Save',
-            callback: postSave,
-        },
-        no: {
-            label: 'Cancel',
-        },
-    },
-    default: 'yes',
-});
-
-dialog.render(true);
+if(mode === "check"){
+  const checkField = new StringField({
+    label: "PF2E.SkillLabel",
+    choices: CONFIG.PF2E.skills,
+    required: true
+  }).toFormGroup({localize: true}, {localize:true, name: "check"}).outerHTML;
+  data = await Dialog.input({
+    window: {title: "New Save"},
+    content: checkField+content,
+    render
+  });
 }
-async function skillCheck() {
+const msg = createMessage(data);
 
-const skillType = await new Promise((resolve) => {
-new Dialog({
-    title: "Which Skill?",
-    buttons: {
-     acr: {
-      label: 'Acrobatics',
-      callback: async() => { resolve('acrobatics'); }
-     },
-     arc: {
-      label: 'Arcana',
-      callback: async() => { resolve('arcana'); },
-     },
-     ath: {
-      label: 'Athletics',
-      callback: async() => { resolve('athletics'); },
-     },
-     crf: {
-      label: 'Crafting',
-      callback: async() => { resolve('crafting'); },
-     },
-     dcp: {
-      label: 'Deception',
-      callback: async() => { resolve('deception'); },
-     },
-     dip: {
-      label: 'Diplomacy',
-      callback: async() => { resolve('diplomacy'); },
-     },
-     int: {
-      label: 'Intimidation',
-      callback: async() => { resolve('intimidation'); },
-     },
-     med: {
-      label: 'Medicine',
-      callback: async() => { resolve('medicine'); },
-     },
-     nat: {
-      label: 'Nature',
-      callback: async() => { resolve('nature'); },
-     },
-     occ: {
-      label: 'Occultism',
-      callback: async() => { resolve('occultism'); },
-     },
-     per: {
-      label: 'Performance',
-      callback: async() => { resolve('performance'); },
-     },
-     rel: {
-      label: 'Religion',
-      callback: async() => { resolve('religion'); },
-     },
-     soc: {
-      label: 'Society',
-      callback: async() => { resolve('society'); },
-     },
-     sth: {
-      label: 'Stealth',
-      callback: async() => { resolve('stealth'); },
-     },
-     sur: {
-      label: 'Survival',
-      callback: async() => { resolve('survival'); },
-     },
-     thi: {
-      label: 'Thievery',
-      callback: async() => { resolve('thievery'); },
-     },
-    },
- }).render(true);
+const answer = await Dialog.wait({
+  window: {title: "To Journal or Message"},
+  buttons: [{
+    label: "Journal",
+    action: "journal"
+  },{
+    label: "Message",
+    action: "message",
+    default: true
+  }]
 });
-
-async function postSkill($html) {
-    const adjDif = parseInt($html.find('[name="adj"]')[0].value);
-    const lbdc = parseInt($html.find('[name="lbdc"]')[0].value);
-    if (lbdc > 25 || lbdc < 0) { return ui.notifications.warn("Level Based DC's are between level 0 and 25"); }
-    let DC;
-    if (lbdc !== NaN) { DC = ldc[lbdc]; }
-    const dc = parseInt($html.find('[name="dc"]')[0].value) || '';
-    if (DC === undefined && (dc === '' || dc < 0)) { DC = 10; }
-    if (dc !== '' && (dc > DC || DC === undefined)) { DC = dc; }
-    const traits = $html.find('[name="traits"]')[0].value || '';
-    const flavor = $html.find('[name="flavor"]')[0].value || '';
-    DC += adjDif;
-    let content = `@Check[type:${skillType}|traits:${traits}|dc:${DC}]`;
-    content += (flavor) ? `{${flavor}}` : "";
-
-    await Answers();
-    if (answer === 'message') {
-        ChatMessage.create({
-            user: game.user.id,
-            content: content
-        });
-    }
-    if (answer === 'journal') {
-        if (!game.journal.some(j => j.name === "Custom Saves and Skill Checks")) {
-            await JournalEntry.create(new JournalEntry({_id:randomID(),name:"Custom Saves and Skill Checks", pages: [await(new JournalEntryPage({_id:randomID(),name:"To Send to Chat",text:{content}})).toObject()]}));
-            ui.notifications.info('New Jounral "Custom Saves and Skill Checks" created');
-        }
-        else { 
-            const page = game.journal.find(x => x.name === "Custom Saves and Skill Checks").pages.contents[0];
-            page.text.content += "<br>" + content;
-            await game.journal.find(x => x.name === "Custom Saves and Skill Checks").updateEmbeddedDocuments("JournalEntryPage",[page]);
-            await game.journal.find(x => x.name === "Custom Saves and Skill Checks").render();
-            ui.notifications.info(`New Entry ${content} added to Custom Saves and Skill Checks journal`);
-        }
-    }
-}
-
-const dialog = new Dialog({
-    title: 'New Skill Check',
-    content: `
-        <form>
-        <div class="form-group">
-        <label>Level based DC:</label>
-        <input id="lbdc" name="lbdc" type="number" value="${lvl}">
-        </div>
-        </form>
-        <form>
-        <div class="form-group">
-        <label>Custom DC:</label>
-        <input id="dc" name="dc" type="number"/>
-        </div>
-        </form>
-        <form>
-        <div class="form-group">
-        <label>Adjust Difficulty:</label>
-        <select id="adj" name="adj">
-        <option value=0>None</option>
-        <option value=-10>Incredibly Easy</option>
-        <option value=-5>Very Easy</option>
-        <option value=-2>Easy</option>
-        <option value=2>Hard</option>
-        <option value=5>Very Hard</option>
-        <option value=10>Incredibly Hard</option>
-        </select>
-        </div>
-        </form>
-        <form>
-        <div class="form-group">
-        <label>Flavor text:</label>
-        <textarea id="flavor" name="flavor"></textarea>
-        </div>
-        </form>
-        </form>
-        <form>
-        <div class="form-group">
-        <label>Traits (poison,fire,...):</label>
-        <input type="text" id="traits" name="traits"></textarea>
-        </div>
-        </form>
-        `
-        ,
-    buttons: {
-        yes: {
-            label: 'Post Check',
-            callback: postSkill,
-        },
-        no: {
-            label: 'Cancel',
-        },
-    },
-    default: 'yes',
-});
-
-dialog.render(true);
+if(!answer) return;
+if(answer === "message") ChatMessage.create({content: msg});
+if(answer === "journal"){
+  const journal = game.journal.getName("Custom Saves and Skill Checks") ?? await JournalEntry.create({
+    name: "Custom Saves and Skill Checks"
+  });
+  const page = journal.pages.getName("To Send to Chat") ?? await JournalEntryPage.create({
+    name: "To Send to Chat"
+  }, {parent: journal});
+  await page.update({"text.content": msg});
+  ui.notifications.info('New entry created in Journal "Custom Saves and Skill Checks"');
 }
