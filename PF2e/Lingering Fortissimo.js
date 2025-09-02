@@ -4,6 +4,9 @@ To use this macro, you need to have the lingering composition feat on your chara
 To use fortissimo composition, you must have the fortissimo composition feat on your character sheet.
 If you do not have lingering composition due to taking the bard dedication and skipping the feat, the checkbox will be permanently enabled and the spells will be filtered only to those that can be used by Fortissimo Composition.
 This macro requires Workbench module. The macro will automatically use the effects in the workbench compendium.
+This macro depends on actor alliance to work properly.
+Neutral alliances not supported at this time.
+If you wish to use this macro with NPCs you could remove the 3 if statements after the first if statement. (Not tested, but should work)
 */
 
 if(!game.modules.get("xdy-pf2e-workbench")?.active) { return ui.notifications.error("This Macro requires PF2e Workbench module")}
@@ -13,11 +16,14 @@ if (actor.system.resources.focus.value === 0 || actor.system.resources.focus.val
 
 const modifiers = [];
 const notes = [];
+const allies = actor.alliance;
+let enemies = allies === "party" ? "opposition" : "party";
 const skillName = "Performance";
 const skillKey = "prf";
 let actionSlug = "lingering-composition";
 let actionName = "Lingering Composition";
 const options = token.actor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
+console.log(allies,enemies);
       
 let cantrips = token.actor.itemTypes.spell.filter(s=> s.isFocusSpell === true && s.isCantrip === true && s.traits.has('composition') && (s.system.duration.value === '1 round' || s.system.duration.value === `1 ${game.i18n.localize("PF2E.Duration.round")}`));
 
@@ -99,20 +105,20 @@ else {
 }
       
 let DCbyLevel = [14,15,16,18,19,20,22,23,24,26,27,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50]
-      
+
 let level;
 let levels = [];
 let willDCs = [];
 const tokens = canvas.tokens.placeables.filter(t => token.distanceTo(t) <= 60 && !t.actor?.hasCondition("defeaned"));
 if (choice[0] === 'dirge-of-doom') {
   options.push(`secret`)
-  levels = tokens.filter(f => f.actor?.type === "npc" && !f.actor?.hasPlayerOwner && token.distanceTo(f) <= 30).map(l => l.actor.level);
+  levels = tokens.filter(f => f.actor?.alliance === enemies && token.distanceTo(f) <= 30).map(l => l.actor.level);
   if (levels.length === 0) { return ui.notifications.warn('There are no enemies within range'); }
   else { level = Math.max(...levels); }
 }
 else { 
-	levels = tokens.filter(pc => pc?.actor?.hasPlayerOwner && pc?.actor?.type === "character").map(l => l.actor.level);
-    willDCs = tokens.filter(pc => pc?.actor?.hasPlayerOwner && pc?.actor?.type === "character").map(l => l.actor.saves.will.dc.value);
+	levels = tokens.filter(f => f.actor?.alliance === allies).map(l => l.actor.level);
+    willDCs = tokens.filter(f => f.actor?.alliance === allies).map(l => l.actor.saves.will.dc.value);
 	level = Math.max(...levels);
 }
 
