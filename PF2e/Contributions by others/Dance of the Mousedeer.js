@@ -31,6 +31,19 @@ const tokenId = _token.id;
 const targets = game.user.targets;
 let maxTargets = 1;
 
+// Check if 1 token is active and has the feat.
+if (canvas.tokens.controlled.length != 1) {
+  return ui.notifications.warn(
+    "You need to select exactly one token to perform Dance of the Mousedeer."
+  );
+} else if (
+  !actor.items.some((dotmd) => dotmd.slug === "dance-of-the-mousedeer")
+) {
+  return void ui.notifications.warn(
+    `${token.name} does not have Dance of the Mousedeer.`
+  );
+}
+
 // Check active actor's performance proficiency and generate target limit
 const performanceRank = actor.skills.performance.rank;
 if (performanceRank > 0) {
@@ -42,10 +55,11 @@ if (game.user.targets.size == 0) {
   return ui.notifications.warn("You must target at least one token.");
 } else if (game.user.targets.size > maxTargets) {
   return ui.notifications.warn(
-    `Your Performance proficiency allows a maximum of ${maxTargets} targets.`
+    `Your Performance proficiency allows a maximum of ${maxTargets} target(s).`
   );
 }
 
+// Set up metagame name hiding
 const respectHiddenNames = game.settings.get(
   "pf2e",
   "metagame_tokenSetsNameVisibility"
@@ -85,6 +99,7 @@ function dsnHook(rollPromise) {
   }
 }
 
+// Immunity check function
 function isImmune(targetActor, trait) {
   return (
     targetActor.system.attributes.immunities.some(
@@ -99,15 +114,59 @@ function isImmune(targetActor, trait) {
 }
 
 // Helper function to generate dynamic relative cover effect.
-function generateCover(
-  coverTargetName,
-  coverTargetId,
-  coverTargetSignature,
-  level
-) {
+function generateCover(coverTargetMap, previous) {
+  // Check if we are updating a previous effect and filter out the redundant values
+  if (previous) {
+    let newSignatures = coverTargetMap.map((t) => t.signature);
+    let oldSignatures = previous.map((t) => t.signature);
+    let toAdd = previous.filter(
+      (add) => !newSignatures.includes(add.signature)
+    );
+    let upgradeDefinitely = coverTargetMap.filter((ud) =>
+      oldSignatures.includes(
+        previous.find(
+          (t) => t.signature === ud.signature && t.level < ud.level
+        )?.signature
+      )
+    );
+    let higherPrevious = previous.filter((hp) =>
+      newSignatures.includes(
+        coverTargetMap.find(
+          (t) => t.signature === hp.signature && t.level < hp.level
+        )?.signature
+      )
+    );
+    toRemove = upgradeDefinitely
+      .map((t) => t.signature)
+      .concat(higherPrevious.map((t) => t.signature));
+
+    coverTargetMap = coverTargetMap
+      .filter((t) => !toRemove.includes(t.signature))
+      .concat(toAdd, upgradeDefinitely, higherPrevious);
+  }
+
+  // Set up filtered arrays for the predicates in the effect
+  const standardCovers = coverTargetMap
+    .filter((t) => t.level === 2)
+    .map((t) => `origin:signature:${t.signature}`);
+  const greaterCovers = coverTargetMap
+    .filter((t) => t.level === 4)
+    .map((t) => `origin:signature:${t.signature}`);
+  const standardStealth = coverTargetMap
+    .filter((t) => t.level === 2)
+    .map((t) => `target:signature:${t.signature}`);
+  const greaterStealth = coverTargetMap
+    .filter((t) => t.level === 4)
+    .map((t) => `target:signature:${t.signature}`);
+
+  if (![standardCovers, greaterCovers].some((a) => a?.length > 0)) {
+    return false;
+  }
+
+  // Define cover effect rules
   const dotmdCoverEffect = {
     type: "effect",
-    name: `DotMD Cover vs. ${coverTargetName}`,
+    name: "Dance of the Mousedeer",
     img: "systems/pf2e/icons/equipment/shields/steel-shield.webp",
     system: {
       slug: "effect-danceofthemousedeer-cover",
@@ -122,25 +181,60 @@ function generateCover(
       },
       rules: [
         {
+          label: "Dance of the Mousedeer Standard Cover",
           key: "FlatModifier",
           selector: "ac",
           type: "circumstance",
-          value: level,
-          label: `Standard Cover vs ${coverTargetName}`,
+          value: 2,
           predicate: [
-            `origin:signature:${coverTargetSignature}`,
+            { or: standardCovers },
             { not: "self:condition:unconscious" },
           ],
         },
         {
+          label: "Dance of the Mousedeer Greater Cover",
+          key: "FlatModifier",
+          selector: "ac",
+          type: "circumstance",
+          value: 4,
+          predicate: [
+            { or: greaterCovers },
+            { not: "self:condition:unconscious" },
+          ],
+        },
+        {
+          label: "Dance of the Mousedeer Standard Cover",
           key: "FlatModifier",
           selector: "stealth",
           type: "circumstance",
-          value: level,
+          value: 2,
           predicate: [
-            "action:hide",
-            "action:sneak",
-            "avoid-detection",
+            {
+              or: [
+                "action:hide",
+                "action:sneak",
+                "avoid-detection",
+              ],
+            },
+            { or: standardStealth },
+            { not: "self:condition:unconscious" },
+          ],
+        },
+        {
+          label: "Dance of the Mousedeer Greater Cover",
+          key: "FlatModifier",
+          selector: "stealth",
+          type: "circumstance",
+          value: 4,
+          predicate: [
+            {
+              or: [
+                "action:hide",
+                "action:sneak",
+                "avoid-detection",
+              ],
+            },
+            { or: greaterStealth },
             { not: "self:condition:unconscious" },
           ],
         },
@@ -148,23 +242,53 @@ function generateCover(
     },
   };
 
+  // And set flags for checking this effect if it is reapplied
   dotmdCoverEffect.flags = {
     dotmd: {
-      target: coverTargetId,
-      level: level,
+      targets: coverTargetMap,
     },
   };
   return dotmdCoverEffect;
 }
 
+// Function that handles effect application logic
 async function applyDotmdEffects(results, sourceTokenId, sourceName) {
+  // Set up function vars
   let source = canvas.tokens.get(sourceTokenId);
-
+  let coverTargetMap = [];
+  let previousEffect = source.actor.itemTypes.effect.find(
+    (e) => e.slug === "effect-danceofthemousedeer-cover"
+  );
+  let previous = previousEffect?.flags?.dotmd?.targets;
   const successVals = {
     criticalSuccess: 4,
     success: 2,
   };
+  const dotmdImmunityEffect = {
+    type: "effect",
+    name: `Dance of the Mousedeer Immunity: ${sourceName}`,
+    img: `${source.actor.prototypeToken.texture.src}`,
+    system: {
+      slug: "effect-danceofthemousedeer-immunity",
+      tokenIcon: {
+        show: true,
+      },
+      duration: {
+        value: 24,
+        unit: "hours",
+        sustained: false,
+        expiry: "turn-end",
+      },
+      rules: [],
+    },
+  };
+  dotmdImmunityEffect.flags = {
+    dotmd: {
+      source: `${source.actor.id}`,
+    },
+  };
 
+  // If there are any (crit) successes send a reminder chat message for removing the effect on movement or attack
   if (
     results.some((r) => ["success", "criticalSuccess"].includes(r.outcome))
   ) {
@@ -172,64 +296,21 @@ async function applyDotmdEffects(results, sourceTokenId, sourceName) {
       user: game.user.id,
       type: CONST.CHAT_MESSAGE_STYLES.OTHER,
       content:
-        "<strong>NOTE: Manually remove cover effects on attack actions or movement.</strong>",
+        "<strong>NOTE: Manually remove Dance of the Mousedeer effect on attack actions or movement.</strong>",
       speaker: ChatMessage.getSpeaker(),
     });
   }
 
-  // Iterate through passed results, applying effects and generating chat messages as appropriate.
+  // Iterate through passed results, preparing effects and generating chat messages as appropriate.
   for (i in results) {
+    // Set loop variables
     let res = results[i];
     let target = canvas.tokens.get(res.targetTokenId);
     let targetSignature = target.actor.signature;
-    let existing = source.actor.itemTypes.effect.find(
-      (e) =>
-        e.slug === "effect-danceofthemousedeer-cover" &&
-        e.flags?.dotmd?.target === res.targetTokenId
-    );
     let level = successVals[res.outcome];
 
-    // On crit or normal success cover effect is only updated if it's not already greater cover
-    if (["success", "criticalSuccess"].includes(res.outcome)) {
-      await source.actor.createEmbeddedDocuments("Item", [
-        generateCover(
-          res.targetName,
-          res.targetTokenId,
-          targetSignature,
-          level
-        ),
-      ]);
-    } else if (["criticalFailure"].includes(res.outcome)) {
-      const dotmdImmunityEffect = {
-        type: "effect",
-        name: `Dance of the Mousedeer Immunity: ${sourceName}`,
-        img: `${source.actor.prototypeToken.texture.src}`,
-        system: {
-          slug: "effect-danceofthemousedeer-immunity",
-          tokenIcon: {
-            show: true,
-          },
-          duration: {
-            value: 24,
-            unit: "hours",
-            sustained: false,
-            expiry: "turn-end",
-          },
-          rules: [],
-        },
-      };
-
-      dotmdImmunityEffect.flags = {
-        dotmd: {
-          source: `${source.actor.id}`,
-        },
-      };
-
-      // In the edge case of active cover effects on the active actor existing when crit failing a new DotMD,
-      // removes them when immunity is applied as the target is now immune to the effect.
-      if (existing) {
-        await existing.delete();
-      }
+    // Crit fail logic
+    if (["criticalFailure"].includes(res.outcome)) {
       // Temporary immunity
       // Check if we have permissions to edit all of the target actors
       if (!target?.actor.isOwner) {
@@ -266,6 +347,8 @@ async function applyDotmdEffects(results, sourceTokenId, sourceName) {
           dotmdImmunityEffect,
         ]);
       }
+
+      // If the result is invalid targeting due to immunity or distance, also send a message.
     } else if (["too far", "immune"].includes(res.outcome)) {
       ChatMessage.create({
         user: game.user.id,
@@ -273,6 +356,28 @@ async function applyDotmdEffects(results, sourceTokenId, sourceName) {
         content: `${res.targetChatName} is ${res.outcome}.`,
         speaker: ChatMessage.getSpeaker(),
       });
+    } else {
+      // Prepare value to be passed into generateCover
+      let thisCoverMap = { signature: targetSignature, level: level };
+      if (level) {
+        coverTargetMap.push(thisCoverMap);
+      }
+    }
+
+  }
+
+  // Actually generate the cover effect, and apply it
+  // But only if there is something to apply
+  coverEffect = generateCover(coverTargetMap, previous);
+  if (
+    coverEffect &&
+    results.some((r) => ["success", "criticalSuccess"].includes(r.outcome))
+  ) {
+    // And update the previous effect if it exists
+    if (previousEffect) {
+      await previousEffect.update(coverEffect);
+    } else {
+      await source.actor.createEmbeddedDocuments("Item", [coverEffect]);
     }
   }
   return undefined;
@@ -322,8 +427,6 @@ let rollResults = targets.map((target) => {
     targetName: targetName,
     targetChatName: targetChatName,
   };
-
-  // Check for Dance of the Mousedeer immunity cooldown.
 
   // Check for target distance.
   if (target.distanceTo(_token) > 30) {
