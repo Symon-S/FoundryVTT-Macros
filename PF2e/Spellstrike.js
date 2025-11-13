@@ -137,7 +137,7 @@ if (game.modules.get("autoanimations")?.active) {
 }
 
 let flavName = ` cast at Rank ${spc.castRank}`;
-if (spc.isCantrip) { flavName = ` Cantrip ${spc.castRank}`; }
+if (spc.spell.isCantrip) { flavName = ` Cantrip ${spc.castRank}`; }
 if (spc.isFocus) { flavName = ` Focus ${spc.castRank}`; }
 let flavor = `<strong>Spellstrike</strong><br>${spc.spell.link}${flavName} (${dos})`;
 if (spc.slug === null) { flavor = `<div class="tags">${ttags}<br><hr><strong>Spellstrike</strong><br>${flavName} [Custom Spell] (${dos})`; }
@@ -256,7 +256,7 @@ if (critt >= 2) {
 }
 
 /* Expend slots */
-if (spc.isCantrip || choices.reroll) { return; }
+if (spc.spell.atWill || choices.reroll) { return; }
 await s_entry.cast(spc.spell, {slotId: spc.index, message: false});
 
 // Show the SpellStrike dialog, return a promise of a result object:
@@ -472,7 +472,7 @@ async function spellList(actor, sbs) {
     !(undead && spell.traits.has('vitality'));
 
   // Spells that ESS allows us to use, beyond spell attacks
-  const allowed = (spell, data) => 
+  const allowed = (spell, data) =>
     !(data.target.value.includes('willing') && healing(spell, data)) &&
       (data.target.value.includes("creature") ||
       (data.defense !== null)
@@ -510,7 +510,7 @@ async function spellList(actor, sbs) {
         }
         const sname = `${name} ${rank} (${e.name})`;
         spells.push({name: sname, castRank, sEId: spellData.id, slug, description, DC: save.value, spell, index, isSave, isAttack,
-          basic: spell.system.defense?.save?.basic ?? false, isCantrip: spell.isCantrip, isFocus: spellData.isFocusPool, traits,
+          basic: spell.system.defense?.save?.basic ?? false, isFocus: spellData.isFocusPool, traits,
           save: save.type ?? "", lvl, hasDamage, isExpended: active.expended ?? false , isUseless: group.uses?.value < 1,
           isStrikeable, standbyExpendable: !spell.isCantrip && castRank >= sbs?.baseRank
         });
@@ -520,7 +520,7 @@ async function spellList(actor, sbs) {
   spells.sort((a, b) => {
     if (a.lvl === b.lvl)
       return a.name.toUpperCase().localeCompare(b.name.toUpperCase(), undefined, {sensitivity: "base"});
-      return a.lvl - b.lvl;
+    return a.lvl - b.lvl;
   });
 
   return spells;
