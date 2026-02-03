@@ -223,12 +223,12 @@ rollResults = await Promise.all(rollResults);
 let summary = '';
 if(rollResults.length == 1){
     summary = response.useVisual ?
-        `${actorChatName} tries to demoralize ${rollResults[0].targetChatName} with ${visualIntimidation.name}.` :
+        `${actorChatName} tries to demoralize ${rollResults[0].targetChatName} with ${visualIntimidationFeat.name}.` :
         `${actorChatName} tries to demoralize ${rollResults[0].targetChatName} in ${languages.find(l=>l.value == response.lang).label}.`;
     summary += `<hr>${rollResults[0].flavor.split(': ').pop()}`
 } else {
     summary = response.useVisual ?
-    `${actorChatName} tries to demoralize targets with ${visualIntimidation.name}.` :
+    `${actorChatName} tries to demoralize targets with ${visualIntimidationFeat.name}.` :
     `${actorChatName} tries to demoralize targets in ${languages.find(l=>l.value == response.lang).label}.`;
     summary += '<hr>';
     summary += rollResults.map(r=>r.flavor).join('<br>');
