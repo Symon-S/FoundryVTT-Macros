@@ -63,6 +63,44 @@ if (dClass.system.attacks.martial >= class2.system.attacks.other.rank && dClass.
 
 //Class DC
 if (class2.system.classDC > dClass.system.classDC) { dClass.system.classDC = class2.system.classDC }
+// Add the 2nd class DC using rules
+dClass.system.rules.push(
+  {
+    key: "ChoiceSet",
+    prompt: `Ability for ${class2.name} Class DC`,
+    flag: `${class2.slug}Ability`,
+    adjustName: false,
+    choices:
+      class2.system.keyAbility.value.map(a => ({ value: a, label: `PF2E.Ability${a[0].toUpperCase() + a.slice(1)}` })).
+      concat({ value: "key", label: "Character's Key Ability"})
+  },
+  {
+    key: "ActiveEffectLike",
+    mode: "override",
+    path: `system.proficiencies.classDCs.${class2.slug}.attribute`,
+    value: `{item|flags.pf2e.rulesSelections.${class2.slug}Ability}`,
+    predicate: [{ not: { eq: [ `{item|flags.pf2e.rulesSelections.${class2.slug}Ability}`, "key"] }}]
+  },
+  {
+    key: "ActiveEffectLike",
+    mode: "override",
+    path: `system.proficiencies.classDCs.${class2.slug}.attribute`,
+    value: "{actor|keyAttribute}",
+    predicate: [{ eq: [ `{item|flags.pf2e.rulesSelections.${class2.slug}Ability}`, "key"] }]
+  },
+  {
+    key: "ActiveEffectLike",
+    mode: "upgrade",
+    path: `system.proficiencies.classDCs.${class2.slug}.rank`,
+    value: 1
+  },
+  {
+    key: "ActiveEffectLike",
+    mode: "override",
+    path: `system.proficiencies.classDCs.${class2.slug}.label`,
+    value: class2.name
+  }
+);
 
 //Defenses
 if (class2.system.defenses.heavy > dClass.system.defenses.heavy) { dClass.system.defenses.heavy = class2.system.defenses.heavy }
