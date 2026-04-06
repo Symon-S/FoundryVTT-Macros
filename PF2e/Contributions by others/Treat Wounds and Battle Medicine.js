@@ -29,6 +29,8 @@ This Macro works just like the system's Treat Wounds macro, except for the follo
 - Disallow Treat Wounds in combat
 */
 
+const system = game.system.id;
+
 /**
  * Check wether the current actor has a feature.
  *
@@ -480,8 +482,8 @@ async function applyChanges($html) {
         const useContinualRecovery = !useBattleMedicine && checkFeat("continual-recovery");
         const usedBattleMedicsBaton =
             useBattleMedicine && $html.find('[name="battle_medics_baton_held_bool"]')[0]?.checked;
-        const bmUUID = "Compendium.pf2e.feat-effects.2XEYQNZTCGpdkyR6";
-        const twUUID = "Compendium.pf2e.feat-effects.Lb4q2bBAgxamtix5";
+        const bmUUID = `Compendium.${system}.feat-effects.2XEYQNZTCGpdkyR6`;
+        const twUUID = `Compendium.${system}.feat-effects.Lb4q2bBAgxamtix5`;
         const immunityEffectUUID = useBattleMedicine ? bmUUID : twUUID;
         const forensicMedicine = checkFeat("forensic-medicine-methodology");
 

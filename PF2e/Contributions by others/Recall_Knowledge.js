@@ -19,6 +19,8 @@ if (!actor) {
     return ui.notifications.error("No selected token or assigned character");
 }
 
+const system = game.system.id;
+
 /**
  * Check wether the current actor has a feature.
  *
@@ -109,7 +111,7 @@ async function getSkillResult(skillSlug, rollResult = undefined, target = undefi
     );
 
     // Get the actual options the pf2e system roll code came up with
-    const rollOptions = fakeMsg.getFlag('pf2e','context.options');
+    const rollOptions = fakeMsg.getFlag(system, 'context.options');
 
     // Extract tags text from roll, but possibly remove ability and proficiency
     let breakdown = null;
@@ -140,7 +142,7 @@ async function getSkillResult(skillSlug, rollResult = undefined, target = undefi
         breakdown,
         rank,
         rollOptions,
-        domains: fakeMsg.getFlag('pf2e', 'context.domains'),
+        domains: fakeMsg.getFlag(system, 'context.domains'),
     };
 }
 
@@ -358,10 +360,10 @@ if (game.user.targets.size < 1) {
         output += skillListOutput("Lore Skill", loreSkills);
         output += conditionalModifiersOutput([...loreSkills, ...tokenSkills]);
         if (checkFeat('dubious-knowledge')) {
-            output += `<p>${token?.name ?? actor.name} has @UUID[Compendium.pf2e.feats-srd.Item.1Bt7uCW2WI4sM84P]</p>`;
+            output += `<p>${token?.name ?? actor.name} has @UUID[Compendium.${system === "sf2e" ? "sf2e.feats": "pf2e.feats-srd"}.Item.1Bt7uCW2WI4sM84P]</p>`;
         }
         if (checkFeat('unmistakable-lore')) {
-            output += `<p>${token?.name ?? actor.name} has @UUID[Compendium.pf2e.feats-srd.Item.XvX1EyxWbbBF32NV]</p>`;
+            output += `<p>${token?.name ?? actor.name} has @UUID[Compendium.${system === "sf2e" ? "sf2e.feats": "pf2e.feats-srd"}.Item.XvX1EyxWbbBF32NV]</p>`;
         }
     }
 }
@@ -402,7 +404,7 @@ await ChatMessage.create({
     blind: true,
     speaker: ChatMessage.getSpeaker(),
     rolls: [rollD20],
-    flags: { pf2e: makeFlags() },
+    flags: { [system]: makeFlags() },
 });
 
 // Recursively return every roll option in a predicate expression tree
