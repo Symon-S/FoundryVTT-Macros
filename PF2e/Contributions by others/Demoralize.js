@@ -18,6 +18,8 @@ rework by kromko
 and freeze2689 (appV2 rewrite)
 */
 
+const system = game.system.id;
+
 /**
 * Wrapper for the DSN Hook. If DSN is enabled, waits for the physical dice to stop rolling (unless the roll has assurance)
 *
@@ -28,7 +30,7 @@ function dsnHook(rollPromise) {
         return rollPromise.then(async results=> {
             await Promise.all(results.map(r=> {
                 // Check if we are using assurance
-                if (r.message.getFlag("pf2e", "context.options").includes("substitute:assurance"))
+                if (r.message.getFlag(system, "context.options").includes("substitute:assurance"))
                     return Promise.resolve(true);
                 return game.dice3d.waitFor3DAnimationByMessageID(r.message.id);
                 }
@@ -107,7 +109,7 @@ else if (game.user.targets.size > 1 && !demoralizeMultitarget){
 const actor = token.actor;
 const targets = game.user.targets;
 
-const respectHiddenNames = game.settings.get("pf2e", "metagame_tokenSetsNameVisibility");
+const respectHiddenNames = game.settings.get(system, "metagame_tokenSetsNameVisibility");
 const hideActorName = respectHiddenNames && !token.document.playersCanSeeName;
 const actorName = !hideActorName ? token.name : "Unknown";
 
