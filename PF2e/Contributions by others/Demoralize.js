@@ -96,7 +96,7 @@ function createContent(){
 }
 
 // Ignoring Reach for the Sky / Tut-Tu / Beast Dynamo Howl / Deimatic Display as they use a single check for all targets
-const multitargetFeats = ["dazzling-display", "frightening-appearance", "terrifying-howl", "flash-your-badge", "terrible-transformation", "menacing-prowess"];
+const multitargetFeats = ["dazzling-display", "frightening-appearance", "terrifying-howl", "flash-your-badge", "terrible-transformation", "menacing-prowess", "terrifying-transformation"];
 const demoralizeMultitarget = token.actor.items.find(item => multitargetFeats.includes(item.slug));
 
 if (game.user.targets.size == 0){
