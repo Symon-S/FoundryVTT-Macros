@@ -63,7 +63,7 @@ if (canvas.tokens.controlled.length !== 1){
     const modifiers = []
 
     let DCsByLevel = [14, 15, 16, 18, 19, 20, 22, 23, 24, 26, 27, 28, 30, 31, 32, 34, 35, 36, 38, 39, 40, 42, 44, 46, 48, 50]
-    let DC = DCsByLevel[token.actor.system.details.level.value] + 2
+    let DC = DCsByLevel[token.actor.system.details.level.value]
 
     const options = token.actor.getRollOptions(['all', 'skill-check', skillName.toLowerCase()]);
     options.push(`action:${actionSlug}`);
