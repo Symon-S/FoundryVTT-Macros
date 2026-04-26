@@ -18,6 +18,7 @@ rework by kromko
 and freeze2689 (appV2 rewrite)
 */
 
+/** @type {"pf2e"|"sf2e"} */
 const system = game.system.id;
 
 /**
@@ -238,8 +239,9 @@ if(rollResults.length == 1){
 if (game.modules.get('xdy-pf2e-workbench')?.active) {
     // Extract the Macro ID from the asynomous benefactor macro compendium.
     const macroName = `Demoralize Immunity CD`;
-    const macroId = (await game.packs.get('xdy-pf2e-workbench.asymonous-benefactor-macros')).index.find(n => n.name === macroName)?._id;
-    summary += `<hr>@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Click to apply effects and immunity}`;
+    const packName = system === "sf2e" ? "asymonous-benefactor-macros-sf2e" : "asymonous-benefactor-macros";
+    const macroId = (await game.packs.get(`xdy-pf2e-workbench.${packName}`)).index.find(n => n.name === macroName)?._id;
+    summary += `<hr>@Compendium[xdy-pf2e-workbench.${packName}.${macroId}]{Click to apply effects and immunity}`;
 } else {
     summary += `<hr>Workbench Module not active! Effects have to be applied manually.`;
 }

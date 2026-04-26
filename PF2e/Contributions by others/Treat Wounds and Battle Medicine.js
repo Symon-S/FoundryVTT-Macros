@@ -29,6 +29,7 @@ This Macro works just like the system's Treat Wounds macro, except for the follo
 - Disallow Treat Wounds in combat
 */
 
+/** @type {"pf2e"|"sf2e"} */
 const system = game.system.id;
 
 /**
@@ -491,10 +492,11 @@ async function applyChanges($html) {
         if (game.modules.has("xdy-pf2e-workbench") && game.modules.get("xdy-pf2e-workbench").active) {
             // Extract the Macro ID from the asynomous benefactor macro compendium.
             const macroName = useBattleMedicine ? `BM Immunity CD` : `TW Immunity CD`;
+            const packName = system === "sf2e" ? "asymonous-benefactor-macros-sf2e" : "asymonous-benefactor-macros";
             const macroId = game.packs
-                .get("xdy-pf2e-workbench.asymonous-benefactor-macros")
+                .get(`xdy-pf2e-workbench.${packName}`)
                 .index.find((n) => n.name === macroName)?._id;
-            immunityMacroLink = `@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Apply ${bmtw} Immunity}`;
+            immunityMacroLink = `@Compendium[xdy-pf2e-workbench.${packName}.${macroId}]{Apply ${bmtw} Immunity}`;
         } else {
             ui.notifications.warn(`Workbench Module not active! Linking Immunity effect Macro not possible.`);
         }
