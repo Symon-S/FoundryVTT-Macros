@@ -16,6 +16,9 @@ Limitations:
 created with the help of demoralize macro written by darkium
 */
 
+/** @type {"pf2e"|"sf2e"} */
+const system = game.system.id;
+
 /**
 * Wrapper for the DSN Hook. It will only use the hook if the non-buggy setting is not enabled.
 *
@@ -74,7 +77,7 @@ if (canvas.tokens.controlled.length !== 1){
         },
       };
 
-    const alwaysShowName = !game.settings.get("pf2e", "metagame_tokenSetsNameVisibility");
+    const alwaysShowName = !game.settings.get(system, "metagame_tokenSetsNameVisibility");
     for(let target of game.user.targets){
         let targetActor = target.actor;
         const showName = alwaysShowName || target.document.playersCanSeeName;
@@ -110,8 +113,9 @@ if (canvas.tokens.controlled.length !== 1){
             if (game.modules.has('xdy-pf2e-workbench') && game.modules.get('xdy-pf2e-workbench').active) { 
                 // Extract the Macro ID from the asynomous benefactor macro compendium.
                 const macroName = `StD Immunity CD`;
-                const macroId = (await game.packs.get('xdy-pf2e-workbench.asymonous-benefactor-macros')).index.find(n => n.name === macroName)?._id;
-                immunityMacroLink = `@Compendium[xdy-pf2e-workbench.asymonous-benefactor-macros.${macroId}]{Click to apply all effects}`
+                const packName = system === "sf2e" ? "asymonous-benefactor-macros-sf2e" : "asymonous-benefactor-macros";
+                const macroId = (await game.packs.get(`xdy-pf2e-workbench.${packName}`)).index.find(n => n.name === macroName)?._id;
+                immunityMacroLink = `@Compendium[xdy-pf2e-workbench.${packName}.${macroId}]{Click to apply all effects}`
             } else {
                 ui.notifications.warn(`Workbench Module not active! Linking Immunity effect Macro not possible.`);
             }
@@ -119,6 +123,8 @@ if (canvas.tokens.controlled.length !== 1){
             const targetWillDC = targetActor.system.saves.will.dc;
             
             // -----------------------
+
+            const conditionsPack = system === "sf2e" ? "sf2e.conditions" : "pf2e.conditionitems";
 
             game.pf2e.Check.roll(
                 new game.pf2e.CheckModifier(
@@ -133,7 +139,7 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Critical Success</strong><br> <strong>${nameForChatMessage}</strong> must make a @Check[type:fortitude|dc:resolve(@actor.skills.intimidation.dc.value)|traits:death,incapacitation], on a critical failure it dies. Otherwise it becomes @UUID[Compendium.pf2e.conditionitems.Item.TBSHQspnbcqxsmjL]{Frightened 2} and is @UUID[Compendium.pf2e.conditionitems.Item.sDPxOjQ9kx2RZE8D]{Fleeing} for 1 round; it suffers no effect on a critical success. <strong>${nameForChatMessage}</strong> ${immunityMessage}`,
+                                flavor: `<strong>Critical Success</strong><br> <strong>${nameForChatMessage}</strong> must make a @Check[type:fortitude|dc:resolve(@actor.skills.intimidation.dc.value)|traits:death,incapacitation], on a critical failure it dies. Otherwise it becomes @UUID[Compendium.${conditionsPack}.Item.TBSHQspnbcqxsmjL]{Frightened 2} and is @UUID[Compendium.${conditionsPack}.Item.sDPxOjQ9kx2RZE8D]{Fleeing} for 1 round; it suffers no effect on a critical success. <strong>${nameForChatMessage}</strong> ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "scaretodeath": {
@@ -152,7 +158,7 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Success</strong><br> <strong>${nameForChatMessage}</strong> becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 2} and ${immunityMessage}`,
+                                flavor: `<strong>Success</strong><br> <strong>${nameForChatMessage}</strong> becomes @UUID[Compendium.${conditionsPack}.TBSHQspnbcqxsmjL]{Frightened 2} and ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "scaretodeath": {
@@ -170,7 +176,7 @@ if (canvas.tokens.controlled.length !== 1){
                             ChatMessage.create({
                                 user: game.user.id,
                                 type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                                flavor: `<strong>Success</strong><br> <strong>${nameForChatMessage}</strong> becomes @UUID[Compendium.pf2e.conditionitems.TBSHQspnbcqxsmjL]{Frightened 1} and ${immunityMessage}`,
+                                flavor: `<strong>Failure</strong><br> <strong>${nameForChatMessage}</strong> becomes @UUID[Compendium.${conditionsPack}.TBSHQspnbcqxsmjL]{Frightened 1} and ${immunityMessage}`,
                                 speaker: ChatMessage.getSpeaker(),
                                 flags: {
                                     "scaretodeath": {
