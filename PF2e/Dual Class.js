@@ -30,7 +30,7 @@ if (class1 === class2) { return ui.notifications.warn("You cannot select the sam
 
 const dClassObj = Object.assign({}, class1);
 Object.defineProperty(dClassObj, 'system', {
-  value: duplicate(class1.system),
+  value: foundry.utils.duplicate(class1.system),
   configurable: true,
   writeable: true
 });
