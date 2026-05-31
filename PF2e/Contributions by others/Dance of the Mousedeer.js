@@ -1,7 +1,7 @@
 /*
 Dance of the Mousedeer
 Authored by Theroxenes
-Tested on Foundry v13.350, pf2e v7.6.2
+Tested on Foundry v14.361, pf2e v8.1.2
 This macro automates relative cover and immunity for the Wayang Dance of the Mousedeer ancestry feat.
 
 * Validates target count
@@ -99,7 +99,13 @@ function dsnHook(rollPromise) {
   }
 }
 
-// Immunity check function
+/**
+ * Immunity check helper function
+ *
+ * @param {Object} targetActor - Actor object for which to check immunity
+ * @param {string} trait - Trait for which to check immunity
+ * @returns {boolean} Whether the target is immune to the trait
+ */
 function isImmune(targetActor, trait) {
   return (
     targetActor.system.attributes.immunities.some(
@@ -113,7 +119,13 @@ function isImmune(targetActor, trait) {
   );
 }
 
-// Helper function to generate dynamic relative cover effect.
+/**
+ * Function to generate cover effects
+ *
+ * @param {Object} coverTargetMap - Object containing formatted target data
+ * @param {Object[]} previous - Array of previous target tokens
+ * @returns {Object} Effect data to apply to Dance of the Mousedeer user
+ */
 function generateCover(coverTargetMap, previous) {
   // Check if we are updating a previous effect and filter out the redundant values
   if (previous) {
@@ -251,7 +263,14 @@ function generateCover(coverTargetMap, previous) {
   return dotmdCoverEffect;
 }
 
-// Function that handles effect application logic
+/**
+ * Handles effect application logic.
+ *
+ * @param {Object[]} results - Roll results from the Performance check(s)
+ * @param {string} sourceTokenId - Short ID of the source token
+ * @param {string} sourceName - Formatted name for the actor to send in the chat message
+ * @returns {undefined}
+ */
 async function applyDotmdEffects(results, sourceTokenId, sourceName) {
   // Set up function vars
   let source = canvas.tokens.get(sourceTokenId);
