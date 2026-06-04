@@ -256,7 +256,7 @@ if (critt >= 2) {
 }
 
 /* Expend slots */
-if (spc.spell.atWill || choices.reroll) { return; }
+if (choices.reroll) { return; }
 await s_entry.cast(spc.spell, {slotId: spc.index, message: false});
 
 // Show the SpellStrike dialog, return a promise of a result object:
