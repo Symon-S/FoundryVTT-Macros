@@ -116,9 +116,9 @@ if (choice[0] === 'dirge-of-doom') {
   if (levels.length === 0) { return ui.notifications.warn('There are no enemies within range'); }
   else { level = Math.max(...levels); }
 }
-else { 
+else {
 	levels = tokens.filter(f => f.actor?.alliance === allies).map(l => l.actor.level);
-    willDCs = tokens.filter(f => f.actor?.alliance === allies).map(l => l.actor.saves.will.dc.value);
+    willDCs = tokens.filter(f => f.actor?.alliance === allies && f.actor?.saves?.will).map(l => l.actor.saves.will.dc.value);
 	level = Math.max(...levels);
 }
 
@@ -127,7 +127,7 @@ if (level < 0) { level = 0 }
 let DC;
 if ( isNaN(choice[1]) ) { 
 	if (choice[2]) {
-    DC = Math.max(...willDCs); 
+    DC = Math.max(...willDCs);
   }
 	else { DC = DCbyLevel[level]; }
 }
