@@ -224,11 +224,11 @@ const rollTreatWounds = async ({
         ).roll();
         ChatMessage.create({
             user: game.user.id,
-            type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+            style: CONST.CHAT_MESSAGE_STYLES.ROLL,
             flavor: `<strong>Assurance Roll: ${
                 skillUsed.label[0].toUpperCase() + skillUsed.label.substring(1)
             }</strong> vs DC ${DC}<br><small>Do not apply any other bonuses, penalties, or modifiers</small><br>`,
-            roll: aroll,
+            roll: [aroll],
             speaker: ChatMessage.getSpeaker(),
         });
 
@@ -280,7 +280,7 @@ const rollTreatWounds = async ({
         } else {
             ChatMessage.create({
                 user: game.user.id,
-                type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+                style: CONST.CHAT_MESSAGE_STYLES.OTHER,
                 flavor: `No healing done.<br>${immunityMessage}`,
                 speaker: ChatMessage.getSpeaker(),
                 flags: {
@@ -362,7 +362,7 @@ const rollTreatWounds = async ({
                     dsnHook(() => {
                         ChatMessage.create({
                             user: game.user.id,
-                            type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+                            style: CONST.CHAT_MESSAGE_STYLES.OTHER,
                             flavor: `No healing done.<br>${immunityMessage}`,
                             speaker: ChatMessage.getSpeaker(),
                             flags: {
