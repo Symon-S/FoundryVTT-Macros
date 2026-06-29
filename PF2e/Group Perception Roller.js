@@ -46,6 +46,5 @@ content += `</table>`;
 
 await ChatMessage.create({
 	content,
-	type: CONST.CHAT_MESSAGE_TYPES.WHISPER,
 	whisper: [game.userId]
 });
